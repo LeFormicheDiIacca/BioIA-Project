@@ -57,7 +57,7 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
 
     return mesh_graph, pos_to_node
 
-test = True
+test = False
 if test:
     graph, _ = meshgraph_generator(n_neighbours=8, n_row=5, n_col=5)
     labels = nx.get_node_attributes(graph, 'label')
