@@ -57,9 +57,7 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
 
     return mesh_graph, pos_to_node
 
-test = False
-if test:
-    graph, _ = meshgraph_generator(n_neighbours=8, n_row=5, n_col=5)
+def plot_graph(graph):
     labels = nx.get_node_attributes(graph, 'label')
     pos = nx.spring_layout(graph, iterations=10000)
     nx.draw_networkx_nodes(graph, pos)
