@@ -10,6 +10,7 @@ aco = ACO(mesh_graph, ant_max_steps=100, num_iterations=100, ant_random_spawn=Tr
 
 #Source and dest should be int as the node id
 #The library uses source and dest as str. Should we uniform the thing and use strings as ids?
+#No GPU parallelism for now
 aco_path, aco_cost = aco.find_shortest_path(
     source=1,
     destination=22,
