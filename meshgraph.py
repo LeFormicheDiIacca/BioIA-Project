@@ -57,10 +57,31 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
 
     return mesh_graph, pos_to_node
 
-def plot_graph(graph):
+def plot_graph(graph, paths = None):
+
     labels = nx.get_node_attributes(graph, 'label')
     pos = nx.spring_layout(graph, iterations=10000)
     nx.draw_networkx_nodes(graph, pos)
-    nx.draw_networkx_edges(graph, pos)
+    nx.draw_networkx_edges(graph, pos, edge_color="black")
+    if paths is not None:
+        for (path, color) in paths:
+            path_graph = nx.path_graph(path)
+            nx.draw_networkx_edges(graph, pos, width = 2, edgelist=list(path_graph.edges()), edge_color=color)
+
     nx.draw_networkx_labels(graph, pos, labels=labels)
     plt.show()
+
+def cost_assignment(graph, edges_metadata, assignment_function, print_assignment=False):
+    for edge in graph.edges():
+        #If no metadata is available, a big value is assigned as cost
+        try:
+            metadata = edges_metadata[edge]
+            cost = assignment_function(metadata)
+        except KeyError:
+            cost = 1000000
+            metadata = None
+            print(f"Error: edge {edge} has no metadata. Cost set to {cost}.")
+        graph[edge[0]][edge[1]]['cost'] = cost
+        if print_assignment:
+            print(f"Assignment for edge {edge[0]}->{edge[1]} cost: {cost}")
+            print(f"Metadata of edge {edge[0]}->{edge[1]}:\n{metadata}")
