@@ -10,6 +10,7 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
     mesh_graph = nx.Graph()
     n_nodes = n_row * n_col
     pos_to_node = {}
+    node_to_pos = {}
     x,y = 0,0
     for i in range(n_nodes):
         label = f"N{i}"
@@ -17,6 +18,7 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
         mesh_graph.nodes[i]["label"] = label
         #Saving grid pos in a separate dictionary for faster retrieval
         pos_to_node[x,y] = i
+        node_to_pos[i] = (x,y)
         y += 1
         if y == n_row:
             x += 1
@@ -55,13 +57,17 @@ def meshgraph_generator(n_neighbours: int, n_row: int = 10, n_col: int = 10):
         mesh_graph.add_edge(pos_to_node[(n_row-2, n_col-1)], pos_to_node[(n_row-1,n_col-2)])
 
 
-    return mesh_graph, pos_to_node
+    return mesh_graph, pos_to_node, node_to_pos
 
-def plot_graph(graph, paths = None):
-
+def plot_graph(graph, paths = None, key_nodes = None):
+    plt.figure(figsize=(10,10))
     labels = nx.get_node_attributes(graph, 'label')
+    if key_nodes is not None:
+        node_color = ["#1f78b4" if x not in key_nodes else "red" for x in graph.nodes()]
+    else:
+        node_color = "#1f78b4"
     pos = nx.spring_layout(graph, iterations=10000)
-    nx.draw_networkx_nodes(graph, pos)
+    nx.draw_networkx_nodes(graph, pos, node_color=node_color)
     nx.draw_networkx_edges(graph, pos, edge_color="black")
     if paths is not None:
         for (path, color) in paths:
@@ -69,6 +75,7 @@ def plot_graph(graph, paths = None):
             nx.draw_networkx_edges(graph, pos, width = 2, edgelist=list(path_graph.edges()), edge_color=color)
 
     nx.draw_networkx_labels(graph, pos, labels=labels)
+    plt.axis('off')
     plt.show()
 
 def cost_assignment(graph, edges_metadata, assignment_function, print_assignment=False):
