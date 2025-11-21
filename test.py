@@ -1,67 +1,26 @@
-import copy
-from itertools import combinations
-
-import inspyred
-from meshgraph import meshgraph_generator, plot_graph, cost_assignment
+from ACO.ACO_simulator import ACO_simulator
 from cost_functions import test_cost_assignment
-from aco_routing import ACO
+from meshgraph import MeshGraph
 
-mesh_graph, pos_to_node, node_to_pos = meshgraph_generator(8,10,10)
+mesh_graph = MeshGraph(8,10,10)
 edges_metadata = dict()
-cost_assignment(mesh_graph, edges_metadata, test_cost_assignment, print_assignment=False)
+mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
+key_nodes = {1, 44, 59, 81}
+aco = ACO_simulator(mesh_graph, key_nodes, 1,5,0.7,200, 100)
+path, path_cost = aco.simulation()
+print(path)
+print(path_cost)
+#for edge in mesh_graph.edges():
+#    print(f"{edge[0]}->{edge[1]}\nMetadata:{mesh_graph[edge[0]][edge[1]]}")
+mesh_graph.plot_graph([(path, "red")], key_nodes = key_nodes)
 
-k = 1
-plot_mesh_changes = False
-keep_key_nodes_neighbors = False
-final_graph = copy.deepcopy(mesh_graph)
-key_nodes = [1,22, 55]
-all_key_node_pairs = list(combinations(key_nodes, 2))
-
-if keep_key_nodes_neighbors:
-    to_sum = []
-    for node in key_nodes:
-        to_sum += list(mesh_graph[node].keys())
-    key_nodes += to_sum
-
-"""complete_graph = nx.Graph()
-for(source, target) in all_key_node_pairs:
-    path = nx.shortest_path(final_graph, source, target, weight='cost')
-    path_cost = 0
-    for i in range(len(path)-1):
-        path_cost += final_graph[path[i]][path[i+1]]['cost']
-    complete_graph.add_edge(source, target, weight=path_cost)
-    print(path)
-
-plot_graph(complete_graph)"""
-
-#Source and dest should be int as the node id
-#The library uses source and dest as str. Should we uniform the thing and use strings as ids?
-#No GPU parallelism for now
-
-aco = ACO(mesh_graph, ant_max_steps=100, num_iterations=20, ant_random_spawn=True, alpha= 1, beta= 3)
-
-
-
-color_list = ["red", "blue", "green", "yellow", "cyan", "magenta"]
-path_list = []
-idx = 0
-#TODO: Se no path, ripristinare i vicini dei nodi chiave.
-for pair in all_key_node_pairs:
-    for path_id in range(k):
-        aco_path, aco_cost = aco.find_shortest_path(
-            source=pair[0],
-            destination=pair[1],
-            num_ants=200,
-        )
-
-        print(aco_path)
-        print(aco_cost)
-        path_list.append((aco_path, color_list[path_id+idx]))
-
-        aco_path = [x for x in aco_path if x not in key_nodes]
-        mesh_graph.remove_nodes_from(aco_path)
-        if plot_mesh_changes:
-            plot_graph(mesh_graph)
-    idx += k
-
-plot_graph(final_graph, path_list, key_nodes)
+#Ants still stupids as fuck
+"""
+TODO:
+    1. Add possibility to see what each ant is doing
+    2. Parallelization
+    3. Add a path optimization system in order to improve the ants result
+    4. Should local update be done when the ants finish with their path calculation?
+        In sequential ants computation this causes no problem but in could in parallel
+        computation. No actual idea
+"""
