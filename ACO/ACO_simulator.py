@@ -7,7 +7,7 @@ from meshgraph import MeshGraph
 
 
 class ACO_simulator:
-    def __init__(self, graph, key_nodes, alpha, beta, rho, ant_number = 200, max_iterations = 1000, max_no_updates = 10, Q = 5000):
+    def __init__(self, graph: MeshGraph, key_nodes, alpha, beta, rho, ant_number = 200, max_iterations = 1000, max_no_updates = 10, Q = 5000):
         self.graph = graph
         self.rho = rho
         self.key_nodes = key_nodes
@@ -20,20 +20,8 @@ class ACO_simulator:
         initial_pheromone = 1.0 / Q
         self.graph.pheromone_initialization(initial_pheromone)
 
-    def calc_path_cost(self, path):
-        path_cost = 0
-        degree_45_penalty_factor = 100
-        for i in range(len(path)-1):
-            source, destination = path[i], path[i+1]
-            dist = self.graph.nodes_geometric_dist(source, destination)
-            if dist != 1:
-                path_cost += degree_45_penalty_factor
-            path_cost += self.graph[source][destination]["cost"]
-
-        return path_cost
-
     def global_pheromone_update(self, best_path):
-        path_cost = self.calc_path_cost(best_path)
+        path_cost = self.graph.calc_path_cost(best_path)
         for i in range(len(best_path)-1):
             source, destination = best_path[i], best_path[i+1]
             current_pheromone = self.graph[source][destination]["pheromone_level"]
@@ -53,13 +41,12 @@ class ACO_simulator:
                 start_node = random.sample(tuple(self.graph.nodes()), 1)[0]
                 ant = Ant(start_node, self.key_nodes, self.graph, self.alpha, self.beta, self.rho)
                 path = ant.calculate_path()
-
                 if path[-1] != start_node:
                     continue
                 visited_set = set(path)
                 if not self.key_nodes.issubset(visited_set):
                     continue
-                path_cost = self.calc_path_cost(path)
+                path_cost = self.graph.calc_path_cost(path)
                 paths += [(path, path_cost)]
                 if path_cost < current_best_path_cost:
                     current_best_path = path
@@ -77,3 +64,35 @@ class ACO_simulator:
             epoch += 1
 
         return current_best_path, current_best_path_cost
+
+
+    def _TwoOptSwap(self, path, v1_index, v2_index):
+        if v1_index >= v2_index:
+            v1_index, v2_index = min(v1_index, v2_index), max(v1_index, v2_index)
+        new_route = path[:v1_index + 1]
+        segment_to_reverse = path[v1_index + 1: v2_index + 1]
+        new_route.extend(segment_to_reverse[::-1])
+        new_route.extend(path[v2_index + 1:])
+        return new_route
+
+    def TwoOptHeuristic(self, path):
+        while True:
+            improved = False
+            best_dist = self.graph.calc_path_cost(path)
+            num_nodes = len(path)
+            for i in range(num_nodes - 1):
+                for j in range(i + 1, num_nodes):
+                    new_route = self._TwoOptSwap(path, i, j)
+                    new_dist = self.graph.calc_path_cost(new_route)
+                    if new_dist < best_dist:
+                        path = new_route
+                        best_dist = new_dist
+                        improved = True
+                        break
+
+                if improved:
+                    break
+            if not improved:
+                break
+
+        return path, best_dist

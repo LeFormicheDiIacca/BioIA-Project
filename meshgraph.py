@@ -104,3 +104,17 @@ class MeshGraph(nx.Graph):
         x_t, y_t = self.node_to_pos[target]
         d = math.sqrt((x_s - x_t) ** 2 + (y_s - y_t) ** 2)
         return d
+
+    def calc_path_cost(self, path, degree_45_penalty_factor = 100):
+        path_cost = 0
+        for i in range(len(path)-1):
+            source, destination = path[i], path[i+1]
+            dist = self.nodes_geometric_dist(source, destination)
+            if dist != 1:
+                path_cost += degree_45_penalty_factor
+            try:
+                path_cost += self[source][destination]["cost"]
+            except KeyError:
+                path_cost = math.inf
+
+        return path_cost

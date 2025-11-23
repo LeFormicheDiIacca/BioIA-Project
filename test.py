@@ -14,6 +14,13 @@ print(path_cost)
 #    print(f"{edge[0]}->{edge[1]}\nMetadata:{mesh_graph[edge[0]][edge[1]]}")
 mesh_graph.plot_graph([(path, "red")], key_nodes = key_nodes)
 
+path, path_cost = aco.TwoOptHeuristic(path)
+print(path)
+print(path_cost)
+#for edge in mesh_graph.edges():
+#    print(f"{edge[0]}->{edge[1]}\nMetadata:{mesh_graph[edge[0]][edge[1]]}")
+mesh_graph.plot_graph([(path, "red")], key_nodes = key_nodes)
+
 #Ants still stupids as fuck
 """
 TODO:
