@@ -1,13 +1,47 @@
 import math
+import multiprocessing
 import random
 
 from ACO.Ant import Ant
-from cost_functions import test_cost_assignment
+import ctypes
+from functools import partial
 from meshgraph import MeshGraph
 
+shared_pheromones_array = None
+
+
+def init_worker(shared_array):
+
+    global shared_pheromones_array
+    shared_pheromones_array = shared_array
+
+
+def run_synchronized_ant(args):
+
+    graph, key_nodes, alpha, beta, rho = args
+
+    global shared_pheromones_array
+
+    random.seed()
+
+    try:
+        start_node = random.sample(tuple(graph.nodes()), 1)[0]
+        ant = Ant(start_node, key_nodes, graph, alpha, beta, rho, shared_pheromones=shared_pheromones_array)
+
+        path = ant.calculate_path()
+
+        if path[-1] != start_node: return None
+        visited_set = set(path)
+        if not key_nodes.issubset(visited_set): return None
+        path_cost = graph.calc_path_cost(path)
+
+        return (path, path_cost)
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 class ACO_simulator:
-    def __init__(self, graph: MeshGraph, key_nodes, alpha, beta, rho, ant_number = 200, max_iterations = 1000, max_no_updates = 10, Q = 5000):
+    def __init__(self, graph: MeshGraph, key_nodes, alpha, beta, rho, ant_number = 200, max_iterations = 1000, max_no_updates = 50, Q = 5000):
         self.graph = graph
         self.rho = rho
         self.key_nodes = key_nodes
@@ -17,8 +51,19 @@ class ACO_simulator:
         self.ant_number = ant_number
         self.max_no_updates = max_no_updates
 
-        initial_pheromone = 1.0 / Q
-        self.graph.pheromone_initialization(initial_pheromone)
+        self.initial_pheromone = 1.0 / Q
+
+        self.edge_mapping = {}
+        idx = 0
+        for u, v in self.graph.edges():
+            if "edge_id" not in self.graph[u][v]:
+                self.graph[u][v]["edge_id"] = idx
+                if self.graph.has_edge(v, u):
+                    self.graph[v][u]["edge_id"] = idx
+                idx += 1
+        self.num_edges = idx
+
+        self.graph.pheromone_initialization(self.initial_pheromone)
 
     def global_pheromone_update(self, best_path):
         path_cost = self.graph.calc_path_cost(best_path)
@@ -32,67 +77,48 @@ class ACO_simulator:
         current_best_path = None
         current_best_path_cost = math.inf
         epoch = 0
+        shared_pheromones = multiprocessing.Array('d', self.num_edges, lock=False)
+        for i in range(self.num_edges):
+            shared_pheromones[i] = self.initial_pheromone
         updated = False
         current_no_updates = 0
         n_best_ants = 5
-        while epoch < self.max_iterations and current_no_updates < self.max_no_updates:
-            paths = []
-            for i in range(self.ant_number):
-                start_node = random.sample(tuple(self.graph.nodes()), 1)[0]
-                ant = Ant(start_node, self.key_nodes, self.graph, self.alpha, self.beta, self.rho)
-                path = ant.calculate_path()
-                if path[-1] != start_node:
-                    continue
-                visited_set = set(path)
-                if not self.key_nodes.issubset(visited_set):
-                    continue
-                path_cost = self.graph.calc_path_cost(path)
-                paths += [(path, path_cost)]
-                if path_cost < current_best_path_cost:
-                    current_best_path = path
-                    current_best_path_cost = path_cost
-                    updated = True
-            if updated:
-                current_no_updates = 0
-            else:
-                current_no_updates += 1
 
-            paths.sort(key=lambda x: x[1])
-            best_ants = paths[:n_best_ants]
-            for (path, cost) in best_ants:
-                self.global_pheromone_update(path)
-            epoch += 1
+        with multiprocessing.Pool(
+            processes=multiprocessing.cpu_count(),
+            initializer=init_worker,
+            initargs=(shared_pheromones,)
+        ) as pool:
+            while epoch < self.max_iterations and current_no_updates < self.max_no_updates:
+
+                task_args = [
+                    (self.graph, self.key_nodes, self.alpha, self.beta, self.rho)
+                    for _ in range(self.ant_number)
+                ]
+
+                results = pool.map(run_synchronized_ant, task_args)
+
+                paths = [res for res in results if res is not None]
+
+                updated = False
+
+                for path, path_cost in paths:
+                    if path_cost < current_best_path_cost:
+                        current_best_path = path
+                        current_best_path_cost = path_cost
+                        updated = True
+
+                if updated:
+                    current_no_updates = 0
+                else:
+                    current_no_updates += 1
+
+                paths.sort(key=lambda x: x[1])
+                best_ants = paths[:n_best_ants]
+
+                for (path, cost) in best_ants:
+                    self.global_pheromone_update(path)
+
+                epoch += 1
 
         return current_best_path, current_best_path_cost
-
-
-    def _TwoOptSwap(self, path, v1_index, v2_index):
-        if v1_index >= v2_index:
-            v1_index, v2_index = min(v1_index, v2_index), max(v1_index, v2_index)
-        new_route = path[:v1_index + 1]
-        segment_to_reverse = path[v1_index + 1: v2_index + 1]
-        new_route.extend(segment_to_reverse[::-1])
-        new_route.extend(path[v2_index + 1:])
-        return new_route
-
-    def TwoOptHeuristic(self, path):
-        while True:
-            improved = False
-            best_dist = self.graph.calc_path_cost(path)
-            num_nodes = len(path)
-            for i in range(num_nodes - 1):
-                for j in range(i + 1, num_nodes):
-                    new_route = self._TwoOptSwap(path, i, j)
-                    new_dist = self.graph.calc_path_cost(new_route)
-                    if new_dist < best_dist:
-                        path = new_route
-                        best_dist = new_dist
-                        improved = True
-                        break
-
-                if improved:
-                    break
-            if not improved:
-                break
-
-        return path, best_dist
