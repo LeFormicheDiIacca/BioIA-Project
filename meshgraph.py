@@ -88,7 +88,8 @@ class MeshGraph(nx.Graph):
             except KeyError:
                 cost = 100
                 metadata = None
-                print(f"Error: edge {edge} has no metadata. Cost set to {cost}.")
+                if print_assignment:
+                    print(f"Error: edge {edge} has no metadata. Cost set to {cost}.")
             self[edge[0]][edge[1]]['cost'] = cost
             if print_assignment:
                 print(f"Assignment for edge {edge[0]}->{edge[1]} cost: {cost}")

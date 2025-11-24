@@ -3,8 +3,6 @@ import multiprocessing
 import random
 
 from ACO.Ant import Ant
-import ctypes
-from functools import partial
 from meshgraph import MeshGraph
 
 shared_pheromones_array = None
