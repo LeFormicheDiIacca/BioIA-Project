@@ -30,7 +30,7 @@ if __name__ == '__main__':
     }
     log_data = False
     print_res = True
-    n_iterations = 1
+    n_iterations = 10
     writer = None
     if log_data:
         Path(OUTPUT_FOLDER).mkdir(parents=True, exist_ok=True)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
             pass
     try:
         for i in range(n_iterations):
-            mesh_graph = MeshGraph(**mesh_graph_parameters)
+            mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
             edges_metadata = dict()
             mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
             aco = ACO_simulator(mesh_graph, key_nodes, **ant_colony_parameters)
@@ -79,4 +79,5 @@ TODO:
     3. Should local update be done when the ants finish with their path calculation?
         Shared memory and let's go for now. Glory to C and the Ants🫡
     4. Convert to k-indpaths
+    5. MicroOptimize code
 """

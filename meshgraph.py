@@ -1,10 +1,12 @@
 import math
-
+from scipy.spatial.distance import pdist, squareform
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 class MeshGraph(nx.Graph):
-    def __init__(self, n_neighbours: int = 8, n_row: int = 10, n_col: int = 10):
+    def __init__(self, key_nodes, n_neighbours: int = 8, n_row: int = 10, n_col: int = 10):
         super().__init__()
         if n_neighbours not in [4, 8]:
             raise ValueError('Invalid number of neighbours. Must be 4 or 8')
@@ -59,12 +61,17 @@ class MeshGraph(nx.Graph):
             self.add_edge(self.pos_to_node[(n_row - 2, 0)], self.pos_to_node[(n_row - 1, 1)])
             self.add_edge(self.pos_to_node[(n_row - 2, n_col - 1)], self.pos_to_node[(n_row - 1, n_col - 2)])
 
+        self.key_nodes = key_nodes
+        nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in self.nodes()])
+        compress_dist = pdist(nodes_pos, metric='euclidean')
+        self.dist_matrix = squareform(compress_dist)
+        self.initial_pheromone_level = 0
 
-    def plot_graph(self, paths=None, key_nodes=None):
+    def plot_graph(self, paths=None):
         plt.figure(figsize=(10, 10))
         labels = nx.get_node_attributes(self, 'label')
-        if key_nodes is not None:
-            node_color = ["#1f78b4" if x not in key_nodes else "red" for x in self.nodes()]
+        if self.key_nodes is not None:
+            node_color = ["#1f78b4" if x not in self.key_nodes else "red" for x in self.nodes()]
         else:
             node_color = "#1f78b4"
         pos = nx.spring_layout(self, iterations=10000)
@@ -96,22 +103,16 @@ class MeshGraph(nx.Graph):
                 print(f"Metadata of edge {edge[0]}->{edge[1]}:\n{metadata}")
 
     def pheromone_initialization(self, initial_pheromone_level):
+        self.initial_pheromone_level = initial_pheromone_level
         for edge in self.edges():
             self[edge[0]][edge[1]]["pheromone_level"] = initial_pheromone_level
-            self[edge[0]][edge[1]]["initial_pheromone_level"] = initial_pheromone_level
-
-    def nodes_geometric_dist(self, source, target):
-        x_s, y_s = self.node_to_pos[source]
-        x_t, y_t = self.node_to_pos[target]
-        d = math.sqrt((x_s - x_t) ** 2 + (y_s - y_t) ** 2)
-        return d
 
     def calc_path_cost(self, path, degree_45_penalty_factor = 100):
         path_cost = 0
         for i in range(len(path)-1):
             source, destination = path[i], path[i+1]
-            dist = self.nodes_geometric_dist(source, destination)
-            if dist != 1:
+            dist = self.dist_matrix[source, destination]
+            if not math.isclose(dist, 1.0, rel_tol=1e-5):
                 path_cost += degree_45_penalty_factor
             try:
                 path_cost += self[source][destination]["cost"]

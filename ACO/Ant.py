@@ -3,6 +3,7 @@ import random
 from meshgraph import MeshGraph
 
 class Ant:
+    __slots__ = ('alpha', 'beta', 'rho', 'path', 'visited_nodes', 'starting_node', 'key_nodes', 'graph','shared_pheromones')
     def __init__(self, starting_node, key_nodes, graph: MeshGraph, alpha, beta, rho, shared_pheromones):
         self.alpha = alpha
         self.beta = beta
@@ -25,17 +26,16 @@ class Ant:
         if self.shared_pheromones is not None:
             edge_id = self.graph[u][v]["edge_id"]
             old_val = self.shared_pheromones[edge_id]
-            initial_pheromone_level = self.graph[u][v]["initial_pheromone_level"]
-            new_val = (1 - self.rho) * old_val + self.rho * initial_pheromone_level
+            new_val = (1 - self.rho) * old_val + self.rho * self.graph.initial_pheromone_level
 
             self.shared_pheromones[edge_id] = new_val
     def select_next_node(self, current_node):
         """
         May God's light shine on this fucking ant and force it to make a good choice. Amen
         """
-        neighbors = self.graph[current_node]
+        neighbors = [n for n in self.graph[current_node] if n not in self.visited_nodes]
         candidates = dict()
-        degree_45_penalty_factor = 2
+        degree_45_penalty_factor = 0.5
 
         active_targets = []
         nodes_to_visit = self.key_nodes - self.visited_nodes
@@ -46,14 +46,14 @@ class Ant:
                 continue
 
             edge_cost = self.graph[current_node][neighbor]["cost"]
-            step_dist = self.graph.nodes_geometric_dist(current_node, neighbor)
+            step_dist = self.graph.dist_matrix[current_node, neighbor]
             is_diagonal = not math.isclose(step_dist, 1.0, rel_tol=1e-5)
 
             dist_to_target = 0.0
             if active_targets:
                 min_dist = math.inf
                 for t in active_targets:
-                    d = self.graph.nodes_geometric_dist(current_node, t)
+                    d = self.graph.dist_matrix[neighbor, t]
                     if d < min_dist:
                         min_dist = d
                 dist_to_target = min_dist
@@ -67,7 +67,7 @@ class Ant:
 
             prob = (pheromone ** self.alpha) * (heuristic ** self.beta)
             if is_diagonal:
-                prob /= degree_45_penalty_factor
+                prob *= degree_45_penalty_factor
 
             candidates[neighbor] = prob
 
