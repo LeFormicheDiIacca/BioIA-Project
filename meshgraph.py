@@ -89,14 +89,36 @@ class MeshGraph(nx.Graph):
             node_color = ["#1f78b4" if x not in self.key_nodes else "red" for x in self.nodes()]
         else:
             node_color = "#1f78b4"
-        nx.draw_networkx_nodes(self, self.node_to_pos, node_color=node_color)
-        nx.draw_networkx_edges(self, self.node_to_pos, edge_color="black")
+
+        pos = self.node_to_pos
+
+        # nx.draw_networkx_nodes(self, self.node_to_pos, node_color=node_color)
+        nx.draw_networkx_edges(self, pos, edge_color="gray")
+
+        node_costs = [self.nodes[node].get('elevation', 0) for node in self.nodes()]
+        nx.draw_networkx_nodes(
+            self, pos,
+            node_color=node_costs,
+            cmap='magma', 
+            node_size=10, 
+        )
+
         if paths is not None:
             for (path, color) in paths:
                 path_graph = nx.path_graph(path)
                 nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
         if draw_labels:
             nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
+
+
+        # water_nodes = [n for n, d in graph.nodes(data=True) if d.get('is_water')]
+        # nx.draw_networkx_nodes(
+        #     graph, pos,
+        #     nodelist=water_nodes,
+        #     node_color='lightblue',
+        #     node_size=10,
+        # )
+
         plt.axis('off')
         plt.show()
 

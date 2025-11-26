@@ -94,6 +94,7 @@ def weight_func(u, v, edge_attr):
     # Cost = Distance + (Elevation Change * Penalty Factor)
     # Increase the multiplier (e.g. 10) to make the path flatter but longer
     return dist + (elev_diff * 5.0)
+
 if __name__ == '__main__':
     res = 100
 
@@ -104,6 +105,8 @@ if __name__ == '__main__':
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)
     # path, cost = aco.find_shortest_path( source=(0,0), destination=(res-1,res-1), num_ants=1000)
     # path = nx.dijkstra_path(G, source= (0,0), target= (res- 1,res-1) , weight='length')
-    path = nx.astar_path(G,  source= (0,0), target= (res- 1,res-1) , heuristic=heuristic, weight=weight_func)
+    path = nx.astar_path(G,  source= 0, target= (res*res)-1 , heuristic=heuristic, weight=weight_func)
 
-    draw_graph_with_path(G,path)
+    print("Plotting graph...")
+    G.plot_graph(paths=[(path,'blue')])
+    # draw_graph_with_path(G,path)

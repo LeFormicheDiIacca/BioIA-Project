@@ -12,7 +12,7 @@ from meshgraph import MeshGraph
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
 def create_graph(tif_path, osm_pbf_path, resolution):
-    G = MeshGraph(n_neighbours = 8, n_row = resolution, n_col = resolution)
+    G = MeshGraph(key_nodes=None,n_neighbours = 8, n_row = resolution, n_col = resolution)
 
     src = rasterio.open(tif_path)
 
