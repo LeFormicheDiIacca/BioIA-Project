@@ -3,14 +3,13 @@ import random
 from meshgraph import MeshGraph
 
 class Ant:
-    __slots__ = ('alpha', 'beta', 'rho', 'path', 'visited_nodes', 'starting_node', 'key_nodes', 'graph','shared_pheromones')
-    def __init__(self, starting_node, key_nodes, graph: MeshGraph, alpha, beta, rho, shared_pheromones):
+    __slots__ = ('alpha', 'beta', 'rho', 'path', 'visited_nodes', 'starting_node', 'graph','shared_pheromones')
+    def __init__(self, starting_node, graph: MeshGraph, alpha, beta, rho, shared_pheromones):
         self.alpha = alpha
         self.beta = beta
         self.path = [starting_node]
         self.visited_nodes = set()
         self.starting_node = starting_node
-        self.key_nodes = key_nodes
         self.graph = graph
         self.rho = rho
         self.shared_pheromones = shared_pheromones
@@ -26,10 +25,9 @@ class Ant:
         if self.shared_pheromones is not None:
             edge_id = self.graph[u][v]["edge_id"]
             old_val = self.shared_pheromones[edge_id]
-            new_val = (1 - self.rho) * old_val + self.rho * self.graph.initial_pheromone_level
-
+            new_val = (1 - self.rho) * old_val + self.rho * self.graph.tau0
             self.shared_pheromones[edge_id] = new_val
-    def select_next_node(self, current_node):
+    def select_next_node(self, current_node, nodes_to_visit = None):
         """
         May God's light shine on this fucking ant and force it to make a good choice. Amen
         """
@@ -38,7 +36,8 @@ class Ant:
         degree_45_penalty_factor = 0.5
 
         active_targets = []
-        nodes_to_visit = self.key_nodes - self.visited_nodes
+        if nodes_to_visit is None:
+            nodes_to_visit = self.graph.key_nodes - self.visited_nodes
         if nodes_to_visit:
             active_targets = list(nodes_to_visit)
         for neighbor in neighbors:
@@ -62,7 +61,7 @@ class Ant:
 
             pheromone = self._get_pheromone(neighbor, current_node)
             heuristic = 1.0 / (total_estimated_effort + 0.1)
-            if neighbor in self.key_nodes and neighbor not in self.visited_nodes:
+            if neighbor in self.graph.key_nodes and neighbor not in self.visited_nodes:
                 heuristic *= 2.0
 
             prob = (pheromone ** self.alpha) * (heuristic ** self.beta)
@@ -82,7 +81,7 @@ class Ant:
     def calculate_path(self):
         next_node = None
         current_node = self.starting_node
-        nodes_to_visit = self.key_nodes.copy()
+        nodes_to_visit = self.graph.key_nodes.copy()
         if current_node in nodes_to_visit:
             nodes_to_visit.remove(current_node)
         while nodes_to_visit:
@@ -98,9 +97,9 @@ class Ant:
                 nodes_to_visit.remove(next_node)
             self._update_local_shared_pheromone(next_node, current_node)
             current_node = next_node
-
+        nodes_to_visit = {self.starting_node}
         while current_node != self.starting_node:
-            next_node = self.select_next_node(current_node)
+            next_node = self.select_next_node(current_node, nodes_to_visit)
 
             if next_node is None:
                 return self.path
@@ -115,58 +114,59 @@ class Ant:
         self.TwoOptHeuristic()
         return self.path
 
-    def _TwoOptSwap(self, v1_index, v2_index):
-        if v1_index >= v2_index:
-            v1_index, v2_index = min(v1_index, v2_index), max(v1_index, v2_index)
-        new_route = self.path[:v1_index + 1]
-        segment_to_reverse = self.path[v1_index + 1: v2_index + 1]
-        new_route.extend(segment_to_reverse[::-1])
-        new_route.extend(self.path[v2_index + 1:])
-        return new_route
-
     def TwoOptHeuristic(self):
-        while True:
+
+        n = len(self.path)
+        improved = True
+
+        while improved:
             improved = False
-            best_dist = self.graph.calc_path_cost(self.path)
-            num_nodes = len(self.path)
-            for i in range(num_nodes - 1):
-                for j in range(i + 1, num_nodes):
-                    new_route = self._TwoOptSwap(i, j)
-                    new_dist = self.graph.calc_path_cost(new_route)
-                    if new_dist < best_dist:
-                        self.path = new_route
-                        best_dist = new_dist
+            for i in range(n - 2):
+                a = self.path[i]
+                b = self.path[i + 1]
+                cost_ab = self.graph[a][b]["cost"]
+                for j in range(i + 2, n - 1):
+                    c = self.path[j]
+                    d = self.path[j + 1]
+                    if c not in self.graph[a] or d not in self.graph[b]:
+                        continue
+
+                    cost_cd = self.graph[c][d]["cost"]
+                    current_cost = cost_ab + cost_cd
+                    new_cost = self.graph[a][c]["cost"] + self.graph[b][d]["cost"]
+
+                    if new_cost < current_cost:
+                        self.path[i + 1:j + 1] = self.path[i + 1:j + 1][::-1]
                         improved = True
                         break
-
                 if improved:
                     break
-            if not improved:
-                break
-
-        return self.path, best_dist
 
     def path_pruning_optimization(self):
-        current_best_cost = self.graph.calc_path_cost(self.path)
-        for current_node in self.path:
-            for neighbor in self.graph[current_node]:
-                if neighbor in self.path:
-                    new_path = self.list_slicing(current_node, neighbor)
-                    if self.key_nodes.issubset(set(new_path)):
-                        new_path_cost = self.graph.calc_path_cost(new_path)
-                        if new_path_cost < current_best_cost:
-                            self.path = new_path
-                            self.path_pruning_optimization()
-                            return
+        node_indices = {node: i for i, node in enumerate(self.path)}
+        i = 0
+        while i < len(self.path) - 1:
+            curr = self.path[i]
+            best_shortcut_idx = -1
 
-    def list_slicing(self, val1, val2):
-        try:
-            idx1 = self.path.index(val1)
-            idx2 = self.path.index(val2)
-            start = min(idx1, idx2)
-            end = max(idx1, idx2)
-            return self.path[:start + 1] + self.path[end:]
+            for neighbor in self.graph[curr]:
+                if neighbor in node_indices:
+                    idx_neighbor = node_indices[neighbor]
+                    if idx_neighbor > i + 1:
+                        skipped_segment = self.path[i + 1: idx_neighbor]
 
-        except ValueError:
-            print(f"Error: at least one node is in the path.\nNodes: {val1}, {val2}\nPath: {self.path}")
-            return self.path
+                        contains_key_node = False
+                        for skipped in skipped_segment:
+                            if skipped in self.graph.key_nodes:
+                                contains_key_node = True
+                                break
+
+                        if not contains_key_node:
+                            if idx_neighbor > best_shortcut_idx:
+                                best_shortcut_idx = idx_neighbor
+
+            if best_shortcut_idx != -1:
+                del self.path[i + 1: best_shortcut_idx]
+                node_indices = {node: k for k, node in enumerate(self.path)}
+            else:
+                i += 1
