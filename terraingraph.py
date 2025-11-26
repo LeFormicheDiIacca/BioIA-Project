@@ -6,10 +6,13 @@ import networkx as nx
 import numpy as np
     
 import fiona
-fiona.drvsupport.supported_drivers['OSM'] = 'r' 
+
+from meshgraph import MeshGraph
+
+fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
 def create_graph(tif_path, osm_pbf_path, resolution):
-    G = nx.grid_2d_graph(resolution, resolution)
+    G = MeshGraph(n_neighbours = 8, n_row = resolution, n_col = resolution)
 
     src = rasterio.open(tif_path)
 
@@ -37,7 +40,7 @@ def create_graph(tif_path, osm_pbf_path, resolution):
         x = float(lons[j])
         y = float(lats[i])
 
-        node_key = (j, i) 
+        node_key = G.pos_to_node[(j,i)]
 
         G.nodes[node_key]["elevation"] = float(val[0])
         G.nodes[node_key]["x"] = x
@@ -92,13 +95,4 @@ def create_graph(tif_path, osm_pbf_path, resolution):
                 G.nodes[node_id]["is_water"] = True
 
 
-    # ============================ add diagonal edges ===================================
-
-    diagonals = [(1, 1), (1, -1)]
-    for i in range(resolution):
-        for j in range(resolution):
-            for di, dj in diagonals:
-                ni, nj = i + di, j + dj
-                if 0 <= ni < resolution and 0 <= nj < resolution:
-                    G.add_edge((i, j), (ni, nj))
     return G
