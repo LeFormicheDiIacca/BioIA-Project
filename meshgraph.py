@@ -3,7 +3,7 @@ from scipy.spatial.distance import pdist, squareform
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-
+import matplotlib.cm as cm
 
 class MeshGraph(nx.Graph):
     def __init__(self, key_nodes: set = None, n_neighbours: int = 8, n_row: int = 10, n_col: int = 10):
@@ -13,14 +13,16 @@ class MeshGraph(nx.Graph):
         if n_row < 3 or n_col < 3:
             raise ValueError('Minimum mesh size must be 3x3')
 
-
         self.key_nodes = key_nodes
         self._construct_graph(n_row, n_col, n_neighbours)
 
         nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in self.nodes()])
         compress_dist = pdist(nodes_pos, metric='euclidean')
         self.dist_matrix = squareform(compress_dist)
+
+        self.edge_mapping = dict()
         self.assign_edge_indexes()
+        self.tau0 = 0
 
     def assign_key_nodes(self, key_nodes: set):
         self.key_nodes = key_nodes
@@ -29,6 +31,7 @@ class MeshGraph(nx.Graph):
         idx = 0
         for u, v in self.edges():
             self[u][v]["edge_id"] = idx
+            self.edge_mapping[idx] = (u, v)
             if self.has_edge(v, u):
                 self[v][u]["edge_id"] = idx
             idx += 1
@@ -49,60 +52,35 @@ class MeshGraph(nx.Graph):
             if y == n_row:
                 x += 1
                 y = 0
-
+        diagonals = [(1, 1), (1, -1)]
+        right_top = [(1,0),(0,1)]
         # Connecting nodes
-        for i in range(1, n_row - 1):
-            for j in range(1, n_col - 1):
+        for i in range(0, n_row):
+            for j in range(0, n_col):
                 # By default a 4 neighbors grid
-                self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i - 1, j)])
-                self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i + 1, j)])
-                self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i, j - 1)])
-                self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i, j + 1)])
-
+                for di, dj in right_top:
+                    ni, nj = i + di, j + dj
+                    if 0 <= ni < n_col and 0 <= nj < n_row:
+                        self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(ni,nj)])
                 # Expand to 8 if needed
                 if n_neighbours >= 8:
-                    self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i - 1, j - 1)])
-                    self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i - 1, j + 1)])
-                    self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i + 1, j - 1)])
-                    self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(i + 1, j + 1)])
-
-        # Edge Cases
-        for i in range(n_col - 1):
-            self.add_edge(self.pos_to_node[(0, i)], self.pos_to_node[(0, i + 1)])
-        for i in range(n_col - 1):
-            self.add_edge(self.pos_to_node[(n_row - 1, i)], self.pos_to_node[(n_row - 1, i + 1)])
-        for i in range(n_row - 1):
-            self.add_edge(self.pos_to_node[(i, 0)], self.pos_to_node[(i + 1, 0)])
-        for i in range(n_row - 1):
-            self.add_edge(self.pos_to_node[(i, n_col - 1)], self.pos_to_node[(i + 1, n_col - 1)])
-        # Expand edge cases
-        if n_neighbours >= 8:
-            self.add_edge(self.pos_to_node[(0, 1)], self.pos_to_node[(1, 0)])
-            self.add_edge(self.pos_to_node[(0, n_col - 2)], self.pos_to_node[(1, n_col - 1)])
-            self.add_edge(self.pos_to_node[(n_row - 2, 0)], self.pos_to_node[(n_row - 1, 1)])
-            self.add_edge(self.pos_to_node[(n_row - 2, n_col - 1)], self.pos_to_node[(n_row - 1, n_col - 2)])
+                    for di, dj in diagonals:
+                        ni, nj = i + di, j + dj
+                        if 0 <= ni < n_col and 0 <= nj < n_row:
+                            self.add_edge(self.pos_to_node[(i, j)], self.pos_to_node[(ni, nj)])
 
     def plot_graph(self, paths=None, draw_labels = False, figsize= (100,100), dpi=100):
         plt.figure(figsize=figsize, dpi=dpi)
         labels = nx.get_node_attributes(self, 'label')
-        if self.key_nodes is not None:
-            node_color = ["#1f78b4" if x not in self.key_nodes else "red" for x in self.nodes()]
-        else:
-            node_color = "#1f78b4"
-
         pos = self.node_to_pos
-
-        # nx.draw_networkx_nodes(self, self.node_to_pos, node_color=node_color)
         nx.draw_networkx_edges(self, pos, edge_color="gray")
-
-        node_costs = [self.nodes[node].get('elevation', 0) for node in self.nodes()]
+        node_costs = [self.nodes[node].get('elevation', 0) if node not in self.key_nodes else "green" for node in self.nodes()]
         nx.draw_networkx_nodes(
             self, pos,
             node_color=node_costs,
             cmap='magma', 
             node_size=10, 
         )
-
         if paths is not None:
             for (path, color) in paths:
                 path_graph = nx.path_graph(path)
@@ -118,6 +96,30 @@ class MeshGraph(nx.Graph):
         #     node_color='lightblue',
         #     node_size=10,
         # )
+
+        plt.axis('off')
+        plt.show()
+
+    def plot_graph_debug(self, draw_pheromones = False, paths=None, draw_labels = False, figsize= (100,100), dpi=100):
+        plt.figure(figsize=figsize, dpi=dpi)
+        labels = nx.get_node_attributes(self, 'label')
+        if self.key_nodes is not None:
+            node_color = ["#1f78b4" if x not in self.key_nodes else "red" for x in self.nodes()]
+        else:
+            node_color = "#1f78b4"
+        nx.draw_networkx_nodes(self, self.node_to_pos, node_color=node_color)
+        nx.draw_networkx_edges(self, self.node_to_pos, edge_color="gray")
+        if paths is not None:
+            for (path, color) in paths:
+                path_graph = nx.path_graph(path)
+                nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
+        if draw_pheromones:
+            cmap = plt.cm.Reds
+            edge_values = [self[edge[0]][edge[1]]["pheromones"] for edge in self.edges()]
+            nx.draw_networkx_edges(self, self.node_to_pos, width=2, edge_cmap=cmap, edge_color=edge_values)
+
+        if draw_labels:
+            nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
 
         plt.axis('off')
         plt.show()
