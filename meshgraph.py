@@ -82,22 +82,21 @@ class MeshGraph(nx.Graph):
             self.add_edge(self.pos_to_node[(n_row - 2, 0)], self.pos_to_node[(n_row - 1, 1)])
             self.add_edge(self.pos_to_node[(n_row - 2, n_col - 1)], self.pos_to_node[(n_row - 1, n_col - 2)])
 
-    def plot_graph(self, paths=None):
-        plt.figure(figsize=(10, 10))
+    def plot_graph(self, paths=None, draw_labels = False, figsize= (100,100), dpi=100):
+        plt.figure(figsize=figsize, dpi=dpi)
         labels = nx.get_node_attributes(self, 'label')
         if self.key_nodes is not None:
             node_color = ["#1f78b4" if x not in self.key_nodes else "red" for x in self.nodes()]
         else:
             node_color = "#1f78b4"
-        pos = nx.spring_layout(self, iterations=10000)
-        nx.draw_networkx_nodes(self, pos, node_color=node_color)
-        nx.draw_networkx_edges(self, pos, edge_color="black")
+        nx.draw_networkx_nodes(self, self.node_to_pos, node_color=node_color)
+        nx.draw_networkx_edges(self, self.node_to_pos, edge_color="black")
         if paths is not None:
             for (path, color) in paths:
                 path_graph = nx.path_graph(path)
-                nx.draw_networkx_edges(self, pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
-
-        nx.draw_networkx_labels(self, pos, labels=labels)
+                nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
+        if draw_labels:
+            nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
         plt.axis('off')
         plt.show()
 
