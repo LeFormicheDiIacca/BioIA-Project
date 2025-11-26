@@ -6,13 +6,34 @@ import numpy as np
 
 
 class MeshGraph(nx.Graph):
-    def __init__(self, key_nodes, n_neighbours: int = 8, n_row: int = 10, n_col: int = 10):
+    def __init__(self, key_nodes: set = None, n_neighbours: int = 8, n_row: int = 10, n_col: int = 10):
         super().__init__()
         if n_neighbours not in [4, 8]:
             raise ValueError('Invalid number of neighbours. Must be 4 or 8')
         if n_row < 3 or n_col < 3:
             raise ValueError('Minimum mesh size must be 3x3')
 
+
+        self.key_nodes = key_nodes
+        self._construct_graph(n_row, n_col, n_neighbours)
+
+        nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in self.nodes()])
+        compress_dist = pdist(nodes_pos, metric='euclidean')
+        self.dist_matrix = squareform(compress_dist)
+        self.assign_edge_indexes()
+
+    def assign_key_nodes(self, key_nodes: set):
+        self.key_nodes = key_nodes
+
+    def assign_edge_indexes(self):
+        idx = 0
+        for u, v in self.edges():
+            self[u][v]["edge_id"] = idx
+            if self.has_edge(v, u):
+                self[v][u]["edge_id"] = idx
+            idx += 1
+
+    def _construct_graph(self, n_row, n_col, n_neighbours):
         n_nodes = n_row * n_col
         self.pos_to_node = {}
         self.node_to_pos = {}
@@ -61,12 +82,6 @@ class MeshGraph(nx.Graph):
             self.add_edge(self.pos_to_node[(n_row - 2, 0)], self.pos_to_node[(n_row - 1, 1)])
             self.add_edge(self.pos_to_node[(n_row - 2, n_col - 1)], self.pos_to_node[(n_row - 1, n_col - 2)])
 
-        self.key_nodes = key_nodes
-        nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in self.nodes()])
-        compress_dist = pdist(nodes_pos, metric='euclidean')
-        self.dist_matrix = squareform(compress_dist)
-        self.initial_pheromone_level = 0
-
     def plot_graph(self, paths=None):
         plt.figure(figsize=(10, 10))
         labels = nx.get_node_attributes(self, 'label')
@@ -102,11 +117,6 @@ class MeshGraph(nx.Graph):
                 print(f"Assignment for edge {edge[0]}->{edge[1]} cost: {cost}")
                 print(f"Metadata of edge {edge[0]}->{edge[1]}:\n{metadata}")
 
-    def pheromone_initialization(self, initial_pheromone_level):
-        self.initial_pheromone_level = initial_pheromone_level
-        for edge in self.edges():
-            self[edge[0]][edge[1]]["pheromone_level"] = initial_pheromone_level
-
     def calc_path_cost(self, path, degree_45_penalty_factor = 100):
         path_cost = 0
         for i in range(len(path)-1):
@@ -120,3 +130,10 @@ class MeshGraph(nx.Graph):
                 path_cost = math.inf
 
         return path_cost
+
+    def is_valid_path(self, path):
+        if not self.key_nodes.issubset(set(path)):
+            return False
+        if path[0] != path[-1]:
+            return False
+        return True
