@@ -87,8 +87,8 @@ class MeshGraph(nx.Graph):
     ):
         plt.figure(figsize=figsize, dpi=dpi)
         if paths is not None and paths_colors is not None:
-            if len(paths) != len(paths_colors):
-                raise ValueError('Paths and paths_colors must have same length')
+            if len(paths) > len(paths_colors):
+                raise ValueError('More paths than colors')
 
         labels = nx.get_node_attributes(self, 'label')
         pos = self.node_to_pos
@@ -217,3 +217,14 @@ class MeshGraph(nx.Graph):
         if path[0] != path[-1]:
             return False
         return True
+
+    def cost_normalization(self):
+        all_costs = [data["cost"] for u, v, data in self.edges(data=True)]
+        for v in self.nodes():
+            for u in self[v]:
+                cost = self[v][u]['cost']
+                min_cost = min(all_costs)
+                max_cost = max(all_costs)
+                cost_range = max_cost - min_cost
+                normalized_cost = 1 + 9 * (cost - min_cost) / (cost_range + 1e-6)
+                self[v][u]['cost'] = normalized_cost
