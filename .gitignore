@@ -216,3 +216,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 cache/
+
+#roba asia che non vuole che vediate perché non sa ancora che fare e sente molta peer pressure
+experiment.py
