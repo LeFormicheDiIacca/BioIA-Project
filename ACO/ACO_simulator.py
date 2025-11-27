@@ -2,6 +2,8 @@ import heapq
 import math
 import multiprocessing
 import random
+import time
+
 from ACO.Ant import Ant
 from meshgraph import MeshGraph
 
@@ -149,6 +151,9 @@ class ACO_simulator:
             initargs=(self.shared_pheromones,)
         ) as pool:
             while epoch < self.max_iterations:
+                start_time = time.perf_counter()
+                print(f"Epoch {epoch} started")
+
                 if current_no_updates >= self.n_iterations_before_spawn_in_key_nodes:
                     spawn_in_key_nodes = True
                 else:
@@ -163,6 +168,10 @@ class ACO_simulator:
                 #Create and run the ants. We remove all empty paths
                 results = pool.map(run_synchronized_ant, task_args)
                 paths = [res for res in results if res is not None]
+
+                res_time = time.perf_counter() - start_time
+
+                print(f"Epoch {epoch} got all res at time {res_time}")
                 #We check if a better route has been found
                 updated = False
                 for path, path_cost in paths:
@@ -197,7 +206,7 @@ class ACO_simulator:
                     self.graph[edge[0]][edge[1]]["pheromones"] = pheromones
                 #Create a pheromone heatmap in order to check it
                 if draw_heatmap:
-                    self.graph.plot_graph_debug(draw_pheromones=True, draw_labels=True, figsize=(10,10), epoch=epoch)
+                    self.graph.plot_graph_debug(draw_pheromones=True, draw_labels=True, figsize=(50,50), epoch=epoch)
                 #If we detect stagnation the pheromones are restored to tau_max
                 if current_no_updates > self.max_no_updates:
                     print("Stagnation. Restarting pheromones to tau_max")
@@ -209,7 +218,11 @@ class ACO_simulator:
                     #Best path before stagnation is saved in order to have multiple best possible paths
                     if (current_best_path, current_best_path_cost) not in best_paths_before_stagnation:
                         best_paths_before_stagnation.append((current_best_path, current_best_path_cost))
+
+                end_time = time.perf_counter() - start_time
+                print(f"Epoch {epoch} has finished at time {end_time}")
                 epoch += 1
+
 
         #Saving best path
         if (current_best_path, current_best_path_cost) not in best_paths_before_stagnation:

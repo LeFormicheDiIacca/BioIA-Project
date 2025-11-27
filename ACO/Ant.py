@@ -1,5 +1,8 @@
-import math
 import random
+import time
+import networkx as nx
+import numpy as np
+from numba import jit
 from meshgraph import MeshGraph
 
 class Ant:
@@ -8,7 +11,7 @@ class Ant:
     It follows the normal Ant Path Calculations with a bias toward avoiding diagonals.
     The bias will be removed in the future because it should be already considered in the edge cost.
     """
-    __slots__ = ('alpha', 'beta', 'rho', 'q0', 'path', 'visited_nodes', 'graph','shared_pheromones')
+    __slots__ = ('alpha', 'beta', 'rho', 'q0', 'path', 'visited_nodes', 'graph','shared_pheromones','key_nodes_array')
     def __init__(self,
                  graph: MeshGraph,
                  shared_pheromones,
@@ -23,6 +26,7 @@ class Ant:
         :param beta: Influence of edge cost
         :param q0: Exploration threshold
         """
+
         self.alpha = alpha
         self.beta = beta
         self.path = []
@@ -30,6 +34,14 @@ class Ant:
         self.graph = graph
         self.q0 = q0
         self.shared_pheromones = shared_pheromones
+        self.key_nodes_array = self._build_key_nodes_array()
+
+
+    def _build_key_nodes_array(self):
+        key_array = np.zeros(self.graph.number_of_nodes(), dtype=np.int32)
+        for node in self.graph.key_nodes:
+            key_array[node] = 1
+        return key_array
 
     def select_next_node(self, current_node, nodes_to_visit = None):
         """
@@ -53,14 +65,15 @@ class Ant:
 
             edge_cost = self.graph[current_node][neighbor]["cost"]
             #Ant Compass. We decide if by going in a node we are getting closer to some key node
-            dist_to_target = 0.0
             if active_targets:
-                min_dist = math.inf
-                for t in active_targets:
-                    d = self.graph.dist_matrix[neighbor, t]
-                    if d < min_dist:
-                        min_dist = d
-                dist_to_target = min_dist
+                min_distances = {
+                    neighbor: min(self.graph.dist_matrix[neighbor, t] for t in active_targets)
+                    for neighbor in neighbors
+                }
+            else:
+                min_distances = {neighbor: 0.0 for neighbor in neighbors}
+
+            dist_to_target = min_distances[neighbor]
             #Total effort will be the edge cost + how close we are to a key node
             total_estimated_effort = edge_cost + dist_to_target
             heuristic = 1.0 / (total_estimated_effort + 0.1)
@@ -100,6 +113,7 @@ class Ant:
         if current_node in nodes_to_visit:
             nodes_to_visit.remove(current_node)
         #Cycle used to search all key nodes
+        t0 = time.time()
         while nodes_to_visit:
             next_node = self.select_next_node(current_node)
             #If we are stuck with no way out we dump the invalid path
@@ -126,70 +140,106 @@ class Ant:
             self.visited_nodes.add(next_node)
 
             current_node = next_node
+        t1 = time.time()
         #Heuristic Used to refine the path and avoid redundancy
         self.path_pruning_optimization()
+        t2 = time.time()
         self.TwoOptHeuristic()
+        t3 = time.time()
+        print(f"Path construction: {t1 - t0:.2f}s, Pruning: {t2 - t1:.2f}s, 2-opt: {t3 - t2:.2f}s")
         return self.path
 
+    def path_pruning_optimization(self):
+        path_array = np.array(self.path, dtype=np.int32)
+        adjacency_matrix = nx.to_numpy_array(self.graph, weight=None).astype(np.int32)
+
+        shortcuts = find_shortcuts_numba(path_array, adjacency_matrix, self.key_nodes_array)
+        for i, shortcut_idx in reversed(shortcuts):
+            del self.path[i + 1:shortcut_idx]
+
     def TwoOptHeuristic(self):
-        """
-        Local search that verify if it's possible to swap the edges in order to reduce the total cost.
-        """
-        n = len(self.path)
-        improved = True
+        path_array = np.array(self.path, dtype=np.int32)
+        cost_matrix = nx.to_numpy_array(self.graph, weight='cost')
+        adjacency_matrix = nx.to_numpy_array(self.graph, weight=None)
 
-        while improved:
-            improved = False
-            for i in range(n - 2):
-                a = self.path[i]
-                b = self.path[i + 1]
-                cost_ab = self.graph[a][b]["cost"]
-                for j in range(i + 2, n - 1):
-                    c = self.path[j]
-                    d = self.path[j + 1]
-                    if c not in self.graph[a] or d not in self.graph[b]:
-                        continue
+        optimized_path = two_opt_numba(path_array, cost_matrix, adjacency_matrix)
+        self.path = optimized_path.tolist()
 
-                    cost_cd = self.graph[c][d]["cost"]
-                    current_cost = cost_ab + cost_cd
-                    new_cost = self.graph[a][c]["cost"] + self.graph[b][d]["cost"]
+@jit(nopython=True)
+def find_shortcuts_numba(path_array, adjacency_matrix, key_nodes_array):
+    """
+    Trova shortcuts nel path senza ricostruire dict Python
+    """
+    n = len(path_array)
+    shortcuts = []
 
-                    if new_cost < current_cost:
-                        self.path[i + 1:j + 1] = self.path[i + 1:j + 1][::-1]
-                        improved = True
+    i = 0
+    while i < n - 1:
+        curr = path_array[i]
+        best_shortcut_idx = -1
+
+        for j in range(i + 2, n):
+            neighbor = path_array[j]
+
+            if adjacency_matrix[curr, neighbor] > 0:
+                has_key_node = False
+                for k in range(i + 1, j):
+                    if key_nodes_array[path_array[k]] > 0:
+                        has_key_node = True
                         break
-                if improved:
+
+                if not has_key_node:
+                    best_shortcut_idx = j
                     break
 
-    def path_pruning_optimization(self):
-        """
-        Don't ask why, accept the code and embrace it.
-        (Ideally it cuts the useless parts in the path).
-        """
-        node_indices = {node: i for i, node in enumerate(self.path)}
-        i = 0
-        while i < len(self.path) - 1:
-            curr = self.path[i]
-            best_shortcut_idx = -1
+        if best_shortcut_idx != -1:
+            shortcuts.append((i, best_shortcut_idx))
+            i = best_shortcut_idx
+        else:
+            i += 1
 
-            for neighbor in self.graph[curr]:
-                if neighbor in node_indices:
-                    idx_neighbor = node_indices[neighbor]
-                    if idx_neighbor > i + 1:
-                        skipped_segment = self.path[i + 1: idx_neighbor]
+    return shortcuts
 
-                        contains_key_node = False
-                        for skipped in skipped_segment:
-                            if skipped in self.graph.key_nodes:
-                                contains_key_node = True
-                                break
+@jit(nopython=True)
+def two_opt_numba(path_array, cost_matrix, adjacency_matrix, window_size=30):
+    """
+    2-opt with numba
+    """
+    n = len(path_array)
+    improved = True
+    iterations = 0
 
-                        if not contains_key_node:
-                            if idx_neighbor > best_shortcut_idx:
-                                best_shortcut_idx = idx_neighbor
+    while improved and iterations < 3:
+        iterations += 1
+        improved = False
 
-            if best_shortcut_idx != -1:
-                del self.path[i + 1: best_shortcut_idx]
-                node_indices = {node: k for k, node in enumerate(self.path)}
-            else:
-                i += 1
+        for i in range(n - 2):
+            a = path_array[i]
+            b = path_array[i + 1]
+
+            if adjacency_matrix[a, b] == 0:
+                continue
+
+            cost_ab = cost_matrix[a, b]
+            max_j = min(i + window_size, n - 1)
+
+            for j in range(i + 2, max_j):
+                c = path_array[j]
+                d = path_array[j + 1]
+
+                if adjacency_matrix[a, c] == 0 or adjacency_matrix[b, d] == 0:
+                    continue
+
+                current_cost = cost_ab + cost_matrix[c, d]
+                new_cost = cost_matrix[a, c] + cost_matrix[b, d]
+
+                if new_cost < current_cost:
+                    # Reverse segment
+                    path_array[i + 1:j + 1] = path_array[i + 1:j + 1][::-1]
+                    improved = True
+                    break
+
+            if improved:
+                break
+
+    return path_array

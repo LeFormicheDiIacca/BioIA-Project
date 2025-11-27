@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import math
 
+from ACO.ACO_simulator import ACO_simulator
+
+
 def draw_graph_with_path(graph, path, title="Graph Visualization with Shortest Path"):
     """
     Draws a NetworkX graph using node tuples as positions, highlighting
@@ -74,22 +77,22 @@ def draw_graph_with_path(graph, path, title="Graph Visualization with Shortest P
 
 from terraingraph import create_graph
 
-def heuristic(u, v):
+def heuristic(G, u, v):
     x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
     x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
     return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 # 2. Weight Function: Distance + Elevation Penalty + Water Avoidance
-def weight_func(u, v, edge_attr):
+def weight_func(graph, u, v, edge_attr):
     # Check for water (avoidance)
-    if G.nodes[u].get('is_water') or G.nodes[v].get('is_water'):
-        return float('inf') # Impossible to cross water
+    if graph.nodes[u].get('is_water') or graph.nodes[v].get('is_water'):
+        return float(100000000000) # Impossible to cross water
         
     # 2D Distance
-    dist = heuristic(u, v)
+    dist = heuristic(graph, u,v)
     
     # Elevation Difference
-    elev_diff = abs(G.nodes[u]['elevation'] - G.nodes[v]['elevation'])
+    elev_diff = abs(graph.nodes[u]['elevation'] - graph.nodes[v]['elevation'])
     
     # Cost = Distance + (Elevation Change * Penalty Factor)
     # Increase the multiplier (e.g. 10) to make the path flatter but longer
@@ -105,7 +108,12 @@ if __name__ == '__main__':
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)
     # path, cost = aco.find_shortest_path( source=(0,0), destination=(res-1,res-1), num_ants=1000)
     # path = nx.dijkstra_path(G, source= (0,0), target= (res- 1,res-1) , weight='length')
-    path = nx.astar_path(G,  source= 0, target= (res*res)-1 , heuristic=heuristic, weight=weight_func)
+
+    ant_colony_parameters = {"alpha": 1, "beta": 2, "rho": 0.1, "ant_number": 5, "max_iterations": 10, "max_no_updates": 50, "n_best_ants": 5, "average_cycle_lenght": 3600}
+    key_nodes = {1, 200, 900, 547}
+
+    aco = ACO_simulator(G, **ant_colony_parameters)
+    path = aco.simulation()
 
     print("Plotting graph...")
     G.plot_graph(paths=[path], paths_colors=["blue"])
