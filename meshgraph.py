@@ -112,15 +112,15 @@ class MeshGraph(nx.Graph):
         if paths is not None:
             for (path, color) in paths:
                 path_graph = nx.path_graph(path)
-                nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
+                edges = nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=color)
         if draw_pheromones:
             cmap = plt.cm.Reds
             edge_values = [self[edge[0]][edge[1]]["pheromones"] for edge in self.edges()]
-            nx.draw_networkx_edges(self, self.node_to_pos, width=2, edge_cmap=cmap, edge_color=edge_values)
+            edges = nx.draw_networkx_edges(self, self.node_to_pos, width=2, edge_cmap=cmap, edge_color=edge_values)
+            plt.colorbar(edges, label="Pheromone Level")
 
         if draw_labels:
             nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
-
         plt.axis('off')
         plt.show()
 
