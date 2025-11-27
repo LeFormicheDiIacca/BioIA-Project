@@ -21,12 +21,7 @@ class Ant:
         else:
             return self.graph[u][v]["pheromone_level"]
 
-    def _update_local_shared_pheromone(self, u, v):
-        if self.shared_pheromones is not None:
-            edge_id = self.graph[u][v]["edge_id"]
-            old_val = self.shared_pheromones[edge_id]
-            new_val = (1 - self.rho) * old_val + self.rho * self.graph.tau0
-            self.shared_pheromones[edge_id] = new_val
+
     def select_next_node(self, current_node, nodes_to_visit = None):
         """
         May God's light shine on this fucking ant and force it to make a good choice. Amen
@@ -95,7 +90,6 @@ class Ant:
 
             if next_node in nodes_to_visit:
                 nodes_to_visit.remove(next_node)
-            self._update_local_shared_pheromone(next_node, current_node)
             current_node = next_node
         nodes_to_visit = {self.starting_node}
         while current_node != self.starting_node:
@@ -106,7 +100,6 @@ class Ant:
 
             self.path.append(next_node)
             self.visited_nodes.add(next_node)
-            self._update_local_shared_pheromone(next_node, current_node)
             current_node = next_node
 
         self.TwoOptHeuristic()
