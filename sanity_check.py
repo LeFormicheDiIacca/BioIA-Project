@@ -108,5 +108,5 @@ if __name__ == '__main__':
     path = nx.astar_path(G,  source= 0, target= (res*res)-1 , heuristic=heuristic, weight=weight_func)
 
     print("Plotting graph...")
-    G.plot_graph(paths=[(path,'blue')])
+    G.plot_graph(paths=[path], paths_colors=["blue"])
     # draw_graph_with_path(G,path)
