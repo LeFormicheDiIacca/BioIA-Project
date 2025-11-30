@@ -30,6 +30,7 @@ pset.addPrimitive(operator.mul, 2, "mul")
 pset.addPrimitive(protectedDiv, 2, "div")
 pset.addPrimitive(operator.neg, 1, "neg")
 pset.addPrimitive(math.log, 1, name ="log")
+pset.addPrimitive(operator.pow, 2, "power")
 
 #adding use of coefficients between -5 and 5, can change according to performance
 pset.addEphemeralConstant("coefficients", lambda:random.uniform(-5.0, 5.0))
