@@ -11,10 +11,12 @@ class Ant:
     It follows the normal Ant Path Calculations with a bias toward avoiding diagonals.
     The bias will be removed in the future because it should be already considered in the edge cost.
     """
-    __slots__ = ('alpha', 'beta', 'rho', 'q0', 'path', 'visited_nodes', 'graph','shared_pheromones','key_nodes_array')
+    __slots__ = ('alpha', 'beta', 'rho', 'q0', 'path', 'visited_nodes', 'graph','shared_pheromones','key_nodes_array', 'colony_id', 'n_colonies')
     def __init__(self,
                  graph: MeshGraph,
                  shared_pheromones,
+                 colony_id: int = 0,
+                 n_colonies: int = 1,
                  alpha: float = 1.0,
                  beta: float = 2.0,
                  q0: float = 0.05
@@ -33,6 +35,8 @@ class Ant:
         self.visited_nodes = set()
         self.graph = graph
         self.q0 = q0
+        self.colony_id = colony_id
+        self.n_colonies = n_colonies
         self.shared_pheromones = shared_pheromones
         self.key_nodes_array = self._build_key_nodes_array()
 
@@ -83,7 +87,17 @@ class Ant:
 
             #Pheromone retrieval
             edge_id = self.graph[current_node][neighbor]["edge_id"]
-            pheromone =  self.shared_pheromones[edge_id]
+            pheromone = self.shared_pheromones[self.colony_id][edge_id]
+
+            sum_pheromones = 0
+            for colony_id in range(self.n_colonies):
+                sum_pheromones += self.shared_pheromones[colony_id][edge_id]
+
+            pheromones_dominance_factor = pheromone/sum_pheromones
+            pheromone *= (pheromones_dominance_factor*pheromones_dominance_factor)
+
+            #pheromone = pheromone * (pheromones_dominance_factor**2)
+            #pheromones_dominance_factor = pheromone/sum(all pheromone types)
 
             prob = (pheromone ** self.alpha) * (heuristic ** self.beta)
             #Diagonal movements have less probability

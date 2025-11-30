@@ -38,7 +38,7 @@ if __name__ == '__main__':
         "average_cycle_length": 5000,
         "n_iterations_before_spawn_in_key_nodes": 5
     }
-    key_nodes = {129, 412, 557, 891, 1035, 1344, 1678, 1960, 2115, 2302}
+    key_nodes = {1, 34, 71, 99}
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
@@ -78,7 +78,7 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = False
+    synthetic_data = True
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
@@ -131,6 +131,6 @@ if __name__ == '__main__':
 """            
 TODO:          
     1. Need to fine tune the ACO hyperparameters and we are done
-    2. Convert to find k as different as possible routes
-    3. Need to improve 2-opt and path optimization
+    2. Need to improve 2-opt and path optimization
+    3. Sometimes tsp problem ignored and some nodes are repeated?
 """
