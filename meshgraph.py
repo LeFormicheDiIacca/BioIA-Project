@@ -3,7 +3,6 @@ from scipy.spatial.distance import pdist, squareform
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.cm as cm
 
 class MeshGraph(nx.Graph):
     """
@@ -87,23 +86,29 @@ class MeshGraph(nx.Graph):
     ):
         plt.figure(figsize=figsize, dpi=dpi)
         if paths is not None and paths_colors is not None:
-            if len(paths) != len(paths_colors):
-                raise ValueError('Paths and paths_colors must have same length')
+            if len(paths) > len(paths_colors):
+                raise ValueError('More paths than colors')
 
         labels = nx.get_node_attributes(self, 'label')
         pos = self.node_to_pos
         nx.draw_networkx_edges(self, pos, edge_color="gray")
-        node_costs = [self.nodes[node].get('elevation', 0) if node not in self.key_nodes else "green" for node in self.nodes()]
+        node_costs = [self.nodes[node].get('elevation', 0) for node in self.nodes()]
         nx.draw_networkx_nodes(
             self, pos,
             node_color=node_costs,
             cmap='magma', 
-            node_size=10, 
+            node_size=300,
+        )
+        nx.draw_networkx_nodes(
+            self, pos,
+            nodelist=self.key_nodes,
+            node_color="green",
+            node_size=300,
         )
         if paths is not None:
             for i in range(len(paths)):
                 path_graph = nx.path_graph(paths[i])
-                nx.draw_networkx_edges(self, self.node_to_pos, width=2, edgelist=list(path_graph.edges()), edge_color=paths_colors[i])
+                nx.draw_networkx_edges(self, self.node_to_pos, width=4, edgelist=list(path_graph.edges()), edge_color=paths_colors[i])
         if draw_labels:
             nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
 
@@ -217,3 +222,14 @@ class MeshGraph(nx.Graph):
         if path[0] != path[-1]:
             return False
         return True
+
+    def cost_normalization(self):
+        all_costs = [data["cost"] for u, v, data in self.edges(data=True)]
+        for v in self.nodes():
+            for u in self[v]:
+                cost = self[v][u]['cost']
+                min_cost = min(all_costs)
+                max_cost = max(all_costs)
+                cost_range = max_cost - min_cost
+                normalized_cost = 1 + 9 * (cost - min_cost) / (cost_range + 1e-6)
+                self[v][u]['cost'] = normalized_cost

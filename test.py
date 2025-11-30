@@ -1,11 +1,11 @@
 import csv
 import json
 import time
-from copy import deepcopy
 from pathlib import Path
 from ACO.ACO_simulator import ACO_simulator
 from cost_functions import test_cost_assignment
 from meshgraph import MeshGraph
+from sanity_check import weight_func
 from terraingraph import create_graph
 
 OUTPUT_FOLDER = "Results"
@@ -31,14 +31,14 @@ if __name__ == '__main__':
         "beta": 2,
         "rho": 0.1,
         "q0": 0.05,
-        "ant_number": 25,
-        "max_iterations": 50,
+        "ant_number": 10,
+        "max_iterations": 25,
         "max_no_updates": 10,
         "n_best_ants": 5,
-        "average_cycle_length": 4000,
+        "average_cycle_length": 5000,
         "n_iterations_before_spawn_in_key_nodes": 5
     }
-    key_nodes = {1, 973, 546, 345, 871, 675}
+    key_nodes = {1, 34, 71, 99}
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
@@ -78,25 +78,32 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = False
+    synthetic_data = True
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=100)
+        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=75)
+        mesh_graph.assign_key_nodes(key_nodes)
+        for v in mesh_graph.nodes():
+            for u in mesh_graph[v]:
+                cost = weight_func(mesh_graph, v,u, None)
+                mesh_graph[v][u]['cost'] = cost
+        mesh_graph.cost_normalization()
+
     #Create the simulators
     aco = ACO_simulator(mesh_graph, **ant_colony_parameters)
 
     #Simulate n_iterations times
     res_paths = []
-    color =["red", "green", "blue", "yellow", "cyan", "magenta"]
+    color =["green", "cyan", "blue", "yellow", "red", "magenta"]
     n_iterations = 1
     try:
         for i in range(n_iterations):
             #Simulate a colony
             start_time = time.perf_counter()
-            paths = aco.simulation(retrieve_n_best_paths = 1, draw_heatmap = True)
+            paths = aco.simulation(retrieve_n_best_paths = 1, draw_heatmap = False)
             end_time = time.perf_counter() - start_time
 
             for (path, path_cost) in paths:
@@ -117,12 +124,13 @@ if __name__ == '__main__':
 
     finally:
         if print_graph:
-            mesh_graph.plot_graph(figsize=(10, 10), paths = res_paths, paths_colors = color)
+            mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
 
 #Ants no longer stupids as fuck. Now just a little bit stupid. Maybe it was my fault :(. Sorry ants
 #Glory to C and the Ants🫡
 """            
 TODO:          
     1. Need to fine tune the ACO hyperparameters and we are done
-    2. Convert to find k as different as possible routes
+    2. Need to improve 2-opt and path optimization
+    3. Sometimes tsp problem ignored and some nodes are repeated?
 """
