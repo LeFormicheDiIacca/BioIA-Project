@@ -5,6 +5,7 @@ import math
 import random
 from ACO.ACO_simulator import ACO_simulator
 from sanity_check import weight_func, heuristic
+from terraingraph import create_graph
 from meshgraph import MeshGraph
 import numpy as np
 import functools
@@ -75,6 +76,66 @@ toolbox.register("compile", gp.compile, pset = pset)
 
 # salvare individuo migliore in file
 
+#extract graph
+
+# E
+def extract_edge_features(graph):
+    edge_features = []
+    
+    for u, v, data in graph.edges(data=True):
+        
+        # Recupera i quattro argomenti della tua Primitive Set (pset)
+        dist = data["dist"]
+        elev_diff = data["elev_diff"]
+        elev_u = data["elev_u"]
+        elev_v = data["elev_v"]
+
+        # Recupera l'etichetta booleana che userai per la "target cost"
+        is_water = data["has_water"] 
+        
+        # Aggiungi il set di features alla lista
+        edge_features.append((dist, elev_diff, elev_u, elev_v, is_water))
+        
+    return edge_features
+
+def enrich_graph_edges(G):
+    """
+    Popola gli attributi degli archi richiesti per la funzione di costo del GP.
+    
+    :param G: Il grafo (MeshGraph) con tutti gli attributi dei nodi già popolati.
+    :return: Il grafo modificato G.
+    """
+    
+    for u, v in G.edges():
+        
+        # 1. Recupera i dati del nodo
+        elev_u = G.nodes[u]["elevation"]
+        elev_v = G.nodes[v]["elevation"]
+        is_water_u = G.nodes[u]["is_water"]
+        is_water_v = G.nodes[v]["is_water"]
+
+        # 2. Calcola le caratteristiche
+        dist = heuristic(G, u, v)  
+        elev_diff = abs(elev_v - elev_u)
+
+        # 3. Assegna gli attributi all'arco (u, v)
+        G.edges[u, v]["dist"] = dist
+        G.edges[u, v]["elev_diff"] = elev_diff
+        G.edges[u, v]["elev_u"] = elev_u
+        G.edges[u, v]["elev_v"] = elev_v
+        
+        # Aggiungi attributi booleani (per il training data)
+        G.edges[u, v]["has_water"] = is_water_u or is_water_v
+
+    return G
+
+G = create_graph("trentino.tif", "trentino_alto_adige.pbf", 150)
+G_complete = enrich_graph_edges(G)
+all_edge_data = extract_edge_features(G_complete)
+
+print(all_edge_data)
+
+#GOAL NOW: EXTRACT GOOD FEATURES AND BAD FEATURES FOR EACH ATTRIBUTE
 
 # Example: Create a dataset of paired contrasting edges (features)
 # In a real scenario, these would come from your MeshGraph data.
