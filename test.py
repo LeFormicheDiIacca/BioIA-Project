@@ -7,6 +7,7 @@ from cost_functions import test_cost_assignment
 from meshgraph import MeshGraph
 from sanity_check import weight_func
 from terraingraph import create_graph
+from path_render import visualize_paths
 
 OUTPUT_FOLDER = "Results"
 FILENAME = "PathOutputs"
@@ -78,13 +79,13 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = True
+    synthetic_data = False 
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=75)
+        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=100)
         mesh_graph.assign_key_nodes(key_nodes)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:
@@ -123,8 +124,16 @@ if __name__ == '__main__':
                         res_paths.append(path)
 
     finally:
-        if print_graph:
-            mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
+        # if print_graph:
+        #     mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
+        visualize_paths(
+            mesh_graph=mesh_graph, 
+            paths=res_paths, 
+            key_nodes=key_nodes,
+            output_file="my_geo_paths.html",
+        )
+
+
 
 #Ants no longer stupids as fuck. Now just a little bit stupid. Maybe it was my fault :(. Sorry ants
 #Glory to C and the Ants🫡
