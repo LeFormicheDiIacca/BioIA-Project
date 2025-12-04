@@ -32,23 +32,23 @@ if __name__ == '__main__':
         "beta": 3,
         "rho": 0.2,
         "q0": 0.1,
-        "ant_number": 20,
-        "max_iterations": 50,
+        "ant_number": 50,
+        "max_iterations": 100,
         "max_no_updates": 15,
         "n_best_ants": 5,
-        "average_cycle_length": 4000,
-        "n_iterations_before_spawn_in_key_nodes": 5
+        "average_cycle_length": 9000,
+        "n_iterations_before_spawn_in_key_nodes": 8
     }
-    key_nodes = {1, 34, 71, 99}
+    key_nodes = {15, 381, 99, 210, 5, 294, 142, 337, 78, 266}
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
         "KeyNodes": list(key_nodes)
     }
     #Debug configs
-    log_data = False
+    log_data = True
     print_res = True
-    print_graph = True
+    print_graph = False
     writer = None
 
     """
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #Simulate n_iterations times
     res_paths = []
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
-    n_iterations = 1
+    n_iterations = 100
     try:
         for i in range(n_iterations):
             #Simulate a colony
@@ -115,6 +115,7 @@ if __name__ == '__main__':
                         "path": ", ".join(map(str, path))
                     }
                     writer.writerow(csv_row)
+                    csvfile.flush()
                 #Print in console
                 if print_res:
                     print(f"Time: {end_time} - Path_cost: {path_cost} - Path: {path}\n")
@@ -123,16 +124,16 @@ if __name__ == '__main__':
                         res_paths.append(path)
 
     finally:
-         if print_graph:
-             if synthetic_data:
+        if print_graph:
+            if synthetic_data:
                 mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
-         else:
-            visualize_paths(
-                mesh_graph=mesh_graph,
-                paths=res_paths,
-                key_nodes=key_nodes,
-                output_file="my_geo_paths.html",
-            )
+            else:
+                visualize_paths(
+                    mesh_graph=mesh_graph,
+                    paths=res_paths,
+                    key_nodes=key_nodes,
+                    output_file="my_geo_paths.html",
+                )
 
 
 

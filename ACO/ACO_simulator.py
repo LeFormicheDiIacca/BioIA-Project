@@ -204,16 +204,20 @@ class ACO_simulator:
 
                     #Create and run the ants. We remove all empty paths
                     results = pool.map(run_synchronized_ant, task_args)
-                    paths = [(path, path_cost, colony_id) for (path, path_cost) in results if path is not None]
-
+                    paths = [(path, path_cost, colony_id)
+                             for item in results
+                             if item is not None
+                             for (path, path_cost) in [item]
+                             if path is not None]
                     if log_print:
                         res_time = time.perf_counter() - start_time
                         print(f"      Colony {colony_id} finished in {res_time} seconds")
-                        if not paths:
-                            if log_print:
-                                print(f"  Colony {colony_id}: No valid paths found")
 
-                            continue
+                    if not paths:
+                        if log_print:
+                            print(f"  Colony {colony_id}: No valid paths found")
+
+                        continue
 
                     #We find the best ants and use them to adapt tau_min and tau_max for the colony pheromones
                     paths.sort(key=lambda x: x[1])
