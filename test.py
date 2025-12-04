@@ -25,18 +25,18 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 10
+        "resolution": 20
     }
     ant_colony_parameters = {
         "alpha": 1,
-        "beta": 2,
-        "rho": 0.1,
-        "q0": 0.05,
-        "ant_number": 10,
-        "max_iterations": 25,
-        "max_no_updates": 10,
+        "beta": 3,
+        "rho": 0.2,
+        "q0": 0.1,
+        "ant_number": 20,
+        "max_iterations": 50,
+        "max_no_updates": 15,
         "n_best_ants": 5,
-        "average_cycle_length": 5000,
+        "average_cycle_length": 4000,
         "n_iterations_before_spawn_in_key_nodes": 5
     }
     key_nodes = {1, 34, 71, 99}
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = False 
+    synthetic_data = True
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
@@ -104,9 +104,8 @@ if __name__ == '__main__':
         for i in range(n_iterations):
             #Simulate a colony
             start_time = time.perf_counter()
-            paths = aco.simulation(retrieve_n_best_paths = 1, draw_heatmap = False)
+            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = 1)
             end_time = time.perf_counter() - start_time
-
             for (path, path_cost) in paths:
                 #Write path info in CSV
                 if log_data and writer:
@@ -124,14 +123,16 @@ if __name__ == '__main__':
                         res_paths.append(path)
 
     finally:
-        # if print_graph:
-        #     mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
-        visualize_paths(
-            mesh_graph=mesh_graph, 
-            paths=res_paths, 
-            key_nodes=key_nodes,
-            output_file="my_geo_paths.html",
-        )
+         if print_graph:
+             if synthetic_data:
+                mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
+         else:
+            visualize_paths(
+                mesh_graph=mesh_graph,
+                paths=res_paths,
+                key_nodes=key_nodes,
+                output_file="my_geo_paths.html",
+            )
 
 
 
@@ -141,5 +142,6 @@ if __name__ == '__main__':
 TODO:          
     1. Need to fine tune the ACO hyperparameters and we are done
     2. Need to improve 2-opt and path optimization
-    3. Sometimes tsp problem ignored and some nodes are repeated?
+    3. Sometimes tsp problem ignored and some nodes are repeated? Ignore
+    4. Formalize better the steiner tree mode?
 """

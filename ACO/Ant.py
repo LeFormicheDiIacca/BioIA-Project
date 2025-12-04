@@ -19,7 +19,7 @@ class Ant:
                  n_colonies: int = 1,
                  alpha: float = 1.0,
                  beta: float = 2.0,
-                 q0: float = 0.05
+                 q0: float = 0.05,
     ):
         """
         :param graph: MeshGraph to explore
@@ -54,7 +54,7 @@ class Ant:
         neighbors = [n for n in self.graph[current_node] if n not in self.visited_nodes]
         candidates = dict()
         degree_45_penalty_factor = 0.5
-        key_nodes_bias = 2.0
+        key_nodes_bias = 20.0
         #We initialize a list of node to reach. They'll guide the ant like a compass
         active_targets = []
         if nodes_to_visit is None:
@@ -120,14 +120,15 @@ class Ant:
             selected_node = random.choices(keys, weights=weights, k=1)[0]
             return selected_node
 
-    def calculate_path(self, starting_node):
+    def calculate_path(self, starting_node, log_print: bool = False, TSP: bool = False):
         self.path.append(starting_node)
         current_node = starting_node
         nodes_to_visit = self.graph.key_nodes.copy()
         if current_node in nodes_to_visit:
             nodes_to_visit.remove(current_node)
         #Cycle used to search all key nodes
-        t0 = time.time()
+        if log_print:
+            t0 = time.time()
         while nodes_to_visit:
             next_node = self.select_next_node(current_node)
             #If we are stuck with no way out we dump the invalid path
@@ -141,26 +142,31 @@ class Ant:
 
             current_node = next_node
 
-        #In this way the ant's compass will guide it toward the starting node
-        nodes_to_visit = {starting_node}
-        while current_node != starting_node:
-            next_node = self.select_next_node(current_node, nodes_to_visit)
-            #If we are stuck with no way out we dump the invalid path
-            if next_node is None:
-                return self.path
+        if TSP:
+            #In this way the ant's compass will guide it toward the starting node
+            nodes_to_visit = {starting_node}
+            while current_node != starting_node:
+                next_node = self.select_next_node(current_node, nodes_to_visit)
+                #If we are stuck with no way out we dump the invalid path
+                if next_node is None:
+                    return self.path
 
-            #Add the new node to all the important data structures
-            self.path.append(next_node)
-            self.visited_nodes.add(next_node)
+                #Add the new node to all the important data structures
+                self.path.append(next_node)
+                self.visited_nodes.add(next_node)
 
-            current_node = next_node
-        t1 = time.time()
+                current_node = next_node
+
+        if log_print:
+            t1 = time.time()
         #Heuristic Used to refine the path and avoid redundancy
         self.path_pruning_optimization()
-        t2 = time.time()
+        if log_print:
+            t2 = time.time()
         self.TwoOptHeuristic()
-        t3 = time.time()
-        print(f"Path construction: {t1 - t0:.2f}s, Pruning: {t2 - t1:.2f}s, 2-opt: {t3 - t2:.2f}s")
+        if log_print:
+            t3 = time.time()
+            print(f"Path construction: {t1 - t0:.2f}s, Pruning: {t2 - t1:.2f}s, 2-opt: {t3 - t2:.2f}s")
         return self.path
 
     def path_pruning_optimization(self):
