@@ -99,7 +99,7 @@ def weight_func(graph, u, v, edge_attr):
     return dist + (elev_diff * 5.0)
 
 if __name__ == '__main__':
-    res = 100
+    res = 1000
 
     print("Generating Graph...")
     G = create_graph("trentino.tif","trentino_alto_adige.pbf",  resolution=res)
@@ -107,14 +107,15 @@ if __name__ == '__main__':
     print("Finding best path...")
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)
     # path, cost = aco.find_shortest_path( source=(0,0), destination=(res-1,res-1), num_ants=1000)
-    # path = nx.dijkstra_path(G, source= (0,0), target= (res- 1,res-1) , weight='length')
+    # path = nx.dijkstra_path(G, source= 0, target= res -1 , weight='length')
 
-    ant_colony_parameters = {"alpha": 1, "beta": 2, "rho": 0.1, "ant_number": 5, "max_iterations": 10, "max_no_updates": 50, "n_best_ants": 5, "average_cycle_lenght": 3600}
-    key_nodes = {1, 200, 900, 547}
-
-    aco = ACO_simulator(G, **ant_colony_parameters)
-    path = aco.simulation()
+    # ant_colony_parameters = {"alpha": 1, "beta": 2, "rho": 0.1, "ant_number": 5, "max_iterations": 10, "max_no_updates": 50, "n_best_ants": 5, "average_cycle_lenght": 3600}
+    # key_nodes = {1, 200, 900, 547}
+    #
+    # aco = ACO_simulator(G, **ant_colony_parameters)
+    # path = aco.simulation()
 
     print("Plotting graph...")
-    G.plot_graph(paths=[path], paths_colors=["blue"])
+    # G.plot_graph(paths=[path], paths_colors=["blue"])
+    G.plot_graph( paths_colors=["blue"])
     # draw_graph_with_path(G,path)

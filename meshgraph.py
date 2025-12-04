@@ -97,14 +97,16 @@ class MeshGraph(nx.Graph):
             self, pos,
             node_color=node_costs,
             cmap='magma', 
-            node_size=300,
+            node_size=10,
         )
-        nx.draw_networkx_nodes(
-            self, pos,
-            nodelist=self.key_nodes,
-            node_color="green",
-            node_size=300,
-        )
+
+        if self.key_nodes is not None:
+            nx.draw_networkx_nodes(
+                self, pos,
+                nodelist=self.key_nodes,
+                node_color="green",
+                node_size=300,
+            )
         if paths is not None:
             for i in range(len(paths)):
                 path_graph = nx.path_graph(paths[i])
@@ -113,13 +115,13 @@ class MeshGraph(nx.Graph):
             nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
 
 
-        # water_nodes = [n for n, d in graph.nodes(data=True) if d.get('is_water')]
-        # nx.draw_networkx_nodes(
-        #     graph, pos,
-        #     nodelist=water_nodes,
-        #     node_color='lightblue',
-        #     node_size=10,
-        # )
+        water_nodes = [n for n, d in self.nodes(data=True) if d.get('is_water')]
+        nx.draw_networkx_nodes(
+            self, pos,
+            nodelist=water_nodes,
+            node_color='lightblue',
+            node_size=10,
+        )
 
         plt.axis('off')
         plt.show()

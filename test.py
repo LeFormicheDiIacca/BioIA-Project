@@ -79,13 +79,13 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = True
+    synthetic_data = False
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=100)
+        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", mesh_graph_parameters["resolution"])
         mesh_graph.assign_key_nodes(key_nodes)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:
