@@ -4,6 +4,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import numpy as np
 import fiona
+import warnings
 
 from meshgraph import MeshGraph
 
@@ -49,8 +50,12 @@ def create_graph(tif_path, osm_pbf_path, resolution):
 
     print("- Reading osm data...")
     bbox = (min(longitudes), min(latitudes), max(longitudes), max(latitudes))
-    osm_gdf = gpd.read_file(osm_pbf_path, layer='multipolygons', bbox=bbox)
 
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore") # This tells Python to ignore all warnings
+        osm_gdf = gpd.read_file(osm_pbf_path, layer='multipolygons', bbox=bbox)
+
+    print("- Checking points inside osm data...")
     if not osm_gdf.empty:
         mask = np.zeros(len(osm_gdf), dtype=bool)
         for col, kw in [('natural', 'water'), ('landuse', 'reservoir'), ('landuse', 'basin')]:
