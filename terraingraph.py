@@ -75,37 +75,4 @@ def create_graph(tif_path, osm_pbf_path, resolution):
             for node_id in water_nodes['id']:
                 G.nodes[node_id]["is_water"] = True
 
-    if not osm_gdf.empty:
-        mask = np.zeros(len(osm_gdf), dtype=bool)
-        
-        for col, kw in [('natural', 'water'), ('landuse', 'reservoir'), ('landuse', 'basin')]:
-            if col in osm_gdf.columns:
-                mask |= (osm_gdf[col] == kw)
-        if 'water' in osm_gdf.columns:
-            mask |= osm_gdf['water'].notna()
-        
-        water_gdf = osm_gdf[mask]
-        
-        if not water_gdf.empty:
-            # if water_gdf.crs != src.crs:
-            #     print("different")
-            #     water_gdf = water_gdf.to_crs(src.crs)
-            
-            nodes_gdf = gpd.GeoDataFrame(
-                {'id': node_ids}, 
-                geometry=node_geoms_native, 
-                crs='EPSG:4326'
-            )
-            
-            water_nodes = gpd.sjoin(
-                nodes_gdf, 
-                water_gdf[['geometry']], 
-                how='inner', 
-                predicate='intersects'
-            )
-            
-            water_node_ids = water_nodes['id'].values
-            for node_id in water_node_ids:
-                G.nodes[node_id]["is_water"] = True
-
     return G   
