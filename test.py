@@ -25,18 +25,18 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 20
+        "resolution": 100
     }
     ant_colony_parameters = {
-        "alpha": 1,
-        "beta": 3,
-        "rho": 0.2,
-        "q0": 0.1,
+        "alpha": 1, # influence of pheromones 
+        "beta": 3, # influence of edge costs
+        "rho": 0.2, # pheromone evaporation rate
+        "q0": 0.1, # greedy choice probability
         "ant_number": 50,
-        "max_iterations": 100,
-        "max_no_updates": 15,
-        "n_best_ants": 5,
-        "average_cycle_length": 9000,
+        "max_iterations": 100, # number of epochs
+        "max_no_updates": 15, # how many times sim accepts not having updates before resetting
+        "n_best_ants": 5, # how much elitism do you want
+        "average_cycle_length": 9000, # serve per inizializzare i feromoni con dei valori sensati 'cit davide'
         "n_iterations_before_spawn_in_key_nodes": 8
     }
     key_nodes = {15, 381, 99, 210, 5, 294, 142, 337, 78, 266}
@@ -45,11 +45,16 @@ if __name__ == '__main__':
         "AntColony": ant_colony_parameters,
         "KeyNodes": list(key_nodes)
     }
-    #Debug configs
-    log_data = True
+    n_iterations = 1 # how many times to run the entire simulation from scratch (used for performance evaluation) 
+    resilience_factor = 1 # how many independent paths to find
+
+    # Debug configs
+    log_data = False 
     print_res = True
     print_graph = False
+    save_rendered_paths = True 
     writer = None
+    synthetic_data = False
 
     """
     n_paths = 8
@@ -79,7 +84,6 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = False
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
@@ -96,15 +100,15 @@ if __name__ == '__main__':
     #Create the simulators
     aco = ACO_simulator(mesh_graph, **ant_colony_parameters)
 
+    print("Running ACO simulation...")
     #Simulate n_iterations times
     res_paths = []
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
-    n_iterations = 100
     try:
         for i in range(n_iterations):
             #Simulate a colony
             start_time = time.perf_counter()
-            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = 1)
+            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = resilience_factor)
             end_time = time.perf_counter() - start_time
             for (path, path_cost) in paths:
                 #Write path info in CSV
@@ -119,21 +123,21 @@ if __name__ == '__main__':
                 #Print in console
                 if print_res:
                     print(f"Time: {end_time} - Path_cost: {path_cost} - Path: {path}\n")
-                if print_graph:
-                    if path is not None:
-                        res_paths.append(path)
+                if (print_graph or save_rendered_paths) and path is not None:
+                    res_paths.append(path)
 
     finally:
         if print_graph:
-            if synthetic_data:
-                mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
-            else:
-                visualize_paths(
-                    mesh_graph=mesh_graph,
-                    paths=res_paths,
-                    key_nodes=key_nodes,
-                    output_file="my_geo_paths.html",
-                )
+            print("Plotting mesh graph...")
+            mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
+        if save_rendered_paths:
+            print("Generating road visualization...")
+            visualize_paths(
+                mesh_graph=mesh_graph,
+                paths=res_paths,
+                key_nodes=key_nodes,
+                output_file="my_geo_paths.html",
+            )
 
 
 
