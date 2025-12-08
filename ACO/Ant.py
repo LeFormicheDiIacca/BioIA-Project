@@ -53,7 +53,6 @@ class Ant:
         """
         neighbors = [n for n in self.graph[current_node] if n not in self.visited_nodes]
         candidates = dict()
-        degree_45_penalty_factor = 0.5
         key_nodes_bias = 20.0
         #We initialize a list of node to reach. They'll guide the ant like a compass
         active_targets = []
@@ -71,7 +70,7 @@ class Ant:
             #Ant Compass. We decide if by going in a node we are getting closer to some key node
             if active_targets:
                 min_distances = {
-                    neighbor: min(self.graph.dist_matrix[neighbor, t] for t in active_targets)
+                    neighbor: min(self.graph.dist_matrix[neighbor, self.graph.key_node_to_idx[t]]  for t in active_targets)
                     for neighbor in neighbors
                 }
             else:
@@ -100,9 +99,6 @@ class Ant:
             #pheromones_dominance_factor = pheromone/sum(all pheromone types)
 
             prob = (pheromone ** self.alpha) * (heuristic ** self.beta)
-            #Diagonal movements have less probability
-            if self.graph.dist_matrix[current_node, neighbor] > 1.01:
-                prob *= degree_45_penalty_factor
             candidates[neighbor] = prob
         #If the ant is stuck it can go in an already visited node. We don't care about the only 1 visit rule because we'll prune the path later
         if not candidates:
@@ -143,6 +139,7 @@ class Ant:
             current_node = next_node
 
         if TSP:
+            self.graph.add_temporary_target_to_dist_matrix(starting_node)
             #In this way the ant's compass will guide it toward the starting node
             nodes_to_visit = {starting_node}
             while current_node != starting_node:
