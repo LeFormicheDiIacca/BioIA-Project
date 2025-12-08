@@ -218,3 +218,6 @@ __marimo__/
 cache/
 
 .vscode
+
+# our stuff
+Results/
