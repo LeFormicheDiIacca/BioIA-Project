@@ -1,5 +1,5 @@
 import math
-from scipy.spatial.distance import pdist, squareform
+from scipy.spatial.distance import pdist, squareform, cdist
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,16 +20,10 @@ class MeshGraph(nx.Graph):
         if resolution < 3:
             raise ValueError('Minimum mesh size must be 3x3')
 
-        self.key_nodes = key_nodes
         #Used to get the geometric position of a node and a node from (x,y) coords
         self.pos_to_node = {}
         self.node_to_pos = {}
         self._construct_graph(resolution, n_neighbours)
-
-        #Create a geometric distance matrix used by the Ants' compass
-        nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in self.nodes()])
-        compress_dist = pdist(nodes_pos, metric='euclidean')
-        self.dist_matrix = squareform(compress_dist)
 
         #Creates a mapping from edges to ids and vice versa. Used in order to get pheromones info in the ants
         self.edge_mapping = dict()
@@ -41,8 +35,34 @@ class MeshGraph(nx.Graph):
                 self[v][u]["edge_id"] = idx
             idx += 1
 
+        self.key_nodes = None
+        self.dist_matrix = None
+        self.key_node_to_idx = None
+        if key_nodes:
+            self.assign_key_nodes(key_nodes)
+
     def assign_key_nodes(self, key_nodes: set):
-        self.key_nodes = key_nodes
+        self.key_nodes = set(sorted(list(key_nodes)))
+        all_nodes = list(self.nodes())
+        key_nodes_list = list(key_nodes)
+        all_nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in all_nodes])
+        key_nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in key_nodes_list])
+        self.dist_matrix = cdist(all_nodes_pos, key_nodes_pos, metric='euclidean')
+        self.key_node_to_idx = {node: idx for idx, node in enumerate(sorted(self.key_nodes))}
+
+    def add_temporary_target_to_dist_matrix(self, target_node: int):
+
+        target_pos = np.array([[self.node_to_pos[target_node][0], self.node_to_pos[target_node][1]]])
+
+        all_nodes = list(self.nodes())
+        all_nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in all_nodes])
+
+        new_column = cdist(all_nodes_pos, target_pos, metric='euclidean')
+        self.dist_matrix = np.hstack([self.dist_matrix, new_column])
+
+        new_idx = len(self.key_nodes)
+        self.key_nodes.add(target_node)
+        self.key_node_to_idx[target_node] = new_idx
 
 
     def _construct_graph(self, resolution, n_neighbours):
@@ -97,14 +117,16 @@ class MeshGraph(nx.Graph):
             self, pos,
             node_color=node_costs,
             cmap='magma', 
-            node_size=300,
+            node_size=10,
         )
-        nx.draw_networkx_nodes(
-            self, pos,
-            nodelist=self.key_nodes,
-            node_color="green",
-            node_size=300,
-        )
+
+        if self.key_nodes is not None:
+            nx.draw_networkx_nodes(
+                self, pos,
+                nodelist=self.key_nodes,
+                node_color="green",
+                node_size=300,
+            )
         if paths is not None:
             for i in range(len(paths)):
                 path_graph = nx.path_graph(paths[i])
@@ -113,13 +135,13 @@ class MeshGraph(nx.Graph):
             nx.draw_networkx_labels(self, self.node_to_pos, labels=labels)
 
 
-        # water_nodes = [n for n, d in graph.nodes(data=True) if d.get('is_water')]
-        # nx.draw_networkx_nodes(
-        #     graph, pos,
-        #     nodelist=water_nodes,
-        #     node_color='lightblue',
-        #     node_size=10,
-        # )
+        water_nodes = [n for n, d in self.nodes(data=True) if d.get('is_water')]
+        nx.draw_networkx_nodes(
+            self, pos,
+            nodelist=water_nodes,
+            node_color='lightblue',
+            node_size=10,
+        )
 
         plt.axis('off')
         plt.show()
@@ -202,9 +224,6 @@ class MeshGraph(nx.Graph):
         path_cost = 0
         for i in range(len(path)-1):
             source, destination = path[i], path[i+1]
-            dist = self.dist_matrix[source, destination]
-            if not math.isclose(dist, 1.0, rel_tol=1e-5):
-                path_cost += degree_45_penalty_factor
             try:
                 path_cost += self[source][destination]["cost"]
             except KeyError:

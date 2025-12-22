@@ -2,97 +2,77 @@ import rasterio
 from rasterio.warp import transform
 import geopandas as gpd 
 from shapely.geometry import Point
-import networkx as nx
 import numpy as np
-    
 import fiona
+import warnings
 
 from meshgraph import MeshGraph
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
 def create_graph(tif_path, osm_pbf_path, resolution):
-    G = MeshGraph(key_nodes=None,n_neighbours = 8, resolution = resolution)
+    print(f"Creating graph with resolution {resolution}:")
+    print("- Running MeshGraph empty constructor...")
+    G = MeshGraph(n_neighbours=8, resolution=resolution)
 
+    print("- Creating coordinate lists...")
     src = rasterio.open(tif_path)
-
     bounds = src.bounds
-    left, bottom, right, top = bounds.left, bounds.bottom, bounds.right, bounds.top
 
-    # print(f"File CRS: {src.crs}")
-    # print(bounds)
+    eastings = np.linspace(bounds.left + 1, bounds.right - 1, resolution)
+    northings = np.linspace(bounds.bottom + 1, bounds.top - 1, resolution)
+    utm_coordinates = [(x, y) for y in northings for x in eastings]
 
-    lons = np.linspace(bounds.left + 1, bounds.right - 1, resolution)
-    lats = np.linspace(bounds.bottom + 1, bounds.top - 1, resolution)
+    longitudes, latitudes = transform(src.crs, 'EPSG:4326', eastings, northings)
+    geo_coordinates = [(x, y) for y in latitudes for x in longitudes]
 
-    coords = [(lon, lat) for lat in lats for lon in lons]
-    samples = src.sample(coords)
+    print("- Reading elevation data...")
+    elevations = [val[0] for val in src.sample(utm_coordinates)]
 
     node_ids = []
-    node_geoms = []
+    node_geoms_native = []
 
-    # ============================ elevation info ========================================
+    for idx, ((lon, lat), elev) in enumerate(zip(geo_coordinates, elevations)):
+        i = idx // resolution
+        j = idx % resolution
 
-    for idx, val in enumerate(samples):
-        i = idx // resolution  
-        j = idx % resolution   
-        
-        x = float(lons[j])
-        y = float(lats[i])
+        node_key = G.pos_to_node[(j, i)]
 
-        node_key = G.pos_to_node[(j,i)]
-
-        G.nodes[node_key]["elevation"] = float(val[0])
-        G.nodes[node_key]["x"] = x
-        G.nodes[node_key]["y"] = y
-        G.nodes[node_key]["is_water"] = False
+        G.nodes[node_key].update({
+            "x": lon,
+            "y": lat,
+            "elevation": elev,
+            "is_water": False
+        })
         
         node_ids.append(node_key)
-        node_geoms.append(Point(x, y))
+        node_geoms_native.append(Point(lon,lat))
 
-    # ============================ coordinate conversions ========================================
+    print("- Reading osm data...")
+    bbox = (min(longitudes), min(latitudes), max(longitudes), max(latitudes))
 
-    src_crs = src.crs
-    dst_crs = 'EPSG:4326'
-    
-    utm_xs = [left, right]
-    utm_ys = [bottom, top]
-    wgs84_lons, wgs84_lats = transform(src_crs, dst_crs, utm_xs, utm_ys)
-    
-    bbox = (
-        min(wgs84_lons), 
-        min(wgs84_lats), 
-        max(wgs84_lons), 
-        max(wgs84_lats)
-    )
-    
-    # ============================ query local file to get osm info ===================================
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore") # This tells Python to ignore all warnings
+        osm_gdf = gpd.read_file(osm_pbf_path, layer='multipolygons', bbox=bbox)
 
-    osm_gdf = gpd.read_file(osm_pbf_path, layer='multipolygons', bbox=bbox)
-
+    print("- Checking points inside osm data...")
     if not osm_gdf.empty:
         mask = np.zeros(len(osm_gdf), dtype=bool)
+        for col, kw in [('natural', 'water'), ('landuse', 'reservoir'), ('landuse', 'basin')]:
+            if col in osm_gdf.columns:
+                mask |= (osm_gdf[col] == kw)
         
-        if 'natural' in osm_gdf.columns:
-            mask |= (osm_gdf['natural'] == 'water')
         if 'water' in osm_gdf.columns:
             mask |= osm_gdf['water'].notna()
-        if 'landuse' in osm_gdf.columns:
-            mask |= osm_gdf['landuse'].isin(['reservoir', 'basin'])
-        
-        if 'other_tags' in osm_gdf.columns:
-            mask |= osm_gdf['other_tags'].astype(str).str.contains('water|reservoir|basin', case=False, na=False)
-
+            
         water_gdf = osm_gdf[mask]
 
         if not water_gdf.empty:
             water_gdf = water_gdf.to_crs(src.crs)
-            nodes_gdf = gpd.GeoDataFrame({'id': node_ids}, geometry=node_geoms, crs=src.crs)
-            
+            nodes_gdf = gpd.GeoDataFrame({'id': node_ids}, geometry=node_geoms_native, crs=src.crs)
             water_nodes = gpd.sjoin(nodes_gdf, water_gdf, how='inner', predicate='intersects')
 
             for node_id in water_nodes['id']:
                 G.nodes[node_id]["is_water"] = True
 
-
-    return G
+    return G   

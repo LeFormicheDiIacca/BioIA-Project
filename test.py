@@ -7,6 +7,7 @@ from cost_functions import test_cost_assignment
 from meshgraph import MeshGraph
 from sanity_check import weight_func
 from terraingraph import create_graph
+from path_render import visualize_paths
 
 OUTPUT_FOLDER = "Results"
 FILENAME = "PathOutputs"
@@ -24,31 +25,36 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 10
+        "resolution": 100
     }
     ant_colony_parameters = {
-        "alpha": 1,
-        "beta": 2,
-        "rho": 0.1,
-        "q0": 0.05,
-        "ant_number": 10,
-        "max_iterations": 25,
-        "max_no_updates": 10,
-        "n_best_ants": 5,
-        "average_cycle_length": 5000,
-        "n_iterations_before_spawn_in_key_nodes": 5
+        "alpha": 1, # influence of pheromones 
+        "beta": 3, # influence of edge costs
+        "rho": 0.2, # pheromone evaporation rate
+        "q0": 0.1, # greedy choice probability
+        "ant_number": 50,
+        "max_iterations": 100, # number of epochs
+        "max_no_updates": 15, # how many times sim accepts not having updates before resetting
+        "n_best_ants": 5, # how much elitism do you want
+        "average_cycle_length": 9000, # serve per inizializzare i feromoni con dei valori sensati 'cit davide'
+        "n_iterations_before_spawn_in_key_nodes": 8
     }
-    key_nodes = {1, 34, 71, 99}
+    key_nodes = {15, 381, 99, 210, 5, 294, 142, 337, 78, 266}
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
         "KeyNodes": list(key_nodes)
     }
-    #Debug configs
-    log_data = False
+    n_iterations = 1 # how many times to run the entire simulation from scratch (used for performance evaluation) 
+    resilience_factor = 1 # how many independent paths to find
+
+    # Debug configs
+    log_data = False 
     print_res = True
-    print_graph = True
+    print_graph = False
+    save_rendered_paths = True 
     writer = None
+    synthetic_data = False
 
     """
     n_paths = 8
@@ -78,13 +84,12 @@ if __name__ == '__main__':
             pass
 
     #Creates a random mesh graph for testing
-    synthetic_data = True
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=75)
+        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", mesh_graph_parameters["resolution"])
         mesh_graph.assign_key_nodes(key_nodes)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:
@@ -95,17 +100,16 @@ if __name__ == '__main__':
     #Create the simulators
     aco = ACO_simulator(mesh_graph, **ant_colony_parameters)
 
+    print("Running ACO simulation...")
     #Simulate n_iterations times
     res_paths = []
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
-    n_iterations = 1
     try:
         for i in range(n_iterations):
             #Simulate a colony
             start_time = time.perf_counter()
-            paths = aco.simulation(retrieve_n_best_paths = 1, draw_heatmap = False)
+            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = resilience_factor)
             end_time = time.perf_counter() - start_time
-
             for (path, path_cost) in paths:
                 #Write path info in CSV
                 if log_data and writer:
@@ -115,16 +119,27 @@ if __name__ == '__main__':
                         "path": ", ".join(map(str, path))
                     }
                     writer.writerow(csv_row)
+                    csvfile.flush()
                 #Print in console
                 if print_res:
                     print(f"Time: {end_time} - Path_cost: {path_cost} - Path: {path}\n")
-                if print_graph:
-                    if path is not None:
-                        res_paths.append(path)
+                if (print_graph or save_rendered_paths) and path is not None:
+                    res_paths.append(path)
 
     finally:
         if print_graph:
+            print("Plotting mesh graph...")
             mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
+        if save_rendered_paths:
+            print("Generating road visualization...")
+            visualize_paths(
+                mesh_graph=mesh_graph,
+                paths=res_paths,
+                key_nodes=key_nodes,
+                output_file="my_geo_paths.html",
+            )
+
+
 
 #Ants no longer stupids as fuck. Now just a little bit stupid. Maybe it was my fault :(. Sorry ants
 #Glory to C and the Ants🫡
@@ -132,5 +147,6 @@ if __name__ == '__main__':
 TODO:          
     1. Need to fine tune the ACO hyperparameters and we are done
     2. Need to improve 2-opt and path optimization
-    3. Sometimes tsp problem ignored and some nodes are repeated?
+    3. Sometimes tsp problem ignored and some nodes are repeated? Ignore
+    4. Formalize better the steiner tree mode?
 """

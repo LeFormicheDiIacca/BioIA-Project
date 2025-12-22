@@ -218,3 +218,7 @@ __marimo__/
 cache/
 
 .vscode
+
+# our stuff
+Results/
+my_geo_paths.html
