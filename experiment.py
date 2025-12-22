@@ -78,6 +78,11 @@ toolbox.register("compile", gp.compile, pset = pset)
 
 #extract graph
 
+
+# NB CONTROLLARE CHE I DUE NODI SIANO CONNESSI
+
+
+
 # E
 def extract_edge_features(graph):
     edge_features = []
@@ -121,6 +126,7 @@ def enrich_graph_edges(G):
         # 3. Assegna gli attributi all'arco (u, v)
         G.edges[u, v]["dist"] = dist
         G.edges[u, v]["elev_diff"] = elev_diff
+        G.edges[u, v]["steepness"] = (elev_diff/dist)*100
         G.edges[u, v]["elev_u"] = elev_u
         G.edges[u, v]["elev_v"] = elev_v
         
