@@ -69,7 +69,9 @@ def create_graph(tif_path, osm_pbf_path, resolution):
 
         if not water_gdf.empty:
             water_gdf = water_gdf.to_crs(src.crs)
-            nodes_gdf = gpd.GeoDataFrame({'id': node_ids}, geometry=node_geoms_native, crs=src.crs)
+            node_points_utm = [Point(x, y) for x, y in utm_coordinates]
+            nodes_gdf = gpd.GeoDataFrame({'id': node_ids}, geometry=node_points_utm, crs=src.crs)
+
             water_nodes = gpd.sjoin(nodes_gdf, water_gdf, how='inner', predicate='intersects')
 
             for node_id in water_nodes['id']:
