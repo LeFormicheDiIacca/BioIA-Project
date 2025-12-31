@@ -1,12 +1,12 @@
 from terraingraph import create_graph
 import math
-from sanity_check import heuristic
-from meshgraph import MeshGraph
+import json
 
+n = 80
 
 tif_path = "trentino.tif"
 osm_path = "trentino_alto_adige.pbf"
-graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=50)
+graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=n)
 
 def get_edge_metadata(G, u, v):
     
@@ -26,12 +26,11 @@ def get_edge_metadata(G, u, v):
     elev_v = node_v['elevation']
     
     is_water = 1.0 if (node_u['is_water'] or node_v['is_water']) else 0.0
-    
     return (dist, float(inclination), float(elev_u), float(elev_v), is_water)
 
-u = 0
-v = 1
-print(get_edge_metadata(graph, u, v))
+
+#graph.plot_graph(figsize= (400,400), dpi = 200, draw_labels=True)
+
 
 
 # TROVARE ALMENO DUE RANDOM NODI INIZIALE E FINALE PER CUI:
@@ -41,4 +40,24 @@ print(get_edge_metadata(graph, u, v))
 
 # OGNI 10 GENERAZIONI CAMBIO NODI SPECIFICI MA TENGO STRUTTURA VS OVERFITTING
 
-scenarios = []
+
+nodes_with_water = [(15,36), (862, 1177), (2800, 3040)]
+
+nodes_different_altitude = [(110,912), (159, 868), (793, 6046)]
+
+nodes_through_obstacles = [(2996, 2214), (2586, 3615), (1837, 3821)]
+
+scenarios = [nodes_with_water[0], nodes_different_altitude[0], nodes_through_obstacles[0]]
+
+edge_dict = {}
+
+for u,v in graph.edges():
+    u_ordered, v_ordered = min(u, v), max(u, v)
+    key = f"{u_ordered}-{v_ordered}"
+    edge_dict[key] =get_edge_metadata(graph, u,v)
+
+
+
+with open(f"edge_dict_res{n}.json", "w") as f:
+    json.dump(edge_dict, f)
+    
