@@ -4,102 +4,114 @@ import math
 import random
 from functools import partial
 import networkx as nx
-from edge_info import graph, scenarios
 import numpy as np
 import json
-# import multiprocessing
+import multiprocessing
+from terraingraph import create_graph
+import pygraphviz as pgv
+import pydot 
 
-with open("edge_dict_res80.json", "r") as f:
+
+n = 80
+tif_path = "trentino.tif"
+osm_path = "trentino_alto_adige.pbf"
+graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=n)
+
+with open(f"edge_dict_res{n}.json", "r") as f:
     edge_dict = json.load(f)
 
-# define the Primitive set
-
 def protected_div(n1, n2):
+    if isinstance(n1, complex):
+        n1 = n2.real
+    if isinstance(n2, complex):
+        n2 = n2.real
     if n2 == 0:
         return 0
     else:
         return n1/n2
     
 def protected_log(x, base):
+    if isinstance(x, complex):
+        x = x.real
+    if isinstance(base, complex):
+        base = base.real
     if x > 0 and base > 0 and base!=1:
         return math.log(x, base)
     else:
         return 1
 
 def protected_pow(n1, n2):
+    if isinstance(n1, complex):
+        n1 = n2.real
+    if isinstance(n2, complex):
+        n2 = n2.real
+    if n1 == 0:
+        return 0
     try:
-        return n1**(min(n2,10))
-    except OverflowError:
-        return 1e10
+        base = np.abs(n1)
+        exponent = np.clip(n2, -5, 5)
+        return np.power(base, exponent)
+    except: 
+        return 1.0
 
 def if_then_else(condition, out1, out2):
-    # Se la condizione è > 0.5 (True), restituisci il primo ramo, altrimenti il secondo
-    return out1 if condition > 0.5 else out2
+    return np.where(condition > 0.5, out1, out2) 
 
-def water_multiplier(is_water, penalty_value):
-    # Se is_water è 1, restituisce la penalità, altrimenti 1 (neutro)
-    if is_water > 0.5:
-        return penalty_value # O un valore che il GP può evolvere
-    return 1.0
+def identity_water(x):
+    return x
 
 def dynamic_penalty(inclination):
-    if inclination >= 30:
+    if inclination >= 30: 
         return 50000*inclination
     else:
         return 5*inclination
 
 def evaluate(individual, graph, scenarios):
-    # 1. Trasforma l'individuo in una funzione utilizzabile
-    func = toolbox.compile(expr=individual)
-    
-    # 2. Applica la formula a tutti gli archi per aggiornare 'cost'
+    func = toolbox.compile(expr=individual)  
+    # add edge cost
     for u, v in graph.edges():
-        #m = get_edge_metadata(graph, u, v)
         u_ordered, v_ordered = min(u,v), max(u,v)
-        m = edge_dict[f"{u_ordered}-{v_ordered}"]
-        # Protezione: evita costi <= 0 che mandano in crash Dijkstra/ACO
-        result = func(*m)
-
+        d, incl, e_u, e_v, water = edge_dict[f"{u_ordered}-{v_ordered}"]
+        result = func(d, incl, e_u, e_v, water)
         if isinstance(result, complex):
             result = result.real
-
         graph[u][v]['cost'] = max(float(result), 0.001)
     
     total_penalty = 0
     
-    # 3. Testa la formula su ogni scenario
+    # check the formula for each scenario
     for start_node, end_node in scenarios:
         try:
-            # Trova il percorso migliore secondo la formula del GP
+            # finds shortest path using dijkstra
             path = nx.shortest_path(graph, source=start_node, target=end_node, weight='cost')
             
-            # Calcola quanto è brutto questo percorso nel mondo reale
-            dist_reale = 0
+            # computes the quality of the path in real world metrics
+            real_dist = 0
             water_nodes = 0
             elev_gain = 0
             total_incl = 0
             
             for i in range(len(path)-1):
                 u, v = path[i], path[i+1]
-                # Usa i metadati reali (non quelli del GP!)
                 u_ordered, v_ordered = min(u,v), max(u,v)
                 d, incl, e_u, e_v, water = edge_dict[f"{u_ordered}-{v_ordered}"]
                 
-                dist_reale += d
-                water_nodes += water # water è 1.0 o 0.0
-                total_incl += dynamic_penalty(incl)*d
+                real_dist += d
+                water_nodes += water #1.0 or 0.0
+                total_incl += dynamic_penalty(incl)*d # very high inclination (>= 30) is dramatically penalized; considers 
+                                                      # distance as the longer the inclined edge, the worse it is
                 if e_v > e_u:
-                    elev_gain += e_v - e_u
+                    elev_gain += e_v - e_u            
             
-            # Formula della penalità per questo scenario
-            # Esempio: Metri + (Salita * 10) + (Ogni nodo acqua vale 5km di penalità)
-            total_penalty += dist_reale + (elev_gain * 10) + (water_nodes * 5000) + total_incl
+            # penalty formula, coefficients just represent the relative weight of each feature 
+ 
+            total_penalty += real_dist + (elev_gain * 10) + (water_nodes * 5000) + total_incl
             
         except nx.NetworkXNoPath:
-            # Se la formula è così brutta da isolare i nodi
+            # no path
             total_penalty += 1000000 
             
-    return total_penalty, # DEAP vuole una tupla
+    return total_penalty, # DEAP requires a tuple
 
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
@@ -108,20 +120,23 @@ random_gen = partial(round_random, 0,10)
 
 # define primitive set
 
-pset = gp.PrimitiveSet("MAIN", arity = 5)
-pset.renameArguments(ARG0 = "dist", ARG1 = "inclination", ARG2 = "elev_u", ARG3 = "elev_v", ARG4 = "is_water")
-pset.addPrimitive(operator.add, 2)
-pset.addPrimitive(operator.mul, 2)
-pset.addPrimitive(protected_pow, 2)
-pset.addPrimitive(operator.sub, 2)
-pset.addPrimitive(operator.neg, 1)
-pset.addPrimitive(protected_log, 2)
-pset.addPrimitive(protected_div, 2)
-pset.addPrimitive(if_then_else, 3)
-pset.addPrimitive(water_multiplier, 2)
-pset.addEphemeralConstant("constant", (random_gen))
+class WaterArg: pass
+class OtherArgs: pass
 
-# define Fitness and Individual
+# strongly typed # chosen to limit if_then function
+
+pset = gp.PrimitiveSetTyped("MAIN", [OtherArgs, OtherArgs, OtherArgs, OtherArgs, WaterArg], OtherArgs)
+pset.renameArguments(ARG0 = "dist", ARG1 = "inclination", ARG2 = "elev_u", ARG3 = "elev_v", ARG4 = "is_water")
+pset.addPrimitive(operator.add, [OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(operator.mul, [OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(protected_pow, [OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(operator.sub, [OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(operator.neg, [OtherArgs], OtherArgs)
+pset.addPrimitive(protected_log, [OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(protected_div,[OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(if_then_else, [WaterArg, OtherArgs, OtherArgs], OtherArgs)
+pset.addPrimitive(identity_water, [WaterArg], WaterArg)
+pset.addEphemeralConstant("constant", random_gen, ret_type=OtherArgs)
 
 creator.create("FitnessMin", base.Fitness, weights = (-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness = creator.FitnessMin, pset = pset)
@@ -129,10 +144,12 @@ creator.create("Individual", gp.PrimitiveTree, fitness = creator.FitnessMin, pse
 # define main functions
 
 toolbox = base.Toolbox()
-toolbox.register("expr", gp.genHalfAndHalf, pset = pset, min_=1, max_=3)
+toolbox.register("expr", gp.genHalfAndHalf, pset = pset, min_=1, max_=5)
 toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
+
+# if your pc allows it, parallelize! (mine doesn't lololol)
 # pool = multiprocessing.Pool()
 # toolbox.register("map", pool.map)
 
@@ -141,24 +158,68 @@ toolbox.register("compile", gp.compile, pset=pset)
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("select", tools.selTournament, tournsize = 3)
 toolbox.register("mutate", gp.mutUniform, expr = toolbox.expr, pset= pset) 
-toolbox.register("evaluate", evaluate, graph = graph, scenarios = scenarios)
 
 # limit bloating
 
 toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 15))
 toolbox.decorate("mutate", gp.staticLimit(operator.attrgetter("height"), max_value=15))
 
-# PREPARATION TO THE SIMULATION
+# scenarios # hand-picked based on the chosen resolution
+
+nodes_with_water = [(15,36), (862, 1177), (2800, 3040)] #water in-between
+nodes_different_altitude = [(110,912), (159, 868), (793, 6046)] #from mountains to plains or viceversa
+nodes_through_obstacles = [(2996, 2214), (2586, 3615), (1837, 3821)] #some water and heights to go through
+
+scenarios = [nodes_with_water, nodes_different_altitude, nodes_through_obstacles]
+
+# algorithm run
 
 def main():
+    all_logs = []
     pop = toolbox.population(n = 10)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("std", np.std)
     stats.register("min", np.min)
     stats.register("max", np.max)
-    algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=2, stats=stats)
-    return pop, stats
+    hof = tools.HallOfFame(10, similar=operator.eq)
+    ngen = 30
+    scenario_run = 10
+    # vs overfitting: we update the scenarios every 10 generations
+    for i in range(0, ngen, scenario_run):
+        current_scenario = [el[i//scenario_run] for el in scenarios]
+        toolbox.register("evaluate", evaluate, graph = graph, scenarios = current_scenario)
+        for ind in pop:
+            del ind.fitness.values
+        pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, 
+                                    ngen=scenario_run, stats=stats, halloffame=hof, verbose=False)
+        print(f"Scenario {i//scenario_run +1} complete.")
+        all_logs.append(log)
+        
+    return pop, stats, hof
 
 if __name__ == "__main__":
     ret = main()
+    for i in range(len(ret[2])):
+        f = ""
+        nodes, edges, labels = gp.graph(ret[2][i])
+        f += ("digraph G {\n")
+        f += (f"label = best_{i+1}_tree\n")
+        f += "size = 20\ndpi = 300\n"
+        f += "ranksep = 0.5\nnodesep = 0.5\n"
+        for node in nodes:
+            label = str(labels[node]).replace('"', '')
+            f += f'  {node} [label="{label}", fontsize = 10];\n'
+        for edge in edges:
+            f += f'  {edge[0]} -> {edge[1]};\n'
+        f += "}"
+        graphs = pydot.graph_from_dot_data(f)
+        graph = graphs[0]
+        graph.write_png(f"hof/best_{i+1}._tree.png")
+
+        
+        
+
+
+
+
