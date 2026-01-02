@@ -51,8 +51,8 @@ def protected_pow(n1, n2):
         base = np.abs(n1)
         exponent = np.clip(n2, -5, 5)
         return np.power(base, exponent)
-    except: 
-        return 1.0
+    except OverflowError: 
+        return 1e10
 
 def if_then_else(condition, out1, out2):
     return np.where(condition > 0.5, out1, out2) 
@@ -110,13 +110,46 @@ def evaluate(individual, graph, scenarios):
         except nx.NetworkXNoPath:
             # no path
             total_penalty += 1000000 
-            
-    return total_penalty, # DEAP requires a tuple
+    
+    string_tree = str(individual)
+    required_inputs = ["distance", "steepness", "elev_u", "elev_v", "is_water"]
+    
+    # counts how many inputs are missing
+
+    missing_count = sum(1 for inp in required_inputs if inp not in string_tree)
+    total_penalty += 10000*missing_count # 10km more if one of the inputs is missing
+    complexity = len(individual)
+    return total_penalty, complexity # MOP
 
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
 random_gen = partial(round_random, 0,10)
 
+def mutate_combined(individual):
+    if random.random() < 0.7:
+        return toolbox.mutate_unif(individual)
+    else:
+        return toolbox.mutate_eph(individual)
+
+def tree_plotter(tree, title):
+    nodes, edges, labels = gp.graph(tree)
+    f = "digraph G {\n"
+    # Attributi corretti:
+    f += "    size=\"20,20\";\n"  
+    f += "    dpi=300;\n"          
+    f += "    labelloc=\"t\";\n"    
+    f += f"    label=\"{title}\n\\n\";\n"
+    f += "    labelloc = \"t\";\n"
+    f += "    size = \"20,20\";\n"
+    f += "    dpi = 300;\n"     
+    for node in nodes:
+        f += f'    {node} [label="{labels[node]}", shape=ellipse, style=filled, fillcolor=white, fontname="Arial", fixedsize=false, margin=0.2];\n'
+    for edge in edges:
+        f += f"    {edge[0]} -> {edge[1]};\n"
+    f += "}"
+    graphs = pydot.graph_from_dot_data(f)
+    graph = graphs[0]
+    graph.write_png(f"hof/{title}.png")
 
 # define primitive set
 
@@ -126,7 +159,7 @@ class OtherArgs: pass
 # strongly typed # chosen to limit if_then function
 
 pset = gp.PrimitiveSetTyped("MAIN", [OtherArgs, OtherArgs, OtherArgs, OtherArgs, WaterArg], OtherArgs)
-pset.renameArguments(ARG0 = "dist", ARG1 = "inclination", ARG2 = "elev_u", ARG3 = "elev_v", ARG4 = "is_water")
+pset.renameArguments(ARG0 = "distance", ARG1 = "steepness", ARG2 = "elevation_u", ARG3 = "elevation_v", ARG4 = "is_water")
 pset.addPrimitive(operator.add, [OtherArgs, OtherArgs], OtherArgs)
 pset.addPrimitive(operator.mul, [OtherArgs, OtherArgs], OtherArgs)
 pset.addPrimitive(protected_pow, [OtherArgs, OtherArgs], OtherArgs)
@@ -138,7 +171,7 @@ pset.addPrimitive(if_then_else, [WaterArg, OtherArgs, OtherArgs], OtherArgs)
 pset.addPrimitive(identity_water, [WaterArg], WaterArg)
 pset.addEphemeralConstant("constant", random_gen, ret_type=OtherArgs)
 
-creator.create("FitnessMin", base.Fitness, weights = (-1.0,))
+creator.create("FitnessMin", base.Fitness, weights = (-1.0, -1.0))
 creator.create("Individual", gp.PrimitiveTree, fitness = creator.FitnessMin, pset = pset)
 
 # define main functions
@@ -157,12 +190,18 @@ toolbox.register("compile", gp.compile, pset=pset)
 
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("select", tools.selTournament, tournsize = 3)
-toolbox.register("mutate", gp.mutUniform, expr = toolbox.expr, pset= pset) 
+toolbox.register("mutate_unif", gp.mutUniform, expr = toolbox.expr, pset= pset) 
+toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
 
 # limit bloating
 
-toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 15))
-toolbox.decorate("mutate", gp.staticLimit(operator.attrgetter("height"), max_value=15))
+toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 7))
+toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 7))
+
+# to include both type of mutation
+
+toolbox.register("mutate", mutate_combined)
+
 
 # scenarios # hand-picked based on the chosen resolution
 
@@ -201,24 +240,13 @@ def main():
 if __name__ == "__main__":
     ret = main()
     for i in range(len(ret[2])):
-        f = ""
-        nodes, edges, labels = gp.graph(ret[2][i])
-        f += ("digraph G {\n")
-        f += (f"label = best_{i+1}_tree\n")
-        f += "size = 20\ndpi = 300\n"
-        f += "ranksep = 0.5\nnodesep = 0.5\n"
-        for node in nodes:
-            label = str(labels[node]).replace('"', '')
-            f += f'  {node} [label="{label}", fontsize = 10];\n'
-        for edge in edges:
-            f += f'  {edge[0]} -> {edge[1]};\n'
-        f += "}"
-        graphs = pydot.graph_from_dot_data(f)
-        graph = graphs[0]
-        graph.write_png(f"hof/best_{i+1}._tree.png")
+        tree_plotter(ret[2][i], f"{i+1}._best_tree")
+
+    # TODO: salvo best tree
+
 
         
-        
+
 
 
 

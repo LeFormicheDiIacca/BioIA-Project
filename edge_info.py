@@ -1,6 +1,12 @@
 import math
 import json
+from terraingraph import create_graph
 
+
+n = 80
+tif_path = "trentino.tif"
+osm_path = "trentino_alto_adige.pbf"
+graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=n)
 
 def get_edge_metadata(G, u, v):
     
@@ -48,4 +54,13 @@ for u,v in graph.edges():
 
 with open(f"edge_dict_res{n}.json", "w") as f:
     json.dump(edge_dict, f)
-    
+
+
+# TODO: for every resolution in (80,161,20), faccio un dizionario di edges
+
+# per ciascuna risoluzione, creo anche degli scenari, trovando almeno un nodo acqua, 
+# almeno uno alto, almeno uno con vari ostacoli, almeno uno con tanta distanza, etc
+
+# NB: normalizzo i valori nella mia funzione evaluate (max_normalization, dove max_distance è resolution-specific)
+# così è più robusta
+
