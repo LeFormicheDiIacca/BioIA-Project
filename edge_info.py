@@ -28,39 +28,19 @@ def get_edge_metadata(G, u, v):
     is_water = 1.0 if (node_u['is_water'] or node_v['is_water']) else 0.0
     return (dist, abs(float(inclination)), float(elev_u), float(elev_v), is_water)
 
-
-#graph.plot_graph(figsize= (400,400), dpi = 200, draw_labels=True)
-
-
-
-# TROVARE ALMENO DUE RANDOM NODI INIZIALE E FINALE PER CUI:
-#   - IN MEZZO PASSA ACQUA
-#   - UNO è IN MONTAGNA E ALTRO IN PIANURA; DA UNA PARTE PENDENZA ALTA, DALL'ALTRA PIù DOLCE
-#   - PERCORSO MISTO CON PICCOLI OSTACOLI (COLLINA E LAGHETTI)
-
-# OGNI 10 GENERAZIONI CAMBIO NODI SPECIFICI MA TENGO STRUTTURA VS OVERFITTING
+def create_edge_dict(graph):
+    edge_dict = {}
+    for u,v in graph.edges():
+        u_ordered, v_ordered = min(u, v), max(u, v)
+        key = f"{u_ordered}-{v_ordered}"
+        edge_dict[key] =get_edge_metadata(graph, u,v)
+    return edge_dict
 
 
+# with open(f"edge_dict_res{n}.json", "w") as f:
+#     json.dump(edge_dict, f)
 
 
-edge_dict = {}
+# TODO: normalizzo i valori nella mia funzione evaluate (max_normalization, dove max_distance è resolution-specific)
 
-for u,v in graph.edges():
-    u_ordered, v_ordered = min(u, v), max(u, v)
-    key = f"{u_ordered}-{v_ordered}"
-    edge_dict[key] =get_edge_metadata(graph, u,v)
-
-
-
-with open(f"edge_dict_res{n}.json", "w") as f:
-    json.dump(edge_dict, f)
-
-
-# TODO: for every resolution in (80,161,20), faccio un dizionario di edges
-
-# per ciascuna risoluzione, creo anche degli scenari, trovando almeno un nodo acqua, 
-# almeno uno alto, almeno uno con vari ostacoli, almeno uno con tanta distanza, etc
-
-# NB: normalizzo i valori nella mia funzione evaluate (max_normalization, dove max_distance è resolution-specific)
-# così è più robusta
 
