@@ -50,10 +50,10 @@ def protected_pow(n1, n2):
     if n1 == 0:
         return 0
     try:
-        base = np.abs(n1)
-        exponent = np.clip(n2, -5, 5)
+        base = float(np.abs(n1))
+        exponent = np.clip(float(n2), -5, 5)
         return np.power(base, exponent)
-    except OverflowError: 
+    except (OverflowError, ValueError): 
         return 1e10
 
 def if_then_else(condition, out1, out2):
@@ -143,18 +143,12 @@ toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
 
 # limit bloating
 
-toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 7))
-toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 7))
+toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
+toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
 
 # to include both type of mutation
 
 toolbox.register("mutate", mutate_combined)
-
-# scenarios # hand-picked based on the chosen resolution
-
-# nodes_with_water = [(15,36), (862, 1177), (2800, 3040)] #water in-between
-# nodes_different_altitude = [(110,912), (159, 868), (793, 6046)] #from mountains to plains or viceversa
-# nodes_through_obstacles = [(2996, 2214), (2586, 3615), (1837, 3821)] #some water and heights to go through
 
 def evaluate(individual, graph, scenarios):
     func = toolbox.compile(expr=individual)  
@@ -228,37 +222,42 @@ def evaluate(individual, graph, scenarios):
 # algorithm run
 def main():
     all_logs = []
-    pop = toolbox.population(n = 10)
+    pop = toolbox.population(n = 20)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("std", np.std)
     stats.register("min", np.min)
     stats.register("max", np.max)
-    hof = tools.HallOfFame(10, similar=operator.eq)
-    scenario_dur = 10
+    hof = tools.HallOfFame(5, similar=operator.eq)
+    scenario_dur = 5
+    print(f"Evolving the cost function across {runs*scenario_dur} generations divided into {runs} {scenario_dur}-generation runs")
     # vs overfitting: we update the scenarios every 10 generations
-    for i in range(0, runs):
+    for i in range(runs):
         current_scenario = [el[i] for el in scenarios]
         toolbox.register("evaluate", evaluate, graph = graph, scenarios = current_scenario)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, 
                                     ngen=scenario_dur, stats=stats, halloffame=hof, verbose=False)
-        print(f"Scenario {i} complete.")
+        print(f"{i+1}° run complete.")
+        print(log)
         all_logs.append(log)
         
     return pop, stats, hof
 
 if __name__ == "__main__":
-
-
     ret = main()
     for i in range(len(ret[2])):
         tree_plotter(ret[2][i], f"{i+1}._best_tree")
+    best = ret[2][0]
+    print(gp.PrimitiveTree(best))
+    with open("best_tree.txt", "w") as f:
+        f.write(str(best))
+    print("The best individual has been saved")
 
-    # TODO: salvo best tree
-
-    # TODO: da tree a funzione
+    # TODO: plottare logs
+    # TODO: registrare total running time per resolution, population size, generations, etc.
+    # TODO: finetuning
 
 
         

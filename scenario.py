@@ -6,9 +6,9 @@ import matplotlib as mpl
 
 # two nodes are directly connected IF:
 #   - their edge number is +-1 (i.e., vertically connected)
-#   - their edge number is +-80 (i.e., horizontally connected)
-#   - their edge number is +-81 (i.e., diagonally, on the SW-NE axis)
-#   - their edge number is +-79 (i.e., diagonally, on the NW-SE axis)
+#   - their edge number is +-res (i.e., horizontally connected)
+#   - their edge number is +- res+1 (i.e., diagonally, on the SW-NE axis)
+#   - their edge number is +- res-1 (i.e., diagonally, on the NW-SE axis)
 
 # I want my function to loop through all nodes AND find n lists of tuples with:
 # -  two connected water nodes and a non-connected node that is linearly reachable only going through water
@@ -81,19 +81,39 @@ def generate_scenarios(runs, graph, res):
         water_choice = random.choice(water)[0] # number between 0 and res^2-1 (included)
         q = random.random()
         if water_choice in quad1 or water_choice in quad4:
-            taken.append(water_choice-res)
-            taken.append(water_choice + (res*(res//2)-1))
+            n = water_choice -res
+            while n in taken:
+                n -= res
+                if n <0:
+                    n = random.choice(water)[0] - res
+                if n > res*res-1:
+                    n = random.choice(water)[0] - res
+            taken.append(n)
+            f = n + res*(res//2)
+            while f in taken:
+                f += res
+            taken.append(f)
             if q <0.5:
-                water_couples.append((water_choice-res, water_choice + (res*(res//2)-1)))
+                water_couples.append((n, f))
             else:
-                water_couples.append((water_choice + (res*(res//2)-1), water_choice-res))
+                water_couples.append((f, n))
         else:
-            taken.append(water_choice+res)
-            taken.append(water_choice - (res*(res//2)-1))
+            n = water_choice + res
+            while n in taken:
+                n += res
+                if n <0:
+                    n = random.choice(water)[0] + res
+                if n > res*res-1:
+                    n = random.choice(water)[0] + res 
+            taken.append(n)
+            f = n - res*(res//2)
+            while f in taken:
+                f -= res
+            taken.append(f)
             if q < 0.5:
-                water_couples.append((water_choice+res, water_choice - (res*(res//2)-1)))
+                water_couples.append((n, f))
             else:
-                water_couples.append((water_choice - (res*(res//2)-1), water_choice+res))
+                water_couples.append((f, n))
         r = random.random()
         if r<0.5:
             quad1_left = quad1[:res*res//16] # to ensure max distance, I want to pick numbers on the leftmost part of the quadrant
@@ -139,8 +159,6 @@ def visualize_scenarios(graph,scenario, runs,
             )
         if draw_labels:
             nx.draw_networkx_labels(graph, graph.node_to_pos, labels=labels)
-
-
         water_nodes = [n for n, d in graph.nodes(data=True) if d.get('is_water')]
         nx.draw_networkx_nodes(
             graph, pos,
@@ -163,7 +181,7 @@ def visualize_scenarios(graph,scenario, runs,
         plt.show()
 
 if __name__ == "__main__":
-    res = 80
+    res = 100
     tif_path = "trentino.tif"
     osm_path = "trentino_alto_adige.pbf"
     graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)

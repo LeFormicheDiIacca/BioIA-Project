@@ -3,11 +3,6 @@ import json
 from terraingraph import create_graph
 
 
-n = 80
-tif_path = "trentino.tif"
-osm_path = "trentino_alto_adige.pbf"
-graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=n)
-
 def get_edge_metadata(G, u, v):
     
     node_u = G.nodes[u]
