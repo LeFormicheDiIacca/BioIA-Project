@@ -35,8 +35,8 @@ def generate_scenarios(runs, graph, res):
             quad2.append(x2[i]+j) # second quadrant, SE
             quad3.append(x2[i]+res//2+j) # third quadrant, NE
             quad4.append(x1[i]+res//2+j) # fourth quadrant, NW
-    water = list()
     taken = list()
+    water = list()
     high = list()
     low = list()
     # first for robustness I give priority to water nodes that are close to each other (more difficult to avoid)
@@ -119,19 +119,36 @@ def generate_scenarios(runs, graph, res):
             quad1_left = quad1[:res*res//16] # to ensure max distance, I want to pick numbers on the leftmost part of the quadrant
             quad3_right = quad3[-res*res//16:] # on the rightmost part of the quadrant
             s = random.random()
+            rand1 = random.choice(quad1_left)
+            while rand1 in taken:
+                rand1 = random.choice(quad1_left)
+            rand3 = random.choice(quad3_right)
+            while rand3 in taken:
+                rand3 = random.choice(quad3_right)
+            taken.append(rand1)
+            taken.append(rand3)
             if s < 0.5:
-                distant_couples.append((random.choice(quad1_left), random.choice(quad3_right)))
+                distant_couples.append((rand1, rand3))
             else:
-                distant_couples.append((random.choice(quad3_right), random.choice(quad1_left)))
+                distant_couples.append((rand3, rand1))
         else:
             quad4_left = quad4[:res*res//16]
             quad2_right = quad2[-res*res//16:]
             t = random.random()
+            rand2 = random.choice(quad2_right)
+            while rand2 in taken:
+                rand2 = random.choice(quad2_right)
+            rand4 = random.choice(quad4_left)
+            while rand4 in taken:
+                rand4 = random.choice(quad4_left)
+            taken.append(rand2)
+            taken.append(rand4)
             if t < 0.5:
-                distant_couples.append((random.choice(quad2_right), random.choice(quad4_left)))
+                distant_couples.append((rand2, rand4))
             else:
-                distant_couples.append((random.choice(quad4_left), random.choice(quad2_right)))
+                distant_couples.append((rand4, rand2))
     scenarios = [water_couples, elevation_couples, distant_couples]
+    visualize_scenarios(graph, scenarios, runs, dpi = 200)
     return scenarios
 
 def visualize_scenarios(graph,scenario, runs,

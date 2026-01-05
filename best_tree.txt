@@ -1,1 +1,0 @@
-if_then_else(is_water, protected_log(mul(distance, elevation_v), elevation_u), mul(steepness, steepness))
