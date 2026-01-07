@@ -4,6 +4,9 @@ import random
 import networkx as nx
 import numpy as np
 import multiprocessing
+
+from scipy.sparse import csr_matrix
+
 from terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
@@ -74,18 +77,20 @@ toolbox.register("mutate", mutate_combined)
 
 # fitness function
 
-def evaluate(individual, graph, scenarios, edge_dict, node_list, node_to_idx):
+def evaluate(individual, scenarios, edge_dict, node_list, node_to_idx, edge_features, col_idx, row_idx):
     func = toolbox.compile(expr=individual)  
     # add edge cost
-    for u, v in graph.edges():
-        u_ordered, v_ordered = min(u,v), max(u,v)
-        data = edge_dict[f"{u_ordered}-{v_ordered}"]
-        result = func(*data)
-        if isinstance(result, complex):
-            result = result.real
-        graph[u][v]['cost'] = max(float(result), 0.001)
-    
-    adj_matrix = nx.to_scipy_sparse_array(graph, weight='cost', nodelist=node_list)
+    try:
+        costs = np.array([func(*features) for features in edge_features])
+        costs = np.where(np.isreal(costs), np.real(costs), costs.real)
+        costs = np.maximum(costs, 0.001)
+    except:
+        return 1e9
+    adj_matrix = csr_matrix(
+        (np.concatenate([costs, costs]),
+         (np.concatenate([row_idx, col_idx]), np.concatenate([col_idx, row_idx]))),
+        shape=(len(node_list), len(node_list))
+    )
     total_penalty = 0
     grouped_scenarios = defaultdict(list)
     for s, e in scenarios:
@@ -117,17 +122,16 @@ def evaluate(individual, graph, scenarios, edge_dict, node_list, node_to_idx):
                 curr = predecessors[curr]
             path = [node_list[i] for i in reversed(path_idxs)]
 
-            # 4. Path Evaluation (Vectorized if possible)
-            # Use your existing penalty logic here...
+            #Path Evaluation (Vectorized if possible)
             for i in range(len(path)-1):
                 u, v = path[i], path[i+1]
                 u_ord, v_ord = (u,v) if u < v else (v,u)
                 d, incl, e_u, e_v, water = edge_dict[f"{u_ord}-{v_ord}"]
-                
+
                 elev_diff = max(e_v - e_u, 0)
                 coeff = np.array([1, dynamic_penalty(incl)*d, 10, 5000])
                 current_scen = np.array([d, incl, elev_diff, water])
-                total_penalty += np.vdot(coeff, current_scen) 
+                total_penalty += np.vdot(coeff, current_scen)
     
     string_tree = str(individual)
     required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
@@ -157,12 +161,27 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
     mstats = tools.MultiStatistics(fitness=stats_fit)
     hof = tools.HallOfFame(5, similar=operator.eq)
     # vs overfitting: we update the scenarios every 10 generations
-    all_logs = list()
     node_list = list(graph.nodes())
     node_to_idx = {node: i for i, node in enumerate(node_list)}
+    edge_features = []
+    for u, v in graph.edges():
+        u_ordered, v_ordered = min(u, v), max(u, v)
+        edge_key = f"{u_ordered}-{v_ordered}"
+        features = edge_dict[edge_key]
+        edge_features.append(features)
+
+    row_idx = [node_to_idx[u] for u, v in graph.edges()]
+    col_idx = [node_to_idx[v] for u, v in graph.edges()]
+
+    edge_features = np.array(edge_features)
     for i in range(runs):
+        print(f"Starting run {i+1}°")
+        start = time.time()
         current_scenario = [el[i] for el in scenarios]
-        toolbox.register("evaluate", evaluate, graph = graph, scenarios = current_scenario, edge_dict=edge_dict, node_list = node_list, node_to_idx = node_to_idx)
+        toolbox.register("evaluate", evaluate, scenarios = current_scenario,
+                         edge_dict=edge_dict, node_list = node_list, node_to_idx = node_to_idx,
+                         edge_features = edge_features,
+                         row_idx = row_idx, col_idx = col_idx)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, 
@@ -192,7 +211,11 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
 
         all_logs.append(flattened_log)
         print(log)
-        print(f"{i+1}° run completed.")    
+        end = time.time()
+        diff = end - start
+        hours, tmp = divmod(diff, 3600)
+        minutes, seconds = divmod(tmp, 60)
+        print(f"{i+1}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
     return pop, hof, all_logs
 
 # main function to run, executes the code and saves logs
@@ -201,10 +224,14 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     scenarios = generate_scenarios(runs, graph, res)
     print(f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     start = time.time()
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count() - 1)
+    toolbox.register("map", pool.map)
     ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur)
     end = time.time()
     diff = end-start
-    print("EA runtime: ", round(diff/60, 2), " minutes")
+    hours, tmp = divmod(diff, 3600)
+    minutes, seconds = divmod(tmp, 60)
+    print(f"EA runtime: {hours} hours {minutes} minutes {seconds} seconds")
     pop = ret[0]
     logs = ret[2]
     best = ret[1][0]
@@ -227,10 +254,10 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
 
 if __name__ == "__main__":
     to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
+    res = 100
+    graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", res)
+    edge_dict = create_edge_dict(graph)
     for el in to_try:
-        res = 160
-        graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
-        edge_dict = create_edge_dict(graph)
         main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
              
 
