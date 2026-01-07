@@ -129,10 +129,10 @@ def generate_scenarios(runs, graph, res):
                 finish = quad3_right.pop()    
             taken.add(finish) 
         else:
-            while start in taken and quad1_left:
+            while start in taken and quad4_left:
                 start = quad4_left.pop()
             taken.add(start)
-            while finish in taken and quad3_right:
+            while finish in taken and quad2_right:
                 finish = quad2_right.pop()    
             taken.add(finish) 
         couple = [start, finish]
