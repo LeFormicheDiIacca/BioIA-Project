@@ -109,7 +109,7 @@ pset.addPrimitive(if_then_else, [WaterArg, OtherArgs, OtherArgs], OtherArgs)
 pset.addPrimitive(identity_water, [WaterArg], WaterArg)
 pset.addEphemeralConstant("constant", random_gen, ret_type=OtherArgs)
 
-creator.create("FitnessMin", base.Fitness, weights = (-1.0,-1.0))
+creator.create("FitnessMin", base.Fitness, weights = (-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness = creator.FitnessMin, pset = pset)
 
 # define main functions
@@ -121,8 +121,8 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
 # if your pc allows it, parallelize! (mine doesn't lololol)
-# pool = multiprocessing.Pool()
-# toolbox.register("map", pool.map)
+pool = multiprocessing.Pool()
+toolbox.register("map", pool.map)
 
 # genetic operators
 
@@ -159,7 +159,8 @@ def evaluate(individual, graph, scenarios, edge_dict):
     for u, v in graph.edges():
         u_ordered, v_ordered = min(u,v), max(u,v)
         d, incl, e_u, e_v, water = edge_dict[f"{u_ordered}-{v_ordered}"]
-        # max normalization of inputs 
+
+        # max normalization of inputs # more robust in front of varying resolution
         incl = incl/max_incl
         d = d/max_d
         e_u = e_u/max_elev
@@ -214,8 +215,7 @@ def evaluate(individual, graph, scenarios, edge_dict):
     # since it does not make sense to have multiple if_counts, the water evaluation must be made only once per node
     if if_counts > 1:
         total_penalty += 100000
-    complexity = len(individual)
-    return total_penalty, complexity
+    return total_penalty,
 
 
 # algorithm-running function
@@ -232,10 +232,10 @@ def run_EA(population, runs, scenario_dur, res):
     stats_fit.register("std", np.std)
     stats_fit.register("min", np.min)
     stats_fit.register("max", np.max)
-    # for info about the complexity of the evolved trees
-    stats_size = tools.Statistics(key = len)
-    stats_size.register("avg", np.mean)
-    mstats = tools.MultiStatistics(fitness = stats_fit, size = stats_size)
+    # # for info about the complexity of the evolved trees
+    mstats = tools.MultiStatistics(fitness=stats_fit)
+    # stats_size = tools.Statistics(key = len)
+    # stats_size.register("avg", np.mean)
     hof = tools.HallOfFame(5, similar=operator.eq)
     print(f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     # vs overfitting: we update the scenarios every 10 generations
@@ -256,7 +256,7 @@ def run_EA(population, runs, scenario_dur, res):
         fit_max = log.chapters["fitness"].select("max")
         fit_std = log.chapters["fitness"].select("std")
         fit_min = log.chapters["fitness"].select("min")
-        size_avg = log.chapters["size"].select("avg")
+        #size_avg = log.chapters["size"].select("avg")
 
         # Reconstruct the list of dictionaries
         for i_gen in range(len(gens)):
@@ -266,8 +266,8 @@ def run_EA(population, runs, scenario_dur, res):
                 'fit_avg': fit_avg[i_gen],
                 'fit_max': fit_max[i_gen],
                 'fit_min' : fit_min[i_gen],
-                'fit_std' : fit_std[i_gen],
-                'size_avg': size_avg[i_gen]
+                'fit_std' : fit_std[i_gen]
+                #'size_avg': size_avg[i_gen]
             }
             flattened_log.append(entry)
 
@@ -277,17 +277,18 @@ def run_EA(population, runs, scenario_dur, res):
     end = time.time()
     diff = end-start
     print("EA runtime: ", round(diff/60, 2), " minutes")    
-    return pop, mstats, hof, all_logs, diff
+    return pop, hof, all_logs, diff
 
 # save runtime info
 
 def main(population, runs, scenario_dur = 10, res = 80):
     ret = run_EA(population, runs, scenario_dur, res)
-    logs = ret[3]
-    diff = ret[4]
-    best = ret[2][0]
+    pop = ret[0]
+    logs = ret[2]
+    diff = ret[3]
+    best = ret[1][0]
     try:
-        tree_plotter(best, f"pop{population}_run{runs}_best_tree")
+        tree_plotter(best, f"pop{population}_run{runs}_res{res}_best_tree")
     except Exception as e:
         print(f"Could not plot tree: {e}")
     tree_diz = dict()
@@ -301,6 +302,19 @@ def main(population, runs, scenario_dur = 10, res = 80):
     tree_diz["logs"] = logs
     append_to_json(tree_diz)
     print("The best individual has been saved")
+    pop_logs = list()
+    for tree in pop:
+        i = 1
+        pop_diz = dict()
+        pop_diz["id"] = i
+        pop_diz["fitness"] = float(tree.fitness.values[0])
+        pop_diz["size"] = len(tree)
+        pop_logs.append(pop_diz)
+        i +=1
+    with open("pop_info.json", "w") as f:
+        json.dump(pop_logs, f)
+    print("The population has been stored")
+    
 
 # adds new data to a json file for finetuning
 
@@ -317,9 +331,9 @@ def append_to_json(new_data):
 
 
 if __name__ == "__main__":
-    to_try = [[50,3], [50, 5], [100,3], [100,5]]
+    to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
     for el in to_try:
-        main(el[0], el[1])
+        main(el[0], el[1], res=160)
 
 
 

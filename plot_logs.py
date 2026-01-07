@@ -2,10 +2,10 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 with open("tree_diz.json", "r") as f:
     trees = json.load(f)
 logs = list()
+
 
 for el in trees:
     el = el["logs"]
@@ -46,8 +46,21 @@ def plot_logs(pop, runs, df_logs = df_logs, res = 80, scenario_dur = 10 ):
     plt.show()
     plt.savefig(f"log_figs/log_{gen}_gen_res_{res}_pop_{pop}.png")
 
-to_try = [[50,3], [50, 5], [100,3], [100,5]]
-for el in to_try:
-    plot_logs(el[0], el[1])
+# to_try = [[50,3], [50, 5], [100,3], [100,5]]
+# for el in to_try:
+#     plot_logs(el[0], el[1])
 
+with open("pop_info.json") as f:
+    pop_info = json.load(f)
+pop_df = pd.DataFrame(pop_info)
+print(pop_df)
+def plot_pop(pop_info):
+    fig, ax = plt.subplots(figsize = (20,20))
+    ax.scatter(pop_info["size"], pop_info["fitness"], color = "red")
+    ax.set_xlabel("Number of nodes in the tree")
+    ax.set_ylabel("Tree fitness")
+    ax.set_title("Fitness by size")
+    plt.savefig(f"log_figs/fitness_by_size.png")
+    plt.show()
 
+plot_pop(pop_df)

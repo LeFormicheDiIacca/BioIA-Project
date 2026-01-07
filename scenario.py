@@ -148,7 +148,7 @@ def generate_scenarios(runs, graph, res):
             else:
                 distant_couples.append((rand4, rand2))
     scenarios = [water_couples, elevation_couples, distant_couples]
-    visualize_scenarios(graph, scenarios, runs, dpi = 200)
+    #visualize_scenarios(graph, scenarios, runs, dpi = 200)
     return scenarios
 
 def visualize_scenarios(graph,scenario, runs,
