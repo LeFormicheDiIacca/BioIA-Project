@@ -243,12 +243,12 @@ class MeshGraph(nx.Graph):
         return True
 
     def cost_normalization(self):
-        all_costs = [data["cost"] for u, v, data in self.edges(data=True)]
-        for v in self.nodes():
-            for u in self[v]:
-                cost = self[v][u]['cost']
-                min_cost = min(all_costs)
-                max_cost = max(all_costs)
-                cost_range = max_cost - min_cost
-                normalized_cost = 1 + 9 * (cost - min_cost) / (cost_range + 1e-6)
-                self[v][u]['cost'] = normalized_cost
+        all_costs = np.array([data["cost"] for u, v, data in self.edges(data=True)])
+
+        min_cost = all_costs.min()
+        max_cost = all_costs.max()
+        cost_range = max_cost - min_cost
+        normalized_costs = 1 + 9 * (all_costs - min_cost) / (cost_range + 1e-6)
+
+        for (u, v, data), norm_cost in zip(self.edges(data=True), normalized_costs):
+            data['cost'] = norm_cost
