@@ -1,93 +1,17 @@
 from deap import base, creator, gp, tools, algorithms
 import operator
-import math
 import random
-from functools import partial
 import networkx as nx
 import numpy as np
 import multiprocessing
 from terraingraph import create_graph
-import pydot 
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
 import json
 import time
-import os
-
-def protected_div(n1, n2):
-    if isinstance(n1, complex):
-        n1 = n2.real
-    if isinstance(n2, complex):
-        n2 = n2.real
-    if n2 == 0:
-        return 0
-    else:
-        return n1/n2
-    
-def protected_log(x, base):
-    if isinstance(x, complex):
-        x = x.real
-    if isinstance(base, complex):
-        base = base.real
-    if x > 0 and base > 0 and base!=1:
-        return math.log(x, base)
-    else:
-        return 1
-
-def protected_pow(n1, n2):
-    if isinstance(n1, complex):
-        n1 = n2.real
-    if isinstance(n2, complex):
-        n2 = n2.real
-    if n1 == 0:
-        return 0
-    try:
-        base = float(np.abs(n1))
-        exponent = np.clip(float(n2), -5, 5)
-        return np.power(base, exponent)
-    except (OverflowError, ValueError): 
-        return 1e10
-
-def if_then_else(condition, out1, out2):
-    return np.where(condition > 0.5, out1, out2) 
-
-def identity_water(x):
-    return x
-
-def dynamic_penalty(inclination):
-    if inclination >= round(30/90, 4): # if normalized inclination is more than 1/3 (= aka inclination is >=30%)
-        return 50000*inclination
-    else:
-        return 5*inclination
-
-def round_random(a,b):
-    return round(random.uniform(a,b), 3)
-random_gen = partial(round_random, 0,10)
-
-def mutate_combined(individual):
-    if random.random() < 0.7:
-        return toolbox.mutate_unif(individual)
-    else:
-        return toolbox.mutate_eph(individual)
-
-def tree_plotter(tree, title):
-    nodes, edges, labels = gp.graph(tree)
-    f = "digraph G {\n"
-    f += "    size=\"20,20\";\n"  
-    f += "    dpi=300;\n"          
-    f += "    labelloc=\"t\";\n"    
-    f += f"    label=\"{title}\n\\n\";\n"
-    f += "    labelloc = \"t\";\n"
-    f += "    size = \"20,20\";\n"
-    f += "    dpi = 300;\n"     
-    for node in nodes:
-        f += f'    {node} [label="{labels[node]}", shape=ellipse, style=filled, fillcolor=white, fontname="Arial", fixedsize=false, margin=0.2];\n'
-    for edge in edges:
-        f += f"    {edge[0]} -> {edge[1]};\n"
-    f += "}"
-    graphs = pydot.graph_from_dot_data(f)
-    graph = graphs[0]
-    graph.write_png(f"hof/{title}.png")
+from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, append_to_json, dynamic_penalty, random_gen
+from collections import defaultdict
+from scipy.sparse.csgraph import dijkstra
 
 # define primitive set
 
@@ -121,8 +45,8 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
 # if your pc allows it, parallelize! (mine doesn't lololol)
-pool = multiprocessing.Pool()
-toolbox.register("map", pool.map)
+# pool = multiprocessing.Pool()
+# toolbox.register("map", pool.map)
 
 # genetic operators
 
@@ -138,71 +62,72 @@ toolbox.decorate("mate", gp.staticLimit(len, max_value= 15))
 toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
 toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value= 15))
 
-
 # to include both type of mutation
+
+def mutate_combined(individual):
+    if random.random() < 0.7:
+        return toolbox.mutate_unif(individual)
+    else:
+        return toolbox.mutate_eph(individual)
 
 toolbox.register("mutate", mutate_combined)
 
 # fitness function
 
-def evaluate(individual, graph, scenarios, edge_dict):
+def evaluate(individual, graph, scenarios, edge_dict, node_list, node_to_idx):
     func = toolbox.compile(expr=individual)  
     # add edge cost
-    max_d = 0
-    max_incl = 90
-    max_elev = 0
-    for el in edge_dict.values():
-        if el[0] > max_d: max_d = el[0]
-        current_max_e = el[2] if el[2] > el[3] else el[3]
-        if current_max_e > max_elev:
-            max_elev = current_max_e
     for u, v in graph.edges():
         u_ordered, v_ordered = min(u,v), max(u,v)
-        d, incl, e_u, e_v, water = edge_dict[f"{u_ordered}-{v_ordered}"]
-
-        # max normalization of inputs # more robust in front of varying resolution
-        incl = incl/max_incl
-        d = d/max_d
-        e_u = e_u/max_elev
-        e_v = e_v/max_elev
-        result = func(d, incl, e_u, e_v, water)
+        data = edge_dict[f"{u_ordered}-{v_ordered}"]
+        result = func(*data)
         if isinstance(result, complex):
             result = result.real
         graph[u][v]['cost'] = max(float(result), 0.001)
     
+    adj_matrix = nx.to_scipy_sparse_array(graph, weight='cost', nodelist=node_list)
     total_penalty = 0
+    grouped_scenarios = defaultdict(list)
+    for s, e in scenarios:
+        grouped_scenarios[s].append(e)
     
     # check the formula for each scenario
-    for start_node, end_node in scenarios:
-        try:
-            # finds shortest path using dijkstra
-            path = nx.shortest_path(graph, source=start_node, target=end_node, weight='cost')
+    for start_node, end_nodes in grouped_scenarios.items():
+        start_idx = node_to_idx[start_node]
+        dist_matrix, predecessors = dijkstra(
+            csgraph=adj_matrix, 
+            directed=False, 
+            indices=start_idx, 
+            return_predecessors=True
+        )
+
+        for end_node in end_nodes:
+            end_idx = node_to_idx[end_node]
             
-            # computes the quality of the path in real world metrics
-            real_dist = 0
-            water_nodes = 0
-            elev_gain = 0
-            total_incl = 0
+            if dist_matrix[end_idx] == np.inf:
+                total_penalty += 1000000
+                continue
             
+            # Reconstruct Path using the Predecessor Array (Much faster than nx)
+            path_idxs = []
+            curr = end_idx
+            while curr != -9999: # -9999 is the default for 'no predecessor'
+                path_idxs.append(curr)
+                if curr == start_idx: break
+                curr = predecessors[curr]
+            path = [node_list[i] for i in reversed(path_idxs)]
+
+            # 4. Path Evaluation (Vectorized if possible)
+            # Use your existing penalty logic here...
             for i in range(len(path)-1):
                 u, v = path[i], path[i+1]
-                u_ordered, v_ordered = min(u,v), max(u,v)
-                d, incl, e_u, e_v, water = edge_dict[f"{u_ordered}-{v_ordered}"]
+                u_ord, v_ord = (u,v) if u < v else (v,u)
+                d, incl, e_u, e_v, water = edge_dict[f"{u_ord}-{v_ord}"]
                 
-                real_dist += d/max_d
-                water_nodes += water #1.0 or 0.0
-                total_incl += dynamic_penalty(incl/max_incl)*d/max_d # very high inclination (>= 30) is dramatically penalized; considers 
-                                                      # distance as the longer the inclined edge, the worse it is
-                if e_v > e_u:
-                    elev_gain += (e_v - e_u)/max_elev            
-            
-            # penalty formula, coefficients just represent the relative weight of each feature 
- 
-            total_penalty += real_dist + (elev_gain * 10) + (water_nodes * 5000) + total_incl
-            
-        except nx.NetworkXNoPath:
-            # no path
-            total_penalty += 1000000 
+                elev_diff = max(e_v - e_u, 0)
+                coeff = np.array([1, dynamic_penalty(incl)*d, 10, 5000])
+                current_scen = np.array([d, incl, elev_diff, water])
+                total_penalty += np.vdot(coeff, current_scen) 
     
     string_tree = str(individual)
     required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
@@ -220,10 +145,7 @@ def evaluate(individual, graph, scenarios, edge_dict):
 
 # algorithm-running function
 
-def run_EA(population, runs, scenario_dur, res):
-    graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
-    edge_dict = create_edge_dict(graph)
-    scenarios = generate_scenarios(runs, graph, res)
+def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
     all_logs = []
     pop = toolbox.population(n = population)
     # for info about fitness of the evolved trees
@@ -232,18 +154,15 @@ def run_EA(population, runs, scenario_dur, res):
     stats_fit.register("std", np.std)
     stats_fit.register("min", np.min)
     stats_fit.register("max", np.max)
-    # # for info about the complexity of the evolved trees
     mstats = tools.MultiStatistics(fitness=stats_fit)
-    # stats_size = tools.Statistics(key = len)
-    # stats_size.register("avg", np.mean)
     hof = tools.HallOfFame(5, similar=operator.eq)
-    print(f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     # vs overfitting: we update the scenarios every 10 generations
     all_logs = list()
-    start = time.time()
+    node_list = list(graph.nodes())
+    node_to_idx = {node: i for i, node in enumerate(node_list)}
     for i in range(runs):
         current_scenario = [el[i] for el in scenarios]
-        toolbox.register("evaluate", evaluate, graph = graph, scenarios = current_scenario, edge_dict=edge_dict)
+        toolbox.register("evaluate", evaluate, graph = graph, scenarios = current_scenario, edge_dict=edge_dict, node_list = node_list, node_to_idx = node_to_idx)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, 
@@ -273,19 +192,21 @@ def run_EA(population, runs, scenario_dur, res):
 
         all_logs.append(flattened_log)
         print(log)
-        print(f"{i+1}° run completed.")
+        print(f"{i+1}° run completed.")    
+    return pop, hof, all_logs
+
+# main function to run, executes the code and saves logs
+
+def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
+    scenarios = generate_scenarios(runs, graph, res)
+    print(f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
+    start = time.time()
+    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur)
     end = time.time()
     diff = end-start
-    print("EA runtime: ", round(diff/60, 2), " minutes")    
-    return pop, hof, all_logs, diff
-
-# save runtime info
-
-def main(population, runs, scenario_dur = 10, res = 80):
-    ret = run_EA(population, runs, scenario_dur, res)
+    print("EA runtime: ", round(diff/60, 2), " minutes")
     pop = ret[0]
     logs = ret[2]
-    diff = ret[3]
     best = ret[1][0]
     try:
         tree_plotter(best, f"pop{population}_run{runs}_res{res}_best_tree")
@@ -302,40 +223,20 @@ def main(population, runs, scenario_dur = 10, res = 80):
     tree_diz["logs"] = logs
     append_to_json(tree_diz)
     print("The best individual has been saved")
-    pop_logs = list()
-    for tree in pop:
-        i = 1
-        pop_diz = dict()
-        pop_diz["id"] = i
-        pop_diz["fitness"] = float(tree.fitness.values[0])
-        pop_diz["size"] = len(tree)
-        pop_logs.append(pop_diz)
-        i +=1
-    with open("pop_info.json", "w") as f:
-        json.dump(pop_logs, f)
-    print("The population has been stored")
     
-
-# adds new data to a json file for finetuning
-
-def append_to_json(new_data):
-    # 1. Check if file exists and isn't empty
-    if os.path.exists("tree_diz.json") and os.path.getsize("tree_diz.json") > 0:
-        with open("tree_diz.json", 'r') as f:
-            data = json.load(f)
-    else:
-        data = [] # Start with an empty list if file doesn't exist
-    data.append(new_data)
-    with open("tree_diz.json", 'w') as f:
-        json.dump(data, f, indent=4)
-
 
 if __name__ == "__main__":
     to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
-    for el in to_try:
-        main(el[0], el[1], res=160)
-
-
+    # for el in to_try:
+    #     res = 160
+    #     graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
+    #     edge_dict = create_edge_dict(graph)
+    #     main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
+             
+    res = 80
+    graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
+    edge_dict = create_edge_dict(graph)
+    main(10, 2, graph, edge_dict)
 
     # TODO: registrare total running time per resolution, population size, generations, etc.
     # TODO: finetuning

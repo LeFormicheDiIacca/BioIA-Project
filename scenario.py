@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib as mpl
+import numpy as np
 
 # two nodes are directly connected IF:
 #   - their edge number is +-1 (i.e., vertically connected)
@@ -20,133 +21,123 @@ def generate_scenarios(runs, graph, res):
     if res%2 != 0:
         res -=1 # it will exclude the last row on the left but it will work, at least
         print(f"Even number needed: a resolution of {res} will be considered")
+    
     res = int(res)
-    # let's divide the graph into quadrants to ensure points are distant enough
+    half = res//2
 
-    x1 = [num for num in range(0,res*(res//2 -1) +1,res)]
-    x2 = [num for num in range(res*(res)//2, res*(res-1)+1, res)]
-    quad1 = []
-    quad2 = []
-    quad3 = []
-    quad4 = []
-    for i in range(len(x1)):
-        for j in range(0, res//2):
-            quad1.append(x1[i]+j) # first quadrant, SW
-            quad2.append(x2[i]+j) # second quadrant, SE
-            quad3.append(x2[i]+res//2+j) # third quadrant, NE
-            quad4.append(x1[i]+res//2+j) # fourth quadrant, NW
-    taken = list()
-    water = list()
-    high = list()
-    low = list()
-    # first for robustness I give priority to water nodes that are close to each other (more difficult to avoid)
-    for u,v in graph.edges():
-        node_u = graph.nodes[u]
-        node_v = graph.nodes[v]
-        if node_u["is_water"] and node_v["is_water"]:
-            water.append((u,v))
-            taken.append(u)
-            taken.append(v)
-    for w in graph.nodes():
-        if w not in taken:
-            # if I don't have enough coupled water points, I consider the single ones
-            if len(water) < runs:
-                if graph.nodes[w]["is_water"]:
-                    water.append((w,))
-                    taken.append(w)
-            # I separate the remaining nodes based on elevation (don't care for water nodes)
-            elif graph.nodes[w]["elevation"] < 600:
-                low.append(w)
-            else:
-                high.append(w)  
+    # let's divide the graph into quadrants to ensure points are distant enough
+    x, y = np.indices((res, res))
+
+    # Mask for the SW quadrant (Quad 1)
+    mask1 = (x < half) & (y < half)
+    mask2 = (x >= half) & (y < half) 
+    mask3 = (x >= half) & (y>= half)
+    mask4 = (x < half) & (y >= half)
+
+    quad1_ind = np.where(mask1.flatten())[0]
+    quad2_ind = np.where(mask2.flatten())[0]
+    quad3_ind = np.where(mask3.flatten())[0]
+    quad4_ind = np.where(mask4.flatten())[0]
+
+    quad1 = set(quad1_ind.tolist())
+    quad2 = set(quad2_ind.tolist())
+    quad3 = set(quad3_ind.tolist())
+    quad4 = set(quad4_ind.tolist())
+
+    taken = set()
+    categories = {
+    "water": set(),
+    "low": set(),
+    "high": set()}
+
+    for node, data in graph.nodes(data=True):
+        if data.get("is_water"):
+            categories["water"].add(node)
+        elif data.get("elevation", 0) < 600:
+            categories["low"].add(node)
+        else:
+            categories["high"].add(node)
+
     # now I set the start and finish nodes for each type of route 
     elevation_couples = list() # high vs low
     water_couples = list() # easiest path crosses water
     distant_couples = list() # nodes that are far apart
+
+    low = list(categories["low"])
+    high = list(categories["high"])
+    water = list(categories["water"])
+    #random shuffle
+    random.shuffle(low)
+    random.shuffle(high)
+    random.shuffle(water)
     # I need as many scenario couples as the number of separate runs n
     for _ in range(runs): 
-        low = [x for x in low if x not in taken]
-        low_node = random.choice(low)
-        taken.append(low_node)
-        high_nodes = [n for n in graph.nodes() if (graph.nodes[n]["elevation"] - graph.nodes[low_node]["elevation"]) > 1000]
-        high_node = random.choice(high_nodes)
-        while high_node in taken:
-            high_node = random.choice(high_nodes)
-                # introduce stochastic ordering of items vs overfitting
-        p = random.random()
-        if p < 0.5:
-            elevation_couples.append((low_node, high_node))
+
+        # pick a low node and a high node
+        if not low or not high: break
+        start = low.pop()
+        while start in taken and low:
+            start = low.pop()
+        taken.add(start)
+        finish = high.pop()
+        while finish in taken and high:
+            finish = high.pop()
+        taken.add(finish)
+        elev_tuple = [start,finish]
+        random.shuffle(elev_tuple)
+        elevation_couples.append(tuple(elev_tuple))
+        
+        #pick a node nearby a water node and another one on the same line
+        wat1 = water.pop()
+        if wat1 in quad1 or wat1 in quad4:
+            while start in taken and water:
+                start = wat1 - res
+            taken.add(start)
+            while finish in taken and water:
+                finish = start + res*res//2
+            taken.add(finish)
         else:
-            elevation_couples.append((high_node, low_node))
-        water_choice = random.choice(water)[0] # number between 0 and res^2-1 (included)
-        q = random.random()
-        if water_choice in quad1 or water_choice in quad4:
-            n = water_choice -res
-            while n in taken:
-                n -= res
-                if n <0:
-                    n = random.choice(water)[0] - res
-                if n > res*res-1:
-                    n = random.choice(water)[0] - res
-            taken.append(n)
-            f = n + res*(res//2)
-            while f in taken:
-                f += res
-            taken.append(f)
-            if q <0.5:
-                water_couples.append((n, f))
-            else:
-                water_couples.append((f, n))
-        else:
-            n = water_choice + res
-            while n in taken:
-                n += res
-                if n <0:
-                    n = random.choice(water)[0] + res
-                if n > res*res-1:
-                    n = random.choice(water)[0] + res 
-            taken.append(n)
-            f = n - res*(res//2)
-            while f in taken:
-                f -= res
-            taken.append(f)
-            if q < 0.5:
-                water_couples.append((n, f))
-            else:
-                water_couples.append((f, n))
+            while start in taken and water:
+                start = wat1 + res
+            taken.add(start)
+            while finish in taken and water:
+                finish = start - res*res//2
+            taken.add(finish)
+        couple = [start,finish]
+        random.shuffle(couple)
+        water_couples.append(tuple(couple))
+        
+        # pick two nodes that are on the furthermost edges
+
+        quad1_left = quad1_ind[:res//10].tolist()
+        quad4_left = quad4_ind[:res//10].tolist()
+        quad2_right = quad2_ind[-res//10:].tolist()
+        quad3_right = quad2_ind[-res//10:].tolist()
+
+        random.shuffle(quad1_left)
+        random.shuffle(quad4_left)
+        random.shuffle(quad2_right)
+        random.shuffle(quad3_right)
+
         r = random.random()
-        if r<0.5:
-            quad1_left = quad1[:res*res//16] # to ensure max distance, I want to pick numbers on the leftmost part of the quadrant
-            quad3_right = quad3[-res*res//16:] # on the rightmost part of the quadrant
-            s = random.random()
-            rand1 = random.choice(quad1_left)
-            while rand1 in taken:
-                rand1 = random.choice(quad1_left)
-            rand3 = random.choice(quad3_right)
-            while rand3 in taken:
-                rand3 = random.choice(quad3_right)
-            taken.append(rand1)
-            taken.append(rand3)
-            if s < 0.5:
-                distant_couples.append((rand1, rand3))
-            else:
-                distant_couples.append((rand3, rand1))
+
+        if r< 0.5:
+            while start in taken and quad1_left:
+                start = quad1_left.pop()
+            taken.add(start)
+            while finish in taken and quad3_right:
+                finish = quad3_right.pop()    
+            taken.add(finish) 
         else:
-            quad4_left = quad4[:res*res//16]
-            quad2_right = quad2[-res*res//16:]
-            t = random.random()
-            rand2 = random.choice(quad2_right)
-            while rand2 in taken:
-                rand2 = random.choice(quad2_right)
-            rand4 = random.choice(quad4_left)
-            while rand4 in taken:
-                rand4 = random.choice(quad4_left)
-            taken.append(rand2)
-            taken.append(rand4)
-            if t < 0.5:
-                distant_couples.append((rand2, rand4))
-            else:
-                distant_couples.append((rand4, rand2))
+            while start in taken and quad1_left:
+                start = quad4_left.pop()
+            taken.add(start)
+            while finish in taken and quad3_right:
+                finish = quad2_right.pop()    
+            taken.add(finish) 
+        couple = [start, finish]
+        random.shuffle(couple)
+        distant_couples.append(tuple(couple))
     scenarios = [water_couples, elevation_couples, distant_couples]
     #visualize_scenarios(graph, scenarios, runs, dpi = 200)
     return scenarios
