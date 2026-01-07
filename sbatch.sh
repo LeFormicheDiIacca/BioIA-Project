@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH -p short
+#SBATCH -n 1
 #SBATCH -c 8
 #SBATCH -N 1
 #SBATCH -t 0-00:15
