@@ -4,6 +4,7 @@
 #SBATCH -c 8
 #SBATCH -N 1
 #SBATCH -t 0-00:15
+#SBATCH --gres=gpu:0
 
 source /home/${USER}/.bashrc
 source activate py313
