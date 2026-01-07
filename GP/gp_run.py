@@ -1,16 +1,14 @@
 from deap import base, creator, gp, tools, algorithms
 import operator
 import random
-import networkx as nx
 import numpy as np
 import multiprocessing
 
 from scipy.sparse import csr_matrix
 
-from terraingraph import create_graph
+from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
-import json
 import time
 from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, append_to_json, dynamic_penalty, random_gen
 from collections import defaultdict
@@ -254,8 +252,8 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
 
 if __name__ == "__main__":
     to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
-    res = 100
-    graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", res)
+    res = 150
+    graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
     for el in to_try:
         main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)

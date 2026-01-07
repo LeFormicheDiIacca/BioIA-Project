@@ -6,7 +6,7 @@ import numpy as np
 import fiona
 import warnings
 
-from meshgraph import MeshGraph
+from TerrainGraph.meshgraph import MeshGraph
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 

@@ -4,10 +4,10 @@ import time
 from pathlib import Path
 from ACO.ACO_simulator import ACO_simulator
 from cost_functions import test_cost_assignment
-from meshgraph import MeshGraph
-from sanity_check import weight_func
-from terraingraph import create_graph
-from path_render import visualize_paths
+from TerrainGraph.meshgraph import MeshGraph
+from GP.sanity_check import weight_func
+from TerrainGraph.terraingraph import create_graph
+from TerrainGraph.path_render import visualize_paths
 
 OUTPUT_FOLDER = "Results"
 FILENAME = "PathOutputs"
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", mesh_graph_parameters["resolution"])
+        mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"])
         mesh_graph.assign_key_nodes(key_nodes)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:

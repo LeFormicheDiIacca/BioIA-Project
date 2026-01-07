@@ -1,12 +1,6 @@
-
-import numpy as np
-import osmnx as ox
-import rasterio
 import matplotlib.pyplot as plt
 import networkx as nx
 import math
-
-from ACO.ACO_simulator import ACO_simulator
 
 
 def draw_graph_with_path(graph, path, title="Graph Visualization with Shortest Path"):
@@ -75,7 +69,7 @@ def draw_graph_with_path(graph, path, title="Graph Visualization with Shortest P
     plt.show()
 
 
-from terraingraph import create_graph
+from TerrainGraph.terraingraph import create_graph
 
 def heuristic(G, u, v):
     x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
@@ -102,7 +96,7 @@ if __name__ == '__main__':
     res = 1000
 
     print("Generating Graph...")
-    G = create_graph("trentino.tif","trentino_alto_adige.pbf",  resolution=res)
+    G = create_graph("../TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", resolution=res)
 
     print("Finding best path...")
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)

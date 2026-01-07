@@ -1,4 +1,4 @@
-from terraingraph import create_graph
+from TerrainGraph.terraingraph import create_graph
 import random
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -190,8 +190,8 @@ def visualize_scenarios(graph,scenario, runs,
 
 if __name__ == "__main__":
     res = 100
-    tif_path = "trentino.tif"
-    osm_path = "trentino_alto_adige.pbf"
+    tif_path = "../TerrainGraph/trentino.tif"
+    osm_path = "../TerrainGraph/trentino_alto_adige.pbf"
     graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)
     runs = 5
     scenarios = generate_scenarios(runs,graph,res= res)

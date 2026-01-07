@@ -3,7 +3,7 @@ import time
 import networkx as nx
 import numpy as np
 from numba import jit
-from meshgraph import MeshGraph
+from TerrainGraph.meshgraph import MeshGraph
 
 class Ant:
     """

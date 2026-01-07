@@ -8,7 +8,7 @@ from typing import List
 import numpy as np
 
 from ACO.Ant import Ant
-from meshgraph import MeshGraph
+from TerrainGraph.meshgraph import MeshGraph
 
 shared_pheromones_arrays = None
 
