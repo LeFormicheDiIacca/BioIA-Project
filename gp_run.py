@@ -227,16 +227,12 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
 
 if __name__ == "__main__":
     to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
-    # for el in to_try:
-    #     res = 160
-    #     graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
-    #     edge_dict = create_edge_dict(graph)
-    #     main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
+    for el in to_try:
+        res = 160
+        graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
+        edge_dict = create_edge_dict(graph)
+        main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
              
-    res = 80
-    graph = create_graph("trentino.tif","trentino_alto_adige.pbf", res)
-    edge_dict = create_edge_dict(graph)
-    main(10, 2, graph, edge_dict)
 
     # TODO: registrare total running time per resolution, population size, generations, etc.
     # TODO: finetuning
