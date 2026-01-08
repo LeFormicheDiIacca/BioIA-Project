@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:0
 
 source /home/${USER}/.bashrc
-source activate py313
+conda activate py313
 
 pip install -r requirements.txt
 python test.py
