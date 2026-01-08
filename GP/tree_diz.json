@@ -3819,5 +3819,2128 @@
                 }
             ]
         ]
+    },
+    {
+        "tree_object": "protected_log(elevation_u, neg(add(neg(distance), add(neg(elevation_v), if_then_else(is_water, elevation_v, steepness)))))",
+        "tree_fitness": [
+            143804.90584689562
+        ],
+        "population": 10,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 33.13063335418701,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 10,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": Infinity,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 5,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": Infinity,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 5,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": Infinity,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 3,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": Infinity,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 4,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 1227209.284327002,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 4,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 1227209.284327002,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 9,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 1227209.284327002,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 5,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 1227209.284327002,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 5,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 612297.2570953111,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 5,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 612297.2570953111,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 6,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 222234.6126302573,
+                    "fit_std": NaN
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 10,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 227507.85376297968,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 7,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 227507.85376297968,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 7,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 227507.85376297968,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 6,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 208679.22895859048,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 10,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 6,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 7,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 6,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 4,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 4,
+                    "fit_avg": 143804.90584689562,
+                    "fit_max": 143804.90584689562,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 6,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 143804.90584689562,
+                    "fit_std": NaN
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "protected_pow(add(neg(mul(elevation_v, distance)), add(neg(elevation_u), add(elevation_u, elevation_u))), mul(sub(protected_pow(elevation_u, elevation_v), mul(steepness, steepness)), protected_log(mul(elevation_v, elevation_v), if_then_else(identity_water(identity_water(identity_water(is_water))), elevation_u, elevation_v))))",
+        "tree_fitness": [
+            60071.16504571632
+        ],
+        "population": 10,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 55.41771459579468,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 10,
+                    "fit_avg": 870619.5932714457,
+                    "fit_max": 2218038.1170927305,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 652148.0348681061
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 5,
+                    "fit_avg": 276711.31587220903,
+                    "fit_max": 572626.0086313501,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 183943.31499812676
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 10,
+                    "fit_avg": 190051.18246403988,
+                    "fit_max": 572626.0086313501,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 157406.71348988728
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 9,
+                    "fit_avg": 129673.59310985325,
+                    "fit_max": 372965.0922354079,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 81097.16637518488
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 4,
+                    "fit_avg": 157292.6376802413,
+                    "fit_max": 649155.5379392888,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 163954.30008634913
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 5,
+                    "fit_avg": 109841.66815102348,
+                    "fit_max": 174645.84264711026,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 21601.391498695593
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 5,
+                    "fit_avg": 130703.99930815988,
+                    "fit_max": 383269.15421847434,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 84188.38497010482
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 7,
+                    "fit_avg": 102641.20431812495,
+                    "fit_max": 102641.20431812495,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 4,
+                    "fit_avg": 102641.20431812495,
+                    "fit_max": 102641.20431812495,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 6,
+                    "fit_avg": 102641.20431812495,
+                    "fit_max": 102641.20431812495,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 5,
+                    "fit_avg": 102641.20431812495,
+                    "fit_max": 102641.20431812495,
+                    "fit_min": 102641.20431812495,
+                    "fit_std": 0.0
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 10,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 4,
+                    "fit_avg": 172662.20361278395,
+                    "fit_max": 1185981.5507163925,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 337773.1157012028
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 2,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 3,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 4,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 7,
+                    "fit_avg": 95158.73462744147,
+                    "fit_max": 410946.8608629679,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 105262.70874517546
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 9,
+                    "fit_avg": 72966.02222903015,
+                    "fit_max": 189019.73687885448,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 38684.57154994145
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 7,
+                    "fit_avg": 91132.82319091404,
+                    "fit_max": 370687.7464976936,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 93184.97443559318
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 6,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 6,
+                    "fit_avg": 60071.16504571632,
+                    "fit_max": 60071.16504571632,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 8,
+                    "fit_avg": 103410.55495759647,
+                    "fit_max": 493465.06416451785,
+                    "fit_min": 60071.16504571632,
+                    "fit_std": 130018.16973564046
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "mul(protected_pow(mul(elevation_u, protected_log(protected_div(elevation_u, elevation_v), sub(steepness, elevation_u))), elevation_u), sub(if_then_else(is_water, protected_log(elevation_v, protected_div(elevation_u, distance)), neg(sub(5.266, elevation_v))), elevation_u))",
+        "tree_fitness": [
+            228725.08268232222
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 119.02712655067444,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 21,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 16,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 25,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 29,
+                    "fit_avg": 229364.70581037021,
+                    "fit_max": 244973.09130932816,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": 3133.9235343860114
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 34,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 26,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 24,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 33,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 29,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 28,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 228725.08268232222,
+                    "fit_std": NaN
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 316027.75827422406,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 23,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 35,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 33,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 27,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 29,
+                    "fit_avg": 369761.3966314312,
+                    "fit_max": 369761.3966314312,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 35,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 28,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 24,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 25,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 31,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 369761.3966314312,
+                    "fit_std": NaN
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "add(add(steepness, 0.628), add(steepness, if_then_else(is_water, protected_div(distance, sub(elevation_v, elevation_v)), neg(distance))))",
+        "tree_fitness": [
+            5302.46981824892
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 156.87355661392212,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 755097.3191366515,
+                    "fit_max": 6158068.307388609,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 1173654.4134935902
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 31,
+                    "fit_avg": 285967.5297661793,
+                    "fit_max": 618068.825569072,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 116362.49519648656
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 31,
+                    "fit_avg": 235146.4707503115,
+                    "fit_max": 591129.781087912,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 116098.04833211115
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 29,
+                    "fit_avg": 160514.2614797652,
+                    "fit_max": 483900.17775020754,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 103927.67877860271
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 39,
+                    "fit_avg": 140483.4101279766,
+                    "fit_max": 2012740.013432416,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 274688.99106325733
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 24,
+                    "fit_avg": 84321.34830546918,
+                    "fit_max": 395542.3640440487,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 68030.0297975142
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 30,
+                    "fit_avg": 65755.42016641532,
+                    "fit_max": 149288.4810736978,
+                    "fit_min": 59977.60646056637,
+                    "fit_std": 16120.901241711077
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 26,
+                    "fit_avg": 79605.19803975995,
+                    "fit_max": 819035.9561926939,
+                    "fit_min": 50139.5805069133,
+                    "fit_std": 107540.17916500846
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 33,
+                    "fit_avg": 115092.39995976778,
+                    "fit_max": 2684344.331662099,
+                    "fit_min": 32544.800592789867,
+                    "fit_std": 367800.0460198748
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 24,
+                    "fit_avg": 57416.31224232711,
+                    "fit_max": 169237.33634605288,
+                    "fit_min": 5302.46981824892,
+                    "fit_std": 20317.477763594525
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 32,
+                    "fit_avg": 93425.97382568539,
+                    "fit_max": 2055359.4071907138,
+                    "fit_min": 5302.46981824892,
+                    "fit_std": 281868.10718961444
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 131235.26122087482,
+                    "fit_max": 3034558.960398873,
+                    "fit_min": 16624.890300364445,
+                    "fit_std": 416019.819846224
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 40,
+                    "fit_avg": 52183.201970283306,
+                    "fit_max": 159905.11624808077,
+                    "fit_min": 16624.890300364445,
+                    "fit_std": 28350.669237249764
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 29,
+                    "fit_avg": 36919.89171978521,
+                    "fit_max": 311855.78511156334,
+                    "fit_min": 16624.890300364445,
+                    "fit_std": 44991.02378680618
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 34,
+                    "fit_avg": 43195.715885723344,
+                    "fit_max": 501785.15656768915,
+                    "fit_min": 16624.890300364445,
+                    "fit_std": 75089.47232078738
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 33,
+                    "fit_avg": 44434.13335992219,
+                    "fit_max": 307470.1184318987,
+                    "fit_min": 16624.890300364445,
+                    "fit_std": 72053.06730830904
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 34,
+                    "fit_avg": 44507.913426385916,
+                    "fit_max": 262929.3897996539,
+                    "fit_min": 6660.4246323190255,
+                    "fit_std": 57043.446925340315
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 31,
+                    "fit_avg": 42697.992245496214,
+                    "fit_max": 258671.18451843533,
+                    "fit_min": 6660.4246323190255,
+                    "fit_std": 63109.09593274454
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 31,
+                    "fit_avg": 31935.382725474108,
+                    "fit_max": 217345.69688075213,
+                    "fit_min": 6643.909732843271,
+                    "fit_std": 46914.650335760656
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 29,
+                    "fit_avg": 29484.23107187103,
+                    "fit_max": 234962.1320537739,
+                    "fit_min": 6643.909732843271,
+                    "fit_std": 47422.797023198444
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 26,
+                    "fit_avg": 21930.135585475786,
+                    "fit_max": 145269.52139903218,
+                    "fit_min": 6643.909732843271,
+                    "fit_std": 38851.6921028565
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 32,
+                    "fit_avg": 32863.512655297265,
+                    "fit_max": 311855.78511156334,
+                    "fit_min": 6643.909732843271,
+                    "fit_std": 62825.49130685428
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "sub(protected_log(if_then_else(is_water, elevation_v, distance), distance), mul(mul(elevation_u, steepness), neg(steepness)))",
+        "tree_fitness": [
+            40571.05523109598
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 180.06015586853027,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 641834.2546296711,
+                    "fit_max": 4157270.4415130205,
+                    "fit_min": 75005.89510746328,
+                    "fit_std": 969742.3623193274
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 26,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 75005.89510746328,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 40,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61580.02765925989,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 24,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61580.02765925989,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 26,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61580.02765925989,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 33,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61580.02765925989,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 33,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61350.71207452459,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 17,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61350.71207452459,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 20,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 42271.915089053335,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 29,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 42271.915089053335,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 29,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 42271.915089053335,
+                    "fit_std": NaN
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 64422.98921856107,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 26,
+                    "fit_avg": 135731.89801015027,
+                    "fit_max": 1252234.7777472457,
+                    "fit_min": 64422.98921856107,
+                    "fit_std": 170664.06430665782
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 29,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 62022.247443258246,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 34,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61809.06855022707,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 32,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 61809.06855022707,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 33,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 28,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 31,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 25,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 29,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 37,
+                    "fit_avg": Infinity,
+                    "fit_max": Infinity,
+                    "fit_min": 40571.05523109598,
+                    "fit_std": NaN
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "protected_div(protected_log(sub(mul(distance, distance), mul(elevation_u, steepness)), protected_log(if_then_else(is_water, 6.861, elevation_v), neg(steepness))), sub(protected_pow(protected_log(distance, distance), sub(steepness, 8.923)), protected_div(protected_log(steepness, steepness), sub(add(elevation_v, 3.039), protected_div(elevation_u, distance)))))",
+        "tree_fitness": [
+            75632.94292046115
+        ],
+        "population": 10,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 63.246625661849976,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 10,
+                    "fit_avg": 811487.5047524369,
+                    "fit_max": 5041412.537854819,
+                    "fit_min": 224040.97562390997,
+                    "fit_std": 1413320.7556825923
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 6,
+                    "fit_avg": 311086.9921788849,
+                    "fit_max": 326369.196439217,
+                    "fit_min": 224040.97562390997,
+                    "fit_std": 32688.27487561986
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 8,
+                    "fit_avg": 321319.8142604156,
+                    "fit_max": 326369.196439217,
+                    "fit_min": 275875.37465120334,
+                    "fit_std": 15148.146536404105
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 7,
+                    "fit_avg": 316270.4320816143,
+                    "fit_max": 326369.196439217,
+                    "fit_min": 275875.37465120334,
+                    "fit_std": 20197.528715205473
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 8,
+                    "fit_avg": 301122.2855452102,
+                    "fit_max": 326369.196439217,
+                    "fit_min": 275875.37465120334,
+                    "fit_std": 25246.91089400684
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 5,
+                    "fit_avg": 280924.7568300047,
+                    "fit_max": 326369.196439217,
+                    "fit_min": 275875.37465120334,
+                    "fit_std": 15148.146536404105
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 5,
+                    "fit_avg": 255851.13224127283,
+                    "fit_max": 275875.37465120334,
+                    "fit_min": 75632.9505518984,
+                    "fit_std": 60072.72722979148
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 2,
+                    "fit_avg": 235826.88983134236,
+                    "fit_max": 275875.37465120334,
+                    "fit_min": 75632.9505518984,
+                    "fit_std": 80096.96963972198
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 4,
+                    "fit_avg": 175754.16260155087,
+                    "fit_max": 275875.37465120334,
+                    "fit_min": 75632.9505518984,
+                    "fit_std": 100121.21204965247
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 6,
+                    "fit_avg": 75632.94902561096,
+                    "fit_max": 75632.9505518984,
+                    "fit_min": 75632.94292046115,
+                    "fit_std": 0.003052574896719307
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 4,
+                    "fit_avg": 75632.94597303607,
+                    "fit_max": 75632.9505518984,
+                    "fit_min": 75632.94292046115,
+                    "fit_std": 0.0037386254492956807
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 10,
+                    "fit_avg": 190689.83912152826,
+                    "fit_max": 195945.56637724864,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 4291.283334584353
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 6,
+                    "fit_avg": 227689.85098602585,
+                    "fit_max": 583464.775874626,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 118620.39401588208
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 4,
+                    "fit_avg": 187186.020951048,
+                    "fit_max": 187186.020951048,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 3,
+                    "fit_avg": 187186.020951048,
+                    "fit_max": 187186.020951048,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 7,
+                    "fit_avg": 250246.67222409224,
+                    "fit_max": 817792.5336814906,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 189181.9538191328
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 5,
+                    "fit_avg": 188333.6179215182,
+                    "fit_max": 198661.99065574986,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 3442.790911410557
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 1,
+                    "fit_avg": 188333.67049109616,
+                    "fit_max": 198662.5163515295,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 3442.9486201444524
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 6,
+                    "fit_avg": 187186.020951048,
+                    "fit_max": 187186.020951048,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 7,
+                    "fit_avg": 189481.3200311443,
+                    "fit_max": 198662.5163515295,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 4590.598160192603
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 8,
+                    "fit_avg": 187186.020951048,
+                    "fit_max": 187186.020951048,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 6,
+                    "fit_avg": 189481.21489198838,
+                    "fit_max": 198661.99065574986,
+                    "fit_min": 187186.020951048,
+                    "fit_std": 4590.3878818807425
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "if_then_else(identity_water(is_water), protected_pow(protected_log(add(8.251, elevation_u), elevation_v), protected_div(steepness, distance)), protected_div(steepness, distance))",
+        "tree_fitness": [
+            13416.512387612647
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 106.03820872306824,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 619437.9438508973,
+                    "fit_max": 2725381.7614895515,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 518906.953628112
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 30,
+                    "fit_avg": 10286057.874432039,
+                    "fit_max": 200326853.72552907,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 36108665.15469517
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 24,
+                    "fit_avg": 10196184.67448048,
+                    "fit_max": 200051389.38891774,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 41197633.830869034
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 37,
+                    "fit_avg": 18090840.579803515,
+                    "fit_max": 200340254.43382776,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 47752125.23597762
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 33,
+                    "fit_avg": 10057940.174819276,
+                    "fit_max": 100203243.79368632,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 30011507.986071818
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 40,
+                    "fit_avg": 12078316.11818599,
+                    "fit_max": 100611945.1371716,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 32569187.320810623
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 33,
+                    "fit_avg": 6051389.388917749,
+                    "fit_max": 100051389.38891774,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 23748684.174075834
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 28,
+                    "fit_avg": 22082358.8621855,
+                    "fit_max": 500340254.43382776,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 75663152.86151251
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 29,
+                    "fit_avg": 14067308.539910272,
+                    "fit_max": 200076389.38911667,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 40085468.988885336
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 22,
+                    "fit_avg": 12065432.672406262,
+                    "fit_max": 200600674.4541625,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 38218778.84547084
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 35,
+                    "fit_avg": 24097596.399071623,
+                    "fit_max": 200604515.7754338,
+                    "fit_min": 51389.38891775152,
+                    "fit_std": 55083751.64716316
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 24047144.83243474,
+                    "fit_max": 200487720.3421551,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 55059070.041349165
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 31,
+                    "fit_avg": 18019670.154919684,
+                    "fit_max": 200071613.59326574,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 47722727.83787591
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 25,
+                    "fit_avg": 10014797.325137047,
+                    "fit_max": 200063411.3215807,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 36061732.911685914
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 34,
+                    "fit_avg": 14126104.241804644,
+                    "fit_max": 200071618.61868143,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 40296389.41184596
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 34,
+                    "fit_avg": 14016998.541138958,
+                    "fit_max": 200071618.61868143,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 40060569.92658269
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 25,
+                    "fit_avg": 12016147.430319734,
+                    "fit_max": 200071618.61868143,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 38166623.26462838
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 26,
+                    "fit_avg": 14023375.994481396,
+                    "fit_max": 200442719.08321053,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 49067645.79872237
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 34,
+                    "fit_avg": 24027771.268152796,
+                    "fit_max": 300442719.0832105,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 58564665.818551496
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 37,
+                    "fit_avg": 12018793.648004567,
+                    "fit_max": 200071613.59326574,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 43097326.018714905
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 28,
+                    "fit_avg": 12018926.771438742,
+                    "fit_max": 200063412.5577774,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 38172897.84051659
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 26,
+                    "fit_avg": 14016373.067568474,
+                    "fit_max": 200071619.29442564,
+                    "fit_min": 13416.512387612647,
+                    "fit_std": 40058725.88750819
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "mul(protected_pow(if_then_else(is_water, 5.373, steepness), protected_log(elevation_v, elevation_v)), protected_div(protected_div(elevation_u, elevation_u), mul(distance, 9.587)))",
+        "tree_fitness": [
+            24949.233062495885
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 155.12324261665344,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 660116.5996067765,
+                    "fit_max": 4840419.093180085,
+                    "fit_min": 33447.822851720324,
+                    "fit_std": 852240.6312045286
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 33,
+                    "fit_avg": 6258713.902405521,
+                    "fit_max": 100378951.67423952,
+                    "fit_min": 33447.822851720324,
+                    "fit_std": 23763037.516095553
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 28,
+                    "fit_avg": 6130733.860190746,
+                    "fit_max": 100372443.41148593,
+                    "fit_min": 33447.822851720324,
+                    "fit_std": 23768634.642720524
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 31,
+                    "fit_avg": 4075224.4049930917,
+                    "fit_max": 100284885.1038698,
+                    "fit_min": 33447.822851720324,
+                    "fit_std": 19624228.304086886
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 34,
+                    "fit_avg": 6054101.03007223,
+                    "fit_max": 100216970.28100342,
+                    "fit_min": 33447.822851720324,
+                    "fit_std": 23758335.044846263
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 30,
+                    "fit_avg": 10052701.923195608,
+                    "fit_max": 300395546.33719516,
+                    "fit_min": 33444.992036706375,
+                    "fit_std": 45872241.08419739
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 33,
+                    "fit_avg": 14067681.17780595,
+                    "fit_max": 300378951.6742395,
+                    "fit_min": 27561.549353318587,
+                    "fit_std": 49109112.00772386
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 32,
+                    "fit_avg": 22031824.223303672,
+                    "fit_max": 200026597.30546382,
+                    "fit_min": 27561.549353318587,
+                    "fit_std": 57580116.488376915
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 33,
+                    "fit_avg": 24055307.755520936,
+                    "fit_max": 300000228.3746425,
+                    "fit_min": 27560.361534939722,
+                    "fit_std": 65031854.67217966
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 24,
+                    "fit_avg": 20053897.919093154,
+                    "fit_max": 300378951.6742395,
+                    "fit_min": 27560.361534939722,
+                    "fit_std": 63319775.811686546
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 29,
+                    "fit_avg": 18042812.9496302,
+                    "fit_max": 300175172.5103053,
+                    "fit_min": 27560.361534939722,
+                    "fit_std": 59006049.17077388
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 18041226.98276018,
+                    "fit_max": 300176256.5356556,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 59005880.20864273
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 27,
+                    "fit_avg": 22134928.73138753,
+                    "fit_max": 300373405.3351771,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 72950801.88118796
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 29,
+                    "fit_avg": 10033188.463733518,
+                    "fit_max": 200248624.349202,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 36087186.23059081
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 31,
+                    "fit_avg": 10037374.62515559,
+                    "fit_max": 300373405.3351771,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 45871229.63614588
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 27,
+                    "fit_avg": 14033143.74423849,
+                    "fit_max": 200176256.48830628,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 44794796.6125312
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 24,
+                    "fit_avg": 8054753.1242456185,
+                    "fit_max": 200373405.33517712,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 33805457.578259625
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 30,
+                    "fit_avg": 12039898.967704248,
+                    "fit_max": 300373405.3351771,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 47551454.54769884
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 34,
+                    "fit_avg": 18042242.15406425,
+                    "fit_max": 300279643.7183022,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 58993637.08287257
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 28,
+                    "fit_avg": 14043129.438835356,
+                    "fit_max": 300373405.3351771,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 56660150.595099084
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 28,
+                    "fit_avg": 16039043.575104946,
+                    "fit_max": 300248624.34920204,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 57872997.53533198
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 33,
+                    "fit_avg": 30058171.323517274,
+                    "fit_max": 300373405.3351771,
+                    "fit_min": 24949.233062495885,
+                    "fit_std": 75584188.52883121
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "protected_pow(protected_div(add(protected_div(elevation_v, elevation_v), protected_pow(distance, elevation_v)), add(neg(elevation_u), if_then_else(is_water, add(sub(mul(add(steepness, sub(6.338, steepness)), distance), neg(distance)), protected_pow(steepness, neg(protected_pow(if_then_else(is_water, 9.931, elevation_u), distance)))), elevation_v))), neg(protected_log(protected_div(elevation_u, steepness), sub(elevation_v, elevation_v))))",
+        "tree_fitness": [
+            26244.73297377508
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 168.85768747329712,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 815342.807282998,
+                    "fit_max": 7160483.288061879,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 1215376.955801102
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 28,
+                    "fit_avg": 6269564.081340971,
+                    "fit_max": 200387492.96680382,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 31049799.068785958
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 32,
+                    "fit_avg": 4171617.580172741,
+                    "fit_max": 100248114.81224968,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 19591896.336371683
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 21,
+                    "fit_avg": 2121119.022066664,
+                    "fit_max": 100398196.91991226,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 14039774.15545226
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 29,
+                    "fit_avg": 150123.9385791066,
+                    "fit_max": 4890251.845213639,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 677811.3481322723
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 23,
+                    "fit_avg": 14067881.255386565,
+                    "fit_max": 300527208.1025593,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 56697747.122570574
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 29,
+                    "fit_avg": 44507.845386408466,
+                    "fit_max": 44507.84538640847,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 32,
+                    "fit_avg": 2100559.630872091,
+                    "fit_max": 100451676.72452831,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 14052520.864174385
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 30,
+                    "fit_avg": 44507.845386408466,
+                    "fit_max": 44507.84538640847,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 31,
+                    "fit_avg": 44507.845386408466,
+                    "fit_max": 44507.84538640847,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 30,
+                    "fit_avg": 44507.845386408466,
+                    "fit_max": 44507.84538640847,
+                    "fit_min": 44507.84538640847,
+                    "fit_std": 7.275957614183426e-12
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 38941.93499888145,
+                    "fit_max": 38941.93499888144,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 26,
+                    "fit_avg": 2071993.035248969,
+                    "fit_max": 101628214.35758373,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 14222320.090073168
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 41,
+                    "fit_avg": 8055102.376674988,
+                    "fit_max": 200397066.68396083,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 39261641.15691398
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 36,
+                    "fit_avg": 12155258.581653334,
+                    "fit_max": 201465877.85656616,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 47739382.60983175
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 32,
+                    "fit_avg": 38941.93499888145,
+                    "fit_max": 38941.93499888144,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 32,
+                    "fit_avg": 91961.25145658638,
+                    "fit_max": 2689907.7578841285,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 371135.21520393464
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 34,
+                    "fit_avg": 8079594.759189541,
+                    "fit_max": 201465877.85656616,
+                    "fit_min": 26244.73297377508,
+                    "fit_std": 39367840.02128296
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 32,
+                    "fit_avg": 4049103.957827843,
+                    "fit_max": 200416279.72764015,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 28052459.65239151
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 35,
+                    "fit_avg": 4046764.1885950924,
+                    "fit_max": 200189569.0293696,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 28020420.910031173
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 37,
+                    "fit_avg": 38941.93499888145,
+                    "fit_max": 38941.93499888144,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 7.275957614183426e-12
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 27,
+                    "fit_avg": 38941.99516026622,
+                    "fit_max": 38944.94306812006,
+                    "fit_min": 38941.93499888144,
+                    "fit_std": 0.42112969340654666
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "protected_pow(mul(add(steepness, protected_log(elevation_u, elevation_u)), elevation_v), protected_pow(protected_div(if_then_else(is_water, steepness, distance), steepness), protected_log(elevation_v, neg(7.087))))",
+        "tree_fitness": [
+            17730.51359347739
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 145.5879349708557,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 895016.5393587063,
+                    "fit_max": 4305272.685673176,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 953793.085223125
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 26,
+                    "fit_avg": 12327906.790137472,
+                    "fit_max": 300321980.11281806,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 58787181.257884726
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 38,
+                    "fit_avg": 14181939.566377511,
+                    "fit_max": 400428865.4740431,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 63331851.058700465
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 35,
+                    "fit_avg": 4118613.7475795494,
+                    "fit_max": 200755867.70377386,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 28091130.039132405
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 22,
+                    "fit_avg": 8053301.215753759,
+                    "fit_max": 300113149.25154316,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 44008495.4169947
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 28,
+                    "fit_avg": 14071641.548309335,
+                    "fit_max": 400346304.5644992,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 63364319.378028736
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 29,
+                    "fit_avg": 4036700.3426079806,
+                    "fit_max": 200738782.60472554,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 28100299.143393576
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 28,
+                    "fit_avg": 14046027.650390822,
+                    "fit_max": 300321980.11281806,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 53029483.12456507
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 27,
+                    "fit_avg": 2075570.7200689209,
+                    "fit_max": 100005860.01054817,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 13995334.286479743
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 27,
+                    "fit_avg": 4019568.5312952013,
+                    "fit_max": 200109631.39867976,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 28012866.12391207
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 28,
+                    "fit_avg": 17730.51359347739,
+                    "fit_max": 17730.51359347739,
+                    "fit_min": 17730.51359347739,
+                    "fit_std": 0.0
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 53093.13552652345,
+                    "fit_max": 53093.13552652345,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 28,
+                    "fit_avg": 10120033.386014547,
+                    "fit_max": 200405894.09488598,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 36163671.104629174
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 35,
+                    "fit_avg": 16064816.96157663,
+                    "fit_max": 200405894.09488598,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 46334801.856194384
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 26,
+                    "fit_avg": 18065045.496872157,
+                    "fit_max": 300203591.7958733,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 62297315.693689585
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 36,
+                    "fit_avg": 59123.88202626554,
+                    "fit_max": 354630.46051362826,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 42215.22549819467
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 24,
+                    "fit_avg": 6055803.794641239,
+                    "fit_max": 300188626.0912622,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 42018974.613803
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 32,
+                    "fit_avg": 10072203.324584404,
+                    "fit_max": 300514768.9639587,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 50079807.294972494
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 27,
+                    "fit_avg": 6064539.6773021845,
+                    "fit_max": 200406762.9483139,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 31100640.293579627
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 21,
+                    "fit_avg": 53093.13552652345,
+                    "fit_max": 53093.13552652345,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 23,
+                    "fit_avg": 4054936.126584245,
+                    "fit_max": 200100252.19677898,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 28006474.432305288
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 21,
+                    "fit_avg": 4055015.8960887734,
+                    "fit_max": 200100252.5218492,
+                    "fit_min": 53093.13552652345,
+                    "fit_std": 28006463.214182835
+                }
+            ]
+        ]
+    },
+    {
+        "tree_object": "mul(mul(steepness, mul(steepness, 0.668)), protected_div(protected_pow(steepness, elevation_u), if_then_else(is_water, elevation_v, distance)))",
+        "tree_fitness": [
+            239.4600506969468
+        ],
+        "population": 50,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 96.93861889839172,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 50,
+                    "fit_avg": 737225.4015634968,
+                    "fit_max": 3280450.974426954,
+                    "fit_min": 26722.51819741493,
+                    "fit_std": 710830.0698260039
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 25,
+                    "fit_avg": 4325560.122643056,
+                    "fit_max": 200036729.1654879,
+                    "fit_min": 26722.51819741493,
+                    "fit_std": 27959453.53044438
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 32,
+                    "fit_avg": 4182251.3551972155,
+                    "fit_max": 200116417.9794021,
+                    "fit_min": 26722.51819741493,
+                    "fit_std": 27991040.817334507
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 34,
+                    "fit_avg": 16124150.591538858,
+                    "fit_max": 300046747.3567802,
+                    "fit_min": 16759.073518726706,
+                    "fit_std": 57840576.11656327
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 26,
+                    "fit_avg": 12037959.549903192,
+                    "fit_max": 300056748.7530249,
+                    "fit_min": 16698.653710932125,
+                    "fit_std": 58790581.91084333
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 29,
+                    "fit_avg": 10045305.319076158,
+                    "fit_max": 300398499.38325787,
+                    "fit_min": 16698.653710932125,
+                    "fit_std": 45873041.68069235
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 28,
+                    "fit_avg": 2022483.1575745242,
+                    "fit_max": 100016701.94076414,
+                    "fit_min": 16698.653710932125,
+                    "fit_std": 13999175.70946565
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 22,
+                    "fit_avg": 12018710.400219405,
+                    "fit_max": 400006674.83042777,
+                    "fit_min": 6757.751011541549,
+                    "fit_std": 58787342.44243834
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 29,
+                    "fit_avg": 18016293.5994356,
+                    "fit_max": 400006674.83042777,
+                    "fit_min": 6757.751011541549,
+                    "fit_std": 71243907.84625791
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 29,
+                    "fit_avg": 10018407.060069907,
+                    "fit_max": 200056747.93727276,
+                    "fit_min": 6683.291243052603,
+                    "fit_std": 36061148.68747958
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 34,
+                    "fit_avg": 8013916.437907073,
+                    "fit_max": 300016693.9909635,
+                    "fit_min": 6683.291243052603,
+                    "fit_std": 44000505.44335438
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 50,
+                    "fit_avg": 8015039.067834242,
+                    "fit_max": 300030221.8445603,
+                    "fit_min": 274.4079869509673,
+                    "fit_std": 44001855.32041744
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 28,
+                    "fit_avg": 12021167.872080255,
+                    "fit_max": 300010276.17811507,
+                    "fit_min": 265.52334082091824,
+                    "fit_std": 51552226.88587706
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 22,
+                    "fit_avg": 18002563.86752171,
+                    "fit_max": 400000270.6701654,
+                    "fit_min": 265.52334082091824,
+                    "fit_std": 79220689.37775554
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 26,
+                    "fit_avg": 30025448.005215354,
+                    "fit_max": 400000270.6701654,
+                    "fit_min": 256.0589016156778,
+                    "fit_std": 80643841.00537768
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 26,
+                    "fit_avg": 6000669.148046165,
+                    "fit_max": 200000326.6007934,
+                    "fit_min": 256.0589016156778,
+                    "fit_std": 31048923.642151207
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 36,
+                    "fit_avg": 20011297.160318267,
+                    "fit_max": 400000270.6701654,
+                    "fit_min": 243.5035179730157,
+                    "fit_std": 72117582.9933247
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 35,
+                    "fit_avg": 28006134.594194245,
+                    "fit_max": 400030284.472751,
+                    "fit_min": 249.11663072492664,
+                    "fit_std": 82567137.98975176
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 30,
+                    "fit_avg": 32003157.70601848,
+                    "fit_max": 400010272.70315695,
+                    "fit_min": 249.11663072492664,
+                    "fit_std": 78590421.16269338
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 25,
+                    "fit_avg": 6010970.12568732,
+                    "fit_max": 300316182.4656713,
+                    "fit_min": 249.11663072492664,
+                    "fit_std": 42043610.223533295
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 22,
+                    "fit_avg": 26001396.157863274,
+                    "fit_max": 400010235.5347571,
+                    "fit_min": 239.4600506969468,
+                    "fit_std": 84407228.0782041
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 25,
+                    "fit_avg": 6002759.529220501,
+                    "fit_max": 100010261.46796498,
+                    "fit_min": 239.4600506969468,
+                    "fit_std": 23750579.57873232
+                }
+            ]
+        ]
     }
 ]

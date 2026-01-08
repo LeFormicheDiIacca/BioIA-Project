@@ -1,11 +1,17 @@
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.join(current_dir, '..')
+if project_root not in sys.path:
+    sys.path.append(os.path.abspath(project_root))
+
 from deap import base, creator, gp, tools, algorithms
 import operator
 import random
 import numpy as np
 import multiprocessing
-
 from scipy.sparse import csr_matrix
-
 from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
@@ -13,6 +19,7 @@ import time
 from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, append_to_json, dynamic_penalty, random_gen
 from collections import defaultdict
 from scipy.sparse.csgraph import dijkstra
+import math
 
 # define primitive set
 
@@ -40,14 +47,24 @@ creator.create("Individual", gp.PrimitiveTree, fitness = creator.FitnessMin, pse
 # define main functions
 
 toolbox = base.Toolbox()
+
+def create_valid_individual():
+    while True:
+        expr = gp.genHalfAndHalf(pset=pset, min_=2, max_=5)
+        ind = creator.Individual(expr) 
+        
+        tree_str = str(ind)
+        required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
+        missing = any(inp not in tree_str for inp in required_inputs)
+        too_many_ifs = tree_str.count("if_then_else") > 1
+        
+        if not missing and not too_many_ifs:
+            return ind
+        
 toolbox.register("expr", gp.genHalfAndHalf, pset = pset, min_=2, max_=5)
-toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
+toolbox.register("individual", tools.initIterate, creator.Individual, create_valid_individual)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
-
-# if your pc allows it, parallelize! (mine doesn't lololol)
-# pool = multiprocessing.Pool()
-# toolbox.register("map", pool.map)
 
 # genetic operators
 
@@ -55,13 +72,6 @@ toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("select", tools.selTournament, tournsize = 3)
 toolbox.register("mutate_unif", gp.mutUniform, expr = toolbox.expr, pset= pset) 
 toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
-
-# limit bloating
-
-toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
-toolbox.decorate("mate", gp.staticLimit(len, max_value= 15))
-toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
-toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value= 15))
 
 # to include both type of mutation
 
@@ -73,11 +83,24 @@ def mutate_combined(individual):
 
 toolbox.register("mutate", mutate_combined)
 
+
+# limit bloating
+
+toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
+toolbox.decorate("mate", gp.staticLimit(len, max_value= 15))
+toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
+toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value= 15))
+toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value= 5))
+toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value= 15))
+
+
+
 # fitness function
 
 def evaluate(individual, scenarios, edge_dict, node_list, node_to_idx, edge_features, col_idx, row_idx):
     func = toolbox.compile(expr=individual)  
-    # add edge cost
+  
+    #add edge cost
     try:
         costs = np.array([func(*features) for features in edge_features])
         costs = np.where(np.isreal(costs), np.real(costs), costs.real)
@@ -131,17 +154,13 @@ def evaluate(individual, scenarios, edge_dict, node_list, node_to_idx, edge_feat
                 current_scen = np.array([d, incl, elev_diff, water])
                 total_penalty += np.vdot(coeff, current_scen)
     
-    string_tree = str(individual)
+    tree_str = str(individual)
     required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
+    missing = sum(1 for inp in required_inputs if inp not in tree_str)
+    too_many_ifs = tree_str.count("if_then_else") > 1
     
-    # counts how many inputs are missing
-
-    missing_count = sum(1 for inp in required_inputs if inp not in string_tree)
-    if_counts = string_tree.count("if_then_else") 
-    total_penalty += 100000*missing_count # 100km for each missing input
-    # since it does not make sense to have multiple if_counts, the water evaluation must be made only once per node
-    if if_counts > 1:
-        total_penalty += 100000
+    total_penalty += missing * 100000000 
+     
     return total_penalty,
 
 
@@ -173,7 +192,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
 
     edge_features = np.array(edge_features)
     for i in range(runs):
-        print(f"Starting run {i+1}°")
+        print(f"Starting run {i+1}")
         start = time.time()
         current_scenario = [el[i] for el in scenarios]
         toolbox.register("evaluate", evaluate, scenarios = current_scenario,
@@ -232,11 +251,13 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     print(f"EA runtime: {hours} hours {minutes} minutes {seconds} seconds")
     pop = ret[0]
     logs = ret[2]
-    best = ret[1][0]
-    try:
-        tree_plotter(best, f"pop{population}_run{runs}_res{res}_best_tree")
-    except Exception as e:
-        print(f"Could not plot tree: {e}")
+    hof = ret[1]
+    for i in range(len(hof)):
+        try:
+            tree_plotter(hof[i], f"pop{population}_run{runs}_res{res}_{i+1}best_tree")
+        except Exception as e:
+            print(f"Could not plot tree: {e}")
+    best = hof[0]
     tree_diz = dict()
     tree_diz["tree_object"] = str(best)
     tree_diz["tree_fitness"] = best.fitness.values
@@ -251,16 +272,18 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     
 
 if __name__ == "__main__":
-    to_try = [[500,3], [500, 5], [1000,3], [1000,5]]
+    to_try = [[500,10], [500, 20], [1000,10], [1000,20]]
     res = 150
     graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
     for el in to_try:
         main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
              
-
-    # TODO: registrare total running time per resolution, population size, generations, etc.
-    # TODO: finetuning
+    #main(population=50, runs = 2, edge_dict=edge_dict, graph = graph)
+    
+# TODO:
+# - try and see how it works with max 20 nodes (terminal values!!!)
+# - check with different populations
 
 
         
