@@ -274,7 +274,7 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
 if __name__ == "__main__":
     to_try = [[500,10], [500, 20], [1000,10], [1000,20]]
     res = 150
-    graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
+    graph = create_graph("../TerrainGraph/trentino.tif", "../TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
     for el in to_try:
         main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
