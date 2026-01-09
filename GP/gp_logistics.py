@@ -7,6 +7,8 @@ import os
 import json
 from functools import partial 
 
+
+
 def protected_div(n1, n2):
     if isinstance(n1, complex):
         n1 = n2.real
@@ -58,7 +60,9 @@ def round_random(a,b):
 random_gen = partial(round_random, 0,10)
 
 
-def tree_plotter(tree, title):
+def tree_plotter(tree, title, pset):
+    if not isinstance(tree, gp.PrimitiveTree):
+        tree = gp.PrimitiveTree.from_string(tree, pset)
     nodes, edges, labels = gp.graph(tree)
     f = "digraph G {\n"
     f += "    size=\"20,20\";\n"  
@@ -82,11 +86,11 @@ def tree_plotter(tree, title):
 
 def append_to_json(new_data):
     # 1. Check if file exists and isn't empty
-    if os.path.exists("../GP/tree_diz.json") and os.path.getsize("../GP/tree_diz.json") > 0:
-        with open("../GP/tree_diz.json", 'r') as f:
+    if os.path.exists("GP/tree_diz.json") and os.path.getsize("GP/tree_diz.json") > 0:
+        with open("GP/tree_diz.json", 'r') as f:
             data = json.load(f)
     else:
         data = [] # Start with an empty list if file doesn't exist
     data.append(new_data)
-    with open("../GP/tree_diz.json", 'w') as f:
+    with open("GP/tree_diz.json", 'w') as f:
         json.dump(data, f, indent=4)
