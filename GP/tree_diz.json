@@ -6140,5 +6140,203 @@
                 }
             ]
         ]
+    },
+    {
+        "hall_of_fame": [
+            {
+                "protected_div(neg(sub(neg(mul(8.588, 4.09)), protected_log(if_then_else(is_water, elevation_v, elevation_v), add(7.969, elevation_u)))), protected_div(add(protected_pow(mul(elevation_v, elevation_u), neg(distance)), protected_div(protected_div(distance, 0.27), protected_log(distance, steepness))), protected_log(mul(add(1.13, elevation_u), neg(steepness)), protected_log(protected_pow(elevation_v, steepness), protected_pow(distance, distance)))))": 96450.31217145528
+            }
+        ],
+        "best_tree_object": "protected_div(neg(sub(neg(mul(8.588, 4.09)), protected_log(if_then_else(is_water, elevation_v, elevation_v), add(7.969, elevation_u)))), protected_div(add(protected_pow(mul(elevation_v, elevation_u), neg(distance)), protected_div(protected_div(distance, 0.27), protected_log(distance, steepness))), protected_log(mul(add(1.13, elevation_u), neg(steepness)), protected_log(protected_pow(elevation_v, steepness), protected_pow(distance, distance)))))",
+        "best_tree_fitness": [
+            96450.31217145528
+        ],
+        "population": 10,
+        "resolution": 80,
+        "runs": 2,
+        "scenario_duration": 10,
+        "runtime": 21.173596143722534,
+        "logs": [
+            [
+                {
+                    "gen": "1.0",
+                    "nevals": 10,
+                    "fit_avg": 760293.6439328755,
+                    "fit_max": 3223208.6129856748,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 872222.8264679778
+                },
+                {
+                    "gen": "1.1",
+                    "nevals": 6,
+                    "fit_avg": 310927.93912604346,
+                    "fit_max": 383340.9429000728,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 113721.61516309243
+                },
+                {
+                    "gen": "1.2",
+                    "nevals": 8,
+                    "fit_avg": 302257.62270565017,
+                    "fit_max": 383340.9429000728,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 103955.01840044041
+                },
+                {
+                    "gen": "1.3",
+                    "nevals": 9,
+                    "fit_avg": 20203412.810516037,
+                    "fit_max": 200383340.94290006,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 60059994.05361428
+                },
+                {
+                    "gen": "1.4",
+                    "nevals": 6,
+                    "fit_avg": 164331.86624233128,
+                    "fit_max": 208693.4191615366,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 46831.57212983488
+                },
+                {
+                    "gen": "1.5",
+                    "nevals": 6,
+                    "fit_avg": 30300087.80949136,
+                    "fit_max": 301906373.97579616,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 90535435.01978438
+                },
+                {
+                    "gen": "1.6",
+                    "nevals": 3,
+                    "fit_avg": 96450.31217145527,
+                    "fit_max": 96450.31217145528,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 1.4551915228366852e-11
+                },
+                {
+                    "gen": "1.7",
+                    "nevals": 6,
+                    "fit_avg": 170597.95936956044,
+                    "fit_max": 383340.9429000728,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 117369.25312116815
+                },
+                {
+                    "gen": "1.8",
+                    "nevals": 7,
+                    "fit_avg": 129989.35427621864,
+                    "fit_max": 264145.52269527205,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 67078.08420952671
+                },
+                {
+                    "gen": "1.9",
+                    "nevals": 4,
+                    "fit_avg": 96450.31217145527,
+                    "fit_max": 96450.31217145528,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 1.4551915228366852e-11
+                },
+                {
+                    "gen": "1.10",
+                    "nevals": 4,
+                    "fit_avg": 96450.31217145527,
+                    "fit_max": 96450.31217145528,
+                    "fit_min": 96450.31217145528,
+                    "fit_std": 1.4551915228366852e-11
+                }
+            ],
+            [
+                {
+                    "gen": "2.0",
+                    "nevals": 10,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.1",
+                    "nevals": 4,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.2",
+                    "nevals": 7,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.3",
+                    "nevals": 6,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.4",
+                    "nevals": 3,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.5",
+                    "nevals": 10,
+                    "fit_avg": 10142815.924294861,
+                    "fit_max": 100326451.18717274,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 30061211.75429263
+                },
+                {
+                    "gen": "2.6",
+                    "nevals": 6,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.7",
+                    "nevals": 6,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.8",
+                    "nevals": 5,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.9",
+                    "nevals": 3,
+                    "fit_avg": 122412.00619731755,
+                    "fit_max": 122412.00619731755,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 0.0
+                },
+                {
+                    "gen": "2.10",
+                    "nevals": 7,
+                    "fit_avg": 10157426.372680675,
+                    "fit_max": 100472555.67103088,
+                    "fit_min": 122412.00619731755,
+                    "fit_std": 30105043.099450067
+                }
+            ]
+        ]
     }
 ]

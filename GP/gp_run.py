@@ -281,11 +281,11 @@ if __name__ == "__main__":
     res = 80
     graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
-    # for el in to_try:
-    #     main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
+    for el in to_try:
+        main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
     
              
-    main(population=10, runs = 2, edge_dict=edge_dict, graph = graph)
+    #main(population=10, runs = 2, edge_dict=edge_dict, graph = graph)
     
 # TODO:
 # - try and see how it works with max 20 nodes (terminal values!!!)
