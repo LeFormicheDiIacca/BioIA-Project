@@ -428,9 +428,9 @@ def main(population, runs, graph, edge_dict, res,scenario_dur=15):
 
 
 if __name__ == "__main__":
-    population = 1000
+    population = 3000
     runs= 15
-    generations = 30
+    generations = 20
     res = 200
     trentino_graph = create_graph("TerrainGraph/trentino.tif",
                                   "TerrainGraph/trentino_alto_adige.pbf",
