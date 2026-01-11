@@ -18,6 +18,13 @@ import time
 from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, \
     append_to_json, random_gen, save_run
 
+# global variables
+
+STEEPNESS_COEFFICIENT = 5.0
+STEEPNESS_PENALTY = 50000.0
+ELEVATION_COEFFICIENT = 10.0
+WATER_COEFFICIENT = 5000.0
+PENALTY_MISSING_VALUES = 1e8
 
 # define primitive set
 
@@ -138,7 +145,7 @@ def create_edge_index_matrix(graph, node_to_idx):
 #Penalty function with numba for better calculations with JIT e vectorial operations
 @njit
 def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
-                                csr_indices, csr_indptr, csr_data, edge_data):
+                                csr_indices, csr_indptr, csr_data, edge_data, water_count, res):
     total_penalty = 0.0
 
     for end_idx in end_nodes:
@@ -170,10 +177,30 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
             water = edge_data[edge_idx, 4]
 
             # Dynamic penalty
-            dp = 10.0 if incl >= 0.15 else (5.0 if incl >= 0.1 else (2.0 if incl >= 0.05 else 1.0))
+
+            dp = STEEPNESS_COEFFICIENT*incl + STEEPNESS_PENALTY * max(0, incl-1/3)
+
             elev_diff = max(e_v - e_u, 0.0)
 
-            total_penalty += d + dp * d + 10.0 * elev_diff + 5000.0 * water
+            penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water])
+
+            # Normalize total penalty w.r.t. to the Manhattan distance, aka the average length of the shortest path between two random
+            # points in a resolution^2 grid
+            
+            manhattan_d = 2*(res+1)/3
+
+
+            # In the average path, the total penalty will be equal to:
+            # total_penalty = res * d + res * dp * d + 10.0 * res/2 * elev_diff + 5000.0 * water
+            # we assume that, in the average path, there will be on each edge at least one-unit dp increase, as well as a one-unit
+            # increase in elevation difference in at least res/2 edges (in the remaining ones, it's assumed to be a decrease, which does 
+            # not impact total penalty)
+            # as the cost for crossing water is vary high, we consider the number of nodes with water that are present in the grid over the resolution
+
+            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d/2, water_count/res])
+            normalized_penalty = penalty/manhattan_matrix
+            normalized_penalty = np.sum(normalized_penalty)
+            total_penalty += normalized_penalty
             curr = prev
 
     return total_penalty
@@ -248,7 +275,7 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
     #Penalties for missing values
     tree_str = str(individual)
     for inp in ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]:
-        if inp not in tree_str: total_penalty += 1e8
+        if inp not in tree_str: total_penalty += PENALTY_MISSING_VALUES
 
     return (total_penalty,)
 
@@ -310,7 +337,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
                          node_to_idx=node_to_idx,
                          edge_features_columns=edge_features_columns,  # Array di colonne
                          csr_template=csr_template,  # Matrice pre-allocata
-                         csr_components=csr_components)
+                         csr_components=csr_components, water_nodes = water_nodes, res = res)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
