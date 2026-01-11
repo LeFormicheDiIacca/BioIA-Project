@@ -6,7 +6,7 @@
 #SBATCH --account=bio.inspired.ai
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
+#SBATCH --cpus-per-task=20
 #SBATCH --mem=32G                   # Memoria RAM richiesta
 #SBATCH --time=1-00:00:00           # Limite massimo di tempo (HH:MM:SS)
 #SBATCH --gres=gpu:2

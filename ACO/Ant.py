@@ -79,10 +79,9 @@ class Ant:
             dist_to_target = min_distances[neighbor]
             #Total effort will be the edge cost + how close we are to a key node
             total_estimated_effort = edge_cost + dist_to_target
-            heuristic = 1.0 / (total_estimated_effort + 0.1)
             #Key nodes have a better heuristic chance to be chosen
             if neighbor in self.graph.key_nodes and neighbor not in self.visited_nodes:
-                heuristic *= key_nodes_bias
+                total_estimated_effort *= key_nodes_bias
 
             #Pheromone retrieval
             edge_id = self.graph[current_node][neighbor]["edge_id"]
@@ -98,7 +97,7 @@ class Ant:
             #pheromone = pheromone * (pheromones_dominance_factor**2)
             #pheromones_dominance_factor = pheromone/sum(all pheromone types)
 
-            prob = (pheromone ** self.alpha) * (heuristic ** self.beta)
+            prob = (pheromone ** self.alpha) * (total_estimated_effort ** self.beta)
             candidates[neighbor] = prob
         #If the ant is stuck it can go in an already visited node. We don't care about the only 1 visit rule because we'll prune the path later
         if not candidates:

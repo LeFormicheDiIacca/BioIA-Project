@@ -89,23 +89,26 @@ def generate_scenarios(runs, graph, res):
         
         #pick a node nearby a water node and another one on the same line
         wat1 = water.pop()
+        num_nodes = res * res
+        
         if wat1 in quad1 or wat1 in quad4:
-            while start in taken and water:
-                start = wat1 - res
-            taken.add(start)
-            while finish in taken and water:
-                finish = start + res*res//2
-            taken.add(finish)
+            potential_start = wat1 - res
+            potential_finish = wat1 + (num_nodes // 2)
         else:
-            while start in taken and water:
-                start = wat1 + res
+            potential_start = wat1 + res
+            potential_finish = wat1 - (num_nodes // 2)
+
+        # Clamp values to valid node range and ensure they exist
+        start = max(0, min(num_nodes - 1, potential_start))
+        finish = max(0, min(num_nodes - 1, potential_finish))
+        
+        # Ensure we don't pick a node that isn't in our mapping
+        if start in graph and finish in graph:
             taken.add(start)
-            while finish in taken and water:
-                finish = start - res*res//2
             taken.add(finish)
-        couple = [start,finish]
-        random.shuffle(couple)
-        water_couples.append(tuple(couple))
+            couple = [start, finish]
+            random.shuffle(couple)
+            water_couples.append(tuple(couple))
         
         # pick two nodes that are on the furthermost edges
 
