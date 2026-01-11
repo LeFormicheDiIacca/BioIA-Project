@@ -1,5 +1,5 @@
 import rasterio
-from rasterio.warp import transform
+from rasterio.warp import transform, transform_bounds
 import geopandas as gpd 
 from shapely.geometry import Point
 import numpy as np
@@ -7,20 +7,29 @@ import fiona
 import warnings
 
 from TerrainGraph.meshgraph import MeshGraph
+from rasterio.coords import BoundingBox
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
-def create_graph(tif_path, osm_pbf_path, resolution):
+def create_graph(tif_path, osm_pbf_path, resolution, area= BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)):
     print(f"Creating graph with resolution {resolution}:")
     print("- Running MeshGraph empty constructor...")
     G = MeshGraph(n_neighbours=8, resolution=resolution)
 
     print("- Creating coordinate lists...")
     src = rasterio.open(tif_path)
-    bounds = src.bounds
 
-    eastings = np.linspace(bounds.left + 1, bounds.right - 1, resolution)
-    northings = np.linspace(bounds.bottom + 1, bounds.top - 1, resolution)
+    bounds = BoundingBox(*transform_bounds(
+        'EPSG:4326',
+        src.crs,
+        area.left,
+        area.bottom,
+        area.right,
+        area.top
+    ))
+
+    eastings = np.linspace(bounds.left , bounds.right , resolution)
+    northings = np.linspace(bounds.bottom , bounds.top , resolution)
     utm_coordinates = [(x, y) for y in northings for x in eastings]
 
     longitudes, latitudes = transform(src.crs, 'EPSG:4326', eastings, northings)
