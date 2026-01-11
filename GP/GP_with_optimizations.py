@@ -393,7 +393,7 @@ def main(population, runs, graph, edge_dict, res,scenario_dur=15):
     tree_diz["scenario_duration"] = scenario_dur
     tree_diz["runtime"] = diff
     tree_diz["logs"] = logs
-    timestamp = datetime.now().strftime("%d%m%Y")
+    timestamp = datetime.now().strftime("%d%m%Y%H%M")
     append_to_json(tree_diz, f"GP/res/run_{timestamp}/GP_tree_{population}pop_{scenario_dur}gen_{runs}runs.json")
     print("The best individual has been saved")
 
