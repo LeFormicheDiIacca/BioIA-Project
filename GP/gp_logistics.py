@@ -7,8 +7,6 @@ import os
 import json
 from functools import partial 
 
-
-
 def protected_div(n1, n2):
     if isinstance(n1, complex):
         n1 = n2.real
@@ -83,13 +81,41 @@ def tree_plotter(tree, title, pset):
 
 
 # adds new data to a json file for finetuning
+def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/tree_diz.json"):
+    if population >=500:
+        for i in range(len(hof)):
+            try:
+                tree_plotter(hof[i], f"pop{population}_run{run}_res{res}_{i+1}best_tree", pset = pset)
+            except Exception as e:
+                print(f"Could not plot tree: {e}")
+    hof_list = []
+    best = hof[0]
+    for ind in hof:
+        ind_diz = dict()
+        ind_diz["individual"] = str(ind)
+        ind_diz["fitness"] = ind.fitness.values[0]
+        hof_list.append(ind_diz)
+    tree_diz = dict()
+    tree_diz["run"] = run
+    tree_diz["resolution"] = res
+    tree_diz["population"] = population
+    tree_diz["scenario_duration"] = scenario_dur
+    tree_diz["best_individual"] = str(best)
+    tree_diz["best_individual_fitness"] = best.fitness.values
+    tree_diz["hall_of_fame"] = hof_list
+    tree_diz["runtime_in_seconds"] = diff
+    append_to_json(tree_diz, path)
 
-def append_to_json(new_data):
-    if os.path.exists("GP/tree_diz.json") and os.path.getsize("GP/tree_diz.json") > 0:
-        with open("GP/tree_diz.json", 'r') as f:
+def append_to_json(new_data, path: str = "GP/tree_diz.json" ):
+    folder = os.path.dirname(path)
+    if folder and not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        with open(path, 'r') as f:
             data = json.load(f)
     else:
         data = [] # Start with an empty list if file doesn't exist
     data.append(new_data)
-    with open("GP/tree_diz.json", 'w') as f:
+    with open(path, 'w') as f:
         json.dump(data, f, indent=4)

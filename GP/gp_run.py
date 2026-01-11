@@ -15,7 +15,8 @@ from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
 import time
-from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, append_to_json, dynamic_penalty, random_gen
+from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, \
+    append_to_json, dynamic_penalty, random_gen, save_run
 from collections import defaultdict
 from scipy.sparse.csgraph import dijkstra
 import math
@@ -229,7 +230,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
         hours, tmp = divmod(diff, 3600)
         minutes, seconds = divmod(tmp, 60)
         print(f"{run}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
-        save_run(population, hof, diff, run, scenario_dur, res)
+        save_run(population, hof, diff, run, scenario_dur, res, pset=pset)
         print(f"Run {run} data has been saved")
     return pop, hof, all_logs
 
@@ -277,33 +278,6 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     diz["full_stats"] = tree_diz
     append_to_json(diz)
     print("The best individual has been saved")
-    
-
-def save_run(population, hof, diff, run,scenario_dur, res):
-    if population >=500:
-        for i in range(len(hof)):
-            try:
-                tree_plotter(hof[i], f"pop{population}_run{run}_res{res}_{i+1}best_tree", pset = pset)
-            except Exception as e:
-                print(f"Could not plot tree: {e}")
-    hof_list = []
-    best = hof[0]
-    for ind in hof:
-        ind_diz = dict()
-        ind_diz["individual"] = str(ind)
-        ind_diz["fitness"] = ind.fitness.values[0]
-        hof_list.append(ind_diz)
-    tree_diz = dict()
-    tree_diz["run"] = run
-    tree_diz["resolution"] = res
-    tree_diz["population"] = population
-    tree_diz["scenario_duration"] = scenario_dur
-    tree_diz["best_individual"] = str(best)
-    tree_diz["best_individual_fitness"] = best.fitness.values
-    tree_diz["hall_of_fame"] = hof_list
-    tree_diz["runtime_in_seconds"] = diff
-    append_to_json(tree_diz)
-
 
 
 
