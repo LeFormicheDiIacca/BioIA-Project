@@ -1,7 +1,10 @@
 import csv
 import json
 import time
+import numpy as np
 from pathlib import Path
+
+from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
 from cost_functions import test_cost_assignment
 from TerrainGraph.meshgraph import MeshGraph
@@ -11,6 +14,18 @@ from TerrainGraph.path_render import visualize_paths
 
 OUTPUT_FOLDER = "Results"
 FILENAME = "PathOutputs"
+
+def get_closest_indices(key_coords, bounds, resolution):
+    pts = np.array(key_coords)
+    lats, lons = pts[:, 0], pts[:, 1]
+    
+    x_idxs = np.round(((lons - bounds.left) / (bounds.right - bounds.left)) * (resolution - 1)).astype(int)
+    y_idxs = np.round(((lats - bounds.bottom) / (bounds.top - bounds.bottom)) * (resolution - 1)).astype(int)
+    
+    x_idxs = np.clip(x_idxs, 0, resolution - 1)
+    y_idxs = np.clip(y_idxs, 0, resolution - 1)
+    
+    return (y_idxs +  x_idxs * resolution).tolist()
 
 def create_file_path(extension):
     file_path = Path(OUTPUT_FOLDER) / f"{FILENAME}.{extension}"
@@ -25,8 +40,18 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 100
+        "resolution": 100,
+        "area" : BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)    
     }
+
+    key_coords = [
+        (46.060883,11.236782), # Pergine
+        (46.066461,11.126490), # Trento
+        (46.072764,11.058383), # Sopramonte
+        (46.038994,11.057160), # Vason
+    ]
+    key_nodes = get_closest_indices(key_coords, mesh_graph_parameters["area"],mesh_graph_parameters["resolution"]);
+
     ant_colony_parameters = {
         "alpha": 1, # influence of pheromones 
         "beta": 3, # influence of edge costs
@@ -39,7 +64,6 @@ if __name__ == '__main__':
         "average_cycle_length": 9000, # serve per inizializzare i feromoni con dei valori sensati 'cit davide'
         "n_iterations_before_spawn_in_key_nodes": 8
     }
-    key_nodes = {15, 381, 99, 210, 5, 294, 142, 337, 78, 266}
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
@@ -89,7 +113,7 @@ if __name__ == '__main__':
         edges_metadata = dict()
         mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
-        mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"])
+        mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], mesh_graph_parameters["area"])
         mesh_graph.assign_key_nodes(key_nodes)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:

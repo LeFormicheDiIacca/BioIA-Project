@@ -11,7 +11,7 @@ from rasterio.coords import BoundingBox
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
-def create_graph(tif_path, osm_pbf_path, resolution, area= BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)):
+def create_graph(tif_path, osm_pbf_path, resolution, area = BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939) ):
     print(f"Creating graph with resolution {resolution}:")
     print("- Running MeshGraph empty constructor...")
     G = MeshGraph(n_neighbours=8, resolution=resolution)
