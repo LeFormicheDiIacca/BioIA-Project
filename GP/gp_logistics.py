@@ -85,7 +85,6 @@ def tree_plotter(tree, title, pset):
 # adds new data to a json file for finetuning
 
 def append_to_json(new_data):
-    # 1. Check if file exists and isn't empty
     if os.path.exists("GP/tree_diz.json") and os.path.getsize("GP/tree_diz.json") > 0:
         with open("GP/tree_diz.json", 'r') as f:
             data = json.load(f)

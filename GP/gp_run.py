@@ -153,7 +153,6 @@ def evaluate(individual, scenarios, edge_dict, node_list, node_to_idx, edge_feat
     tree_str = str(individual)
     required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
     missing = sum(1 for inp in required_inputs if inp not in tree_str)
-    too_many_ifs = tree_str.count("if_then_else") > 1
     
     total_penalty += missing * 100000000 
      
@@ -256,7 +255,7 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
                 print(f"Could not plot tree: {e}")
     best = hof[0]
     hof_list = []
-    for ind in hof[:1]:
+    for ind in hof:
         ind_diz = dict()
         ind_fit = ind.fitness.values[0]
         ind_str = str(ind)
@@ -277,7 +276,8 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     
 
 if __name__ == "__main__":
-    to_try = [[500,10], [500, 20], [1000,10], [1000,20]]
+    to_try = [1000,10]
+    #to_try2 = [[500,10], [500, 20], [1000,10], [1000,20]]
     res = 150
     graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
