@@ -222,6 +222,9 @@ cache/
 # our stuff
 Results/
 my_geo_paths.html
+GP/tree_diz_davide.json
+GP/tree_diz_mop.json
+GP/tree_diz_old.json
 
 #cluster
 /Anaconda3-2023.03-1-Linux-x86_64.sh
