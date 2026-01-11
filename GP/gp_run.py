@@ -147,7 +147,7 @@ def evaluate(individual, scenarios, edge_dict, node_list, node_to_idx, edge_feat
 
                 elev_diff = max(e_v - e_u, 0)
                 coeff = np.array([1, dynamic_penalty(incl)*d, 10, 5000])
-                current_scen = np.array([d, incl, elev_diff, water])
+                current_scen = np.array([d, 1, elev_diff, water])
                 total_penalty += np.vdot(coeff, current_scen)
     
     tree_str = str(individual)
@@ -171,7 +171,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
     stats_fit.register("min", np.min)
     stats_fit.register("max", np.max)
     mstats = tools.MultiStatistics(fitness=stats_fit)
-    hof = tools.HallOfFame(5, similar=operator.eq)
+    hof = tools.HallOfFame(10, similar=operator.eq)
     # vs overfitting: we update the scenarios every 10 generations
     node_list = list(graph.nodes())
     node_to_idx = {node: i for i, node in enumerate(node_list)}
@@ -187,7 +187,8 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
 
     edge_features = np.array(edge_features)
     for i in range(runs):
-        print(f"Starting run {i+1}")
+        run = i+1
+        print(f"Starting run {run}")
         start = time.time()
         current_scenario = [el[i] for el in scenarios]
         toolbox.register("evaluate", evaluate, scenarios = current_scenario,
@@ -227,7 +228,9 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
         diff = end - start
         hours, tmp = divmod(diff, 3600)
         minutes, seconds = divmod(tmp, 60)
-        print(f"{i+1}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
+        print(f"{run}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
+        save_run(population, hof, diff, run, scenario_dur, res)
+        print(f"Run {run} data has been saved")
     return pop, hof, all_logs
 
 # main function to run, executes the code and saves logs
@@ -250,46 +253,72 @@ def main(population, runs, graph, edge_dict, scenario_dur = 10, res = 80):
     if population >=500:
         for i in range(len(hof)):
             try:
-                tree_plotter(hof[i], f"pop{population}_run{runs}_res{res}_{i+1}best_tree", pset = pset)
+                tree_plotter(hof[i], f"pop{population}_total_runs{runs}_res{res}_{i+1}best_tree", pset = pset)
             except Exception as e:
                 print(f"Could not plot tree: {e}")
     best = hof[0]
     hof_list = []
     for ind in hof:
         ind_diz = dict()
-        ind_fit = ind.fitness.values[0]
-        ind_str = str(ind)
-        ind_diz[ind_str] = ind_fit
+        ind_diz["individual"] = str(ind)
+        ind_diz["fitness"] = ind.fitness.values[0]
         hof_list.append(ind_diz)
+    diz = dict()
     tree_diz = dict()
-    tree_diz["hall_of_fame"] = hof_list
-    tree_diz["best_tree_object"] = str(best)
-    tree_diz["best_tree_fitness"] = best.fitness.values
-    tree_diz["population"] = population
-    tree_diz["resolution"] = res
     tree_diz["runs"] = runs
+    tree_diz["resolution"] = res
+    tree_diz["population"] = population
     tree_diz["scenario_duration"] = scenario_dur
-    tree_diz["runtime"] = diff
+    tree_diz["best_individual"] = str(best)
+    tree_diz["best_individual_fitness"] = best.fitness.values
+    tree_diz["hall_of_fame"] = hof_list
+    tree_diz["runtime_in_seconds"] = diff
     tree_diz["logs"] = logs
-    append_to_json(tree_diz)
+    diz["full_stats"] = tree_diz
+    append_to_json(diz)
     print("The best individual has been saved")
     
 
+def save_run(population, hof, diff, run,scenario_dur, res):
+    if population >=500:
+        for i in range(len(hof)):
+            try:
+                tree_plotter(hof[i], f"pop{population}_run{run}_res{res}_{i+1}best_tree", pset = pset)
+            except Exception as e:
+                print(f"Could not plot tree: {e}")
+    hof_list = []
+    best = hof[0]
+    for ind in hof:
+        ind_diz = dict()
+        ind_diz["individual"] = str(ind)
+        ind_diz["fitness"] = ind.fitness.values[0]
+        hof_list.append(ind_diz)
+    tree_diz = dict()
+    tree_diz["run"] = run
+    tree_diz["resolution"] = res
+    tree_diz["population"] = population
+    tree_diz["scenario_duration"] = scenario_dur
+    tree_diz["best_individual"] = str(best)
+    tree_diz["best_individual_fitness"] = best.fitness.values
+    tree_diz["hall_of_fame"] = hof_list
+    tree_diz["runtime_in_seconds"] = diff
+    append_to_json(tree_diz)
+
+
+
+
 if __name__ == "__main__":
-    to_try = [1000,10]
-    #to_try2 = [[500,10], [500, 20], [1000,10], [1000,20]]
-    res = 150
+    to_try = [[500,10], [500, 20], [1000,10], [1000,20]]
+    res = 80
     graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", res)
     edge_dict = create_edge_dict(graph)
-    for el in to_try:
-        main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
+    # for el in to_try:
+    #     main(population=el[0], runs=el[1], graph=graph, edge_dict=edge_dict, res=res)
     
              
-    #main(population=10, runs = 2, edge_dict=edge_dict, graph = graph)
+    main(population=10, runs = 2, edge_dict=edge_dict, graph = graph)
     
-# TODO:
-# - try and see how it works with max 20 nodes (terminal values!!!)
-# - check with different populations
+
 
 
         
