@@ -165,15 +165,19 @@ def append_to_json(new_data, path: str = "GP/tree_diz.json" ):
 if __name__ == "__main__":
     from GP_with_optimizations import pset
 
-    for i in range(1,21):
-        with open(f"GP/res/run_12_01_2026/GP_tree_2500pop_15gen_20runs_{i}subrun.json") as f:
-            tree_diz = json.load(f)
+    for i in range(15):
+        if i == 0:
+            with open(f"GP/res/run_12012026/GP_tree_2000pop_15gen_15runs_{i+1}subrun.json") as f:
+                tree_diz = json.load(f)
+        else:
+            with open(f"GP/res/run_12012026_{i}/GP_tree_2000pop_15gen_15runs_{i+1}subrun.json") as f:
+                tree_diz = json.load(f)
         tree_diz = tree_diz[0]
         hof = tree_diz["hall_of_fame"]
         for j in range(len(hof)):
-            title = f"subrun{i}_best_{j+1}_tree"
+            title = f"subrun{i+1}_best_{j+1}_tree"
             fitness = f"Fitness = {hof[j]["fitness"]}"
             tree = hof[j]["individual"]
-            destination = f"GP/hof_12_01/subrun{i}"
+            destination = f"GP/hof_12_01_2000/subrun{i+1}"
             tree_plotter(tree, title, fitness, pset, destination)
     print("All trees have been plotted")
