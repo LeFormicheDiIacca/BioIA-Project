@@ -15,8 +15,7 @@ from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
 import time
-from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, \
-    append_to_json, random_gen, save_run
+from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, random_gen, save_run
 
 # global variables
 
@@ -281,7 +280,7 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
     return (total_penalty,)
 
 # algorithm-running function
-def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
+def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder):
     all_logs = []
     pop = toolbox.population(n=population)
     # for info about fitness of the evolved trees
@@ -376,8 +375,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
         minutes, seconds = divmod(tmp, 60)
 
         print(f"{i + 1}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
-        timestamp = datetime.now().strftime("%d%m%Y%H%M")
-        save_run(population, hof, diff, i+1, scenario_dur, res, pset=pset,path=f"GP/res/run_{timestamp}/GP_tree_{population}pop_{scenario_dur}gen_{runs}runs_{i+1}subrun.json")
+        save_run(population, hof, diff, i+1, scenario_dur, res, pset=pset,path=base_folder, sub_run_idx=i)
         print(f"{i + 1}° run saved")
 
     return pop, hof, all_logs
@@ -385,12 +383,12 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
 
 # main function to run, executes the code and saves logs
 
-def main(population, runs, graph, edge_dict, res,scenario_dur=15):
+def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15, ):
     scenarios = generate_scenarios(runs, graph, res)
     print(
         f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     start = time.time()
-    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur)
+    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder=base_folder)
     end = time.time()
     diff = end - start
     hours, tmp = divmod(diff, 3600)
@@ -399,40 +397,24 @@ def main(population, runs, graph, edge_dict, res,scenario_dur=15):
     pop = ret[0]
     logs = ret[2]
     hof = ret[1]
-    if population >= 500:
-        for i in range(len(hof)):
-            try:
-                tree_plotter(hof[i], f"pop{population}_run{runs}_res{res}_{i + 1}best_tree", pset=pset)
-            except Exception as e:
-                print(f"Could not plot tree: {e}")
-    best = hof[0]
-    hof_list = []
-    for ind in hof:
-        ind_diz = dict()
-        ind_fit = ind.fitness.values[0]
-        ind_str = str(ind)
-        ind_diz[ind_str] = ind_fit
-        hof_list.append(ind_diz)
-    tree_diz = dict()
-    tree_diz["hall_of_fame"] = hof_list
-    tree_diz["best_tree_object"] = str(best)
-    tree_diz["best_tree_fitness"] = best.fitness.values
-    tree_diz["population"] = population
-    tree_diz["resolution"] = res
-    tree_diz["runs"] = runs
-    tree_diz["scenario_duration"] = scenario_dur
-    tree_diz["runtime"] = diff
-    tree_diz["logs"] = logs
-    timestamp = datetime.now().strftime("%d%m%Y%H%M")
-    append_to_json(tree_diz, f"GP/res/run_{timestamp}/GP_tree_{population}pop_{scenario_dur}gen_{runs}runs.json")
+    save_run(population, hof, diff, runs, scenario_dur, res, pset=pset, path=base_folder, logs=logs)
     print("The best individual has been saved")
 
 
 if __name__ == "__main__":
-    population = 3000
-    runs= 15
-    generations = 20
+    experiments = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
+    ]
     res = 200
+    today = datetime.now().strftime("%d_%m_%Y")
+    runs_today_folder = f"GP/res/runs_{today}"
+    if not os.path.exists(runs_today_folder):
+        os.makedirs(runs_today_folder)
     trentino_graph = create_graph("TerrainGraph/trentino.tif",
                                   "TerrainGraph/trentino_alto_adige.pbf",
                                   resolution=res)
@@ -442,6 +424,21 @@ if __name__ == "__main__":
     if water_count == 0:
         print("No Water Node. Can't continue.")
         exit(-1)
+    for experiment in experiments:
+        population = experiment[0]
+        runs = experiment[1]
+        generations = experiment[2]
 
+        base_folder = f"{runs_today_folder}/{population}pop_{generations}gen_{runs}run_{res}res"
+        if not os.path.exists(base_folder):
+            os.makedirs(base_folder)
+        else:
+            i=0
+            while os.path.exists(base_folder):
+                i += 1
+                base_folder = f"{base_folder}_{i}"
+            os.makedirs(base_folder)
 
-    main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations)
+        main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations, base_folder = base_folder)
+        print("Small pause for CPU cooling")
+        sleep(10*60)

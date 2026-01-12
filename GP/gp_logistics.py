@@ -82,9 +82,8 @@ def tree_plotter(tree, title, fitness, pset, destination = "GP/hof" ):
     f += "}"
     graphs = pydot.graph_from_dot_data(f)
     graph = graphs[0]
-    if not os.path.exists(destination):
-        os.makedirs(destination)
-    graph.write_png(f"{destination}/{title}.png")
+    graph.write(f"{destination}/{title}.svg", format="svg")
+    print("ciao")
 
 # to solve TypeError problem
 def from_tree_to_string(string, pset):
@@ -123,11 +122,18 @@ def from_tree_to_string(string, pset):
     return gp.PrimitiveTree(expr)
 
 # adds new data to a json file for finetuning
-def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/tree_diz.json"):
+def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/res", sub_run_idx: int = -1, logs = None):
+    title = f"{population}pop_{scenario_dur}gen_run{run}_res{res}"
+    if sub_run_idx != -1:
+        title = f"{title}_{sub_run_idx}subrun"
+    path_hof = f"{path}/hof/{title}"
+    if not os.path.exists(path_hof):
+        os.makedirs(path_hof)
+    path = f"{path}/{title}"
     if population >=500:
         for i in range(len(hof)):
             try:
-                tree_plotter(hof[i], f"pop{population}_run{run}_res{res}_{i+1}best_tree", pset = pset)
+                tree_plotter(hof[i], f"{title}_{i+1}best_tree", fitness=hof[i].fitness.values[0],pset = pset, destination = path_hof)
             except Exception as e:
                 print(f"Could not plot tree: {e}")
     hof_list = []
@@ -146,38 +152,8 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
     tree_diz["best_individual_fitness"] = best.fitness.values
     tree_diz["hall_of_fame"] = hof_list
     tree_diz["runtime_in_seconds"] = diff
-    append_to_json(tree_diz, path)
-
-def append_to_json(new_data, path: str = "GP/tree_diz.json" ):
-    folder = os.path.dirname(path)
-    if folder and not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
-
-    if os.path.exists(path) and os.path.getsize(path) > 0:
-        with open(path, 'r') as f:
-            data = json.load(f)
-    else:
-        data = [] # Start with an empty list if file doesn't exist
-    data.append(new_data)
+    if logs is not None:
+        tree_diz["logs"] = logs
+    path = f"{path}.json"
     with open(path, 'w') as f:
-        json.dump(data, f, indent=4)
-
-if __name__ == "__main__":
-    from GP_with_optimizations import pset
-
-    for i in range(15):
-        if i == 0:
-            with open(f"GP/res/run_12012026/GP_tree_2000pop_15gen_15runs_{i+1}subrun.json") as f:
-                tree_diz = json.load(f)
-        else:
-            with open(f"GP/res/run_12012026_{i}/GP_tree_2000pop_15gen_15runs_{i+1}subrun.json") as f:
-                tree_diz = json.load(f)
-        tree_diz = tree_diz[0]
-        hof = tree_diz["hall_of_fame"]
-        for j in range(len(hof)):
-            title = f"subrun{i+1}_best_{j+1}_tree"
-            fitness = f"Fitness = {hof[j]["fitness"]}"
-            tree = hof[j]["individual"]
-            destination = f"GP/hof_12_01_2000/subrun{i+1}"
-            tree_plotter(tree, title, fitness, pset, destination)
-    print("All trees have been plotted")
+        json.dump([tree_diz], f, indent=4)
