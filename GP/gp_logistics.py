@@ -6,6 +6,7 @@ import pydot
 import os
 import json
 from functools import partial 
+from collections import deque
 
 def protected_div(n1, n2):
     if isinstance(n1, complex):
@@ -60,7 +61,10 @@ random_gen = partial(round_random, 0,10)
 
 def tree_plotter(tree, title, pset):
     if not isinstance(tree, gp.PrimitiveTree):
-        tree = gp.PrimitiveTree.from_string(tree, pset)
+        try:
+            tree = gp.PrimitiveTree.from_string(tree, pset)
+        except TypeError:    
+            tree = from_tree_to_string(tree, pset)
     nodes, edges, labels = gp.graph(tree)
     f = "digraph G {\n"
     f += "    size=\"20,20\";\n"  
@@ -79,6 +83,41 @@ def tree_plotter(tree, title, pset):
     graph = graphs[0]
     graph.write_png(f"hof/{title}.png")
 
+# to solve TypeError problem
+def from_tree_to_string(string, pset):
+    tokens = re.split("[ \t\n\r\f\v(),]", string)
+    expr = []
+    ret_types = deque()
+    for token in tokens:
+        if token == '':
+            continue
+        type_ = ret_types.popleft() if len(ret_types) != 0 else None
+        if token in pset.mapping:
+            item = pset.mapping[token]
+            if type_ is not None and not issubclass(item.ret, type_):
+                raise TypeError(f"Type mismatch for {token}")
+            expr.append(item)
+            if hasattr(item, 'args'): 
+                ret_types.extendleft(reversed(item.args))
+        else:
+            try:
+                #to solve TypeError
+                val = eval(token) 
+                name = "OtherArgs"
+                new_terminal_cls = gp.MetaEphemeral.__new__(
+                    gp.MetaEphemeral, 
+                    name, 
+                    (gp.Terminal,), 
+                    {'value': val}
+                )
+                gp.MetaEphemeral.cache[id(new_terminal_cls)] = new_terminal_cls
+                terminal_instance = gp.Terminal(token, False, type_ if type_ else type(val))
+                terminal_instance.value = val
+                expr.append(terminal_instance)
+
+            except Exception as e:
+                raise TypeError(f"Unable to evaluate terminal: {token}. Error: {e}")
+    return gp.PrimitiveTree(expr)
 
 # adds new data to a json file for finetuning
 def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/tree_diz.json"):
@@ -119,3 +158,101 @@ def append_to_json(new_data, path: str = "GP/tree_diz.json" ):
     data.append(new_data)
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
+
+if __name__ == "__main__":
+    
+    import re
+    import json
+    import os
+    import deap.gp as gp
+    import networkx as nx
+    import matplotlib.pyplot as plt
+
+    # 1. Usa l'import originale per evitare mismatch di classe
+    from gp_run import pset, OtherArgs 
+
+    import re
+    import json
+    import os
+    import deap.gp as gp
+    import networkx as nx
+    import matplotlib.pyplot as plt
+
+    # 1. Usa l'import originale per evitare mismatch di classe
+    from gp_run import pset, OtherArgs 
+
+    import re
+    import json
+    import os
+    import networkx as nx
+    import matplotlib.pyplot as plt
+
+    def tree_plotter(tree_str, title, fitness, i):
+        print(f"---> Disegnando: {title} (Subrun {i})")
+        
+        # 1. Tokenizzazione della stringa (gestisce nomi funzioni, virgole e parentesi)
+        # Trasformiamo "add(dist, 1.5)" in ["add", "(", "dist", "1.5", ")"]
+        tokens = re.findall(r'[a-zA-Z0-9_.]+|[(),]', tree_str)
+        
+        g = nx.DiGraph()
+        labels = {}
+        stack = []
+        node_count = 0
+        
+        for token in tokens:
+            if token == ",":
+                continue
+            if token == "(":
+                # Il nodo precedente è il padre, lo lasciamo nello stack
+                continue
+            if token == ")":
+                # Abbiamo finito i figli di questo padre
+                if stack:
+                    stack.pop()
+                continue
+                
+            # Creiamo un nuovo nodo
+            node_id = node_count
+            node_count += 1
+            
+            # Pulizia nome per il grafico
+            clean_label = token.replace("OtherArgs", "").replace("WaterArg", "")
+            labels[node_id] = clean_label
+            g.add_node(node_id)
+            
+            # Se c'è un padre nello stack, colleghiamolo
+            if stack:
+                g.add_edge(stack[-1], node_id)
+                
+            # Determiniamo se questo token è una funzione (ha figli) o un terminale
+            # Se il token successivo è "(", è una funzione
+            current_idx = tokens.index(token)
+            if current_idx + 1 < len(tokens) and tokens[current_idx + 1] == "(":
+                stack.append(node_id)
+
+        # 2. PLOTTING
+        plt.figure(figsize=(14, 10))
+        
+        try:
+            # Layout ad albero (richiede Graphviz installato)
+            from networkx.drawing.nx_agraph import graphviz_layout
+            pos = graphviz_layout(g, prog="dot")
+        except:
+            # Fallback se Graphviz non è disponibile
+            pos = nx.spring_layout(g)
+
+        nx.draw(g, pos, labels=labels, with_labels=True, 
+                node_color='skyblue', node_size=2500, 
+                font_size=10, font_weight='bold', 
+                arrows=True, edge_color='gray', alpha=0.9)
+        
+        plt.title(f"{title}\n{fitness}", fontsize=14)
+
+        # 3. SALVATAGGIO
+        output_dir = f"latest_hof/subrun{i}"
+        os.makedirs(output_dir, exist_ok=True)
+        plt.savefig(f"{output_dir}/{title}.png", bbox_inches='tight')
+        plt.close()
+        print(f"   [OK] Salvato in {output_dir}")
+
+    
