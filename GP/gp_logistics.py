@@ -60,7 +60,7 @@ def round_random(a,b):
 random_gen = partial(round_random, 0,10)
 
 
-def tree_plotter(tree, title, fitness, pset):
+def tree_plotter(tree, title, fitness, pset, destination = "GP/hof" ):
     if not isinstance(tree, gp.PrimitiveTree):
         try:
             tree = gp.PrimitiveTree.from_string(tree, pset)
@@ -82,7 +82,9 @@ def tree_plotter(tree, title, fitness, pset):
     f += "}"
     graphs = pydot.graph_from_dot_data(f)
     graph = graphs[0]
-    graph.write_png(f"hof/{title}.png")
+    if not os.path.exists(destination):
+        os.makedirs(destination)
+    graph.write_png(f"{destination}/{title}.png")
 
 # to solve TypeError problem
 def from_tree_to_string(string, pset):
@@ -160,6 +162,18 @@ def append_to_json(new_data, path: str = "GP/tree_diz.json" ):
     with open(path, 'w') as f:
         json.dump(data, f, indent=4)
 
-#if __name__ == "__main__":
-    
+if __name__ == "__main__":
+    from GP_with_optimizations import pset
+
+    for i in range(1,20):
+        with open(f"GP/res/run_12_01_2026/GP_tree_2500pop_15gen_20runs_{i}subrun.json") as f:
+            tree_diz = json.load(f)
+        tree_diz = tree_diz[0]
+        hof = tree_diz["hall_of_fame"]
+        for j in range(len(hof)):
+            title = f"subrun{i}_best_{j+1}_tree"
+            fitness = f"Fitness = {hof[j]["fitness"]}"
+            tree = hof[j]["individual"]
+            destination = f"GP/hof_12_01/subrun{i}"
+            tree_plotter(tree, title, fitness, pset, destination)
     
