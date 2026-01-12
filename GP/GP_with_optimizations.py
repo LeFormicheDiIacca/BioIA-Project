@@ -233,7 +233,7 @@ def precompute_edge_lookup_simple(graph, edge_dict, node_to_idx):
 
 
 
-def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_columns, csr_template, csr_components):
+def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_columns, csr_template, csr_components, water_nodes,res):
     global _GLOBAL_EDGE_DATA, _GLOBAL_PSET
 
     #Vectorial cost computation
@@ -269,7 +269,7 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
     for i, start_idx in enumerate(sources):
         total_penalty += compute_total_penalty_numba(
             preds[i], np.array(grouped[start_idx], dtype=np.int64), start_idx,
-            csr_indices, csr_indptr, csr_data, _GLOBAL_EDGE_DATA
+            csr_indices, csr_indptr, csr_data, _GLOBAL_EDGE_DATA, water_nodes, res
         )
 
     #Penalties for missing values
@@ -312,6 +312,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
         edge_index_matrix.data
     )
     edge_features_columns = [np.array(c, dtype=np.float32) for c in zip(*edge_features)]
+    water_count = sum(1 for features in edge_dict.values() if features[4] > 0)
 
     # Crea un template CSR fisso
     n_nodes = len(node_to_idx)
@@ -337,7 +338,8 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
                          node_to_idx=node_to_idx,
                          edge_features_columns=edge_features_columns,  # Array di colonne
                          csr_template=csr_template,  # Matrice pre-allocata
-                         csr_components=csr_components, water_nodes = water_nodes, res = res)
+                         csr_components=csr_components, res = res,
+                         water_nodes = water_count)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
@@ -373,7 +375,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur):
         minutes, seconds = divmod(tmp, 60)
 
         print(f"{i + 1}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
-        timestamp = datetime.now().strftime("%d%m%Y")
+        timestamp = datetime.now().strftime("%d%m%Y%H%M")
         save_run(population, hof, diff, i+1, scenario_dur, res, pset=pset,path=f"GP/res/run_{timestamp}/GP_tree_{population}pop_{scenario_dur}gen_{runs}runs_{i+1}subrun.json")
         print(f"{i + 1}° run saved")
 
@@ -426,7 +428,9 @@ def main(population, runs, graph, edge_dict, res,scenario_dur=15):
 
 
 if __name__ == "__main__":
-    to_try = [[2500, 15],[2500,15],[2500,15],[2500,15]]
+    population = 3000
+    runs= 15
+    generations = 20
     res = 200
     trentino_graph = create_graph("TerrainGraph/trentino.tif",
                                   "TerrainGraph/trentino_alto_adige.pbf",
@@ -438,7 +442,5 @@ if __name__ == "__main__":
         print("No Water Node. Can't continue.")
         exit(-1)
 
-    for el in to_try:
-        main(population=el[0], runs=el[1], graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=15)
-        #sleep so CPU can rest
-        sleep(10*60)
+
+    main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations)
