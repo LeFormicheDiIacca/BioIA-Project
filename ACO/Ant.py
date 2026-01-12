@@ -1,190 +1,250 @@
 import random
 import time
-import networkx as nx
 import numpy as np
 from numba import jit
-from TerrainGraph.meshgraph import MeshGraph
+
 
 class Ant:
     """
-    Main villain in this story. I've lost too many hairs due to it.
-    It follows the normal Ant Path Calculations with a bias toward avoiding diagonals.
-    The bias will be removed in the future because it should be already considered in the edge cost.
+    Optimized Ant - uses pre-computed sparse structures, no graph reference
     """
-    __slots__ = ('alpha', 'beta', 'rho', 'q0', 'path', 'visited_nodes', 'graph','shared_pheromones','key_nodes_array', 'colony_id', 'n_colonies')
+    __slots__ = ('alpha', 'beta', 'q0', 'path', 'visited_nodes', 'visited_array',
+                 'shared_pheromones', 'colony_id', 'n_colonies',
+                 'n_nodes', 'n_edges', 'key_nodes', 'key_nodes_array',
+                 'neighbors_list', 'edge_costs_csr', 'adjacency_csr',
+                 'edge_id_csr', 'dist_to_key_nodes', 'edge_mapping',
+                 'ant_id')
+
     def __init__(self,
-                 graph: MeshGraph,
+                 graph_data: dict,
                  shared_pheromones,
                  colony_id: int = 0,
                  n_colonies: int = 1,
                  alpha: float = 1.0,
                  beta: float = 2.0,
                  q0: float = 0.05,
-    ):
+                 ant_id: int = 1
+                 ):
         """
-        :param graph: MeshGraph to explore
-        :param shared_pheromones: Shared Memory C Array used for multiprocessing
+        :param graph_data: Dictionary with pre-computed structures
+        :param shared_pheromones: Shared Memory C Array
         :param alpha: Influence of pheromones
         :param beta: Influence of edge cost
         :param q0: Exploration threshold
         """
-
         self.alpha = alpha
         self.beta = beta
+        self.q0 = q0
         self.path = []
         self.visited_nodes = set()
-        self.graph = graph
-        self.q0 = q0
         self.colony_id = colony_id
         self.n_colonies = n_colonies
         self.shared_pheromones = shared_pheromones
-        self.key_nodes_array = self._build_key_nodes_array()
+        self.ant_id = ant_id
 
+        # Extract pre-computed structures from graph_data
+        self.n_nodes = graph_data['n_nodes']
+        self.n_edges = graph_data['n_edges']
+        self.key_nodes = set(graph_data['key_nodes'])
+        self.key_nodes_array = graph_data['key_nodes_array']
+        self.neighbors_list = graph_data['neighbors_list']
+        self.edge_costs_csr = graph_data['edge_costs_csr']
+        self.adjacency_csr = graph_data['adjacency_csr']
+        self.edge_id_csr = graph_data['edge_id_csr']
+        self.dist_to_key_nodes = graph_data['dist_to_key_nodes']
+        self.edge_mapping = graph_data['edge_mapping']
 
-    def _build_key_nodes_array(self):
-        key_array = np.zeros(self.graph.number_of_nodes(), dtype=np.int32)
-        for node in self.graph.key_nodes:
-            key_array[node] = 1
-        return key_array
+        # Fast visited tracking
+        self.visited_array = np.zeros(self.n_nodes, dtype=np.bool_)
 
-    def select_next_node(self, current_node, nodes_to_visit = None):
+    def select_next_node(self, current_node, nodes_to_visit=None):
         """
-        May God's light shine on this fucking ant and force it to make a good choice. Amen
+        Optimized node selection using sparse matrices and pre-computed data
         """
-        neighbors = [n for n in self.graph[current_node] if n not in self.visited_nodes]
-        candidates = dict()
-        key_nodes_bias = 20.0
-        #We initialize a list of node to reach. They'll guide the ant like a compass
-        active_targets = []
+        # Get neighbors from pre-computed list
+        all_neighbors = self.neighbors_list[current_node]
+
+        # Filter visited using array (faster than set lookup)
+        neighbors = [n for n in all_neighbors if not self.visited_array[n]]
+
+        if not neighbors:
+            # Fallback: accept visited nodes if stuck
+            if all_neighbors:
+                return random.choice(all_neighbors)
+            return None
+
+        n_neighbors = len(neighbors)
+        neighbors_arr = np.array(neighbors, dtype=np.int32)
+
+        # Extract edge costs using CSR (very fast!)
+        edge_costs = np.array([
+            self.edge_costs_csr[current_node, n] for n in neighbors
+        ], dtype=np.float32)
+
+        # Calculate distances to target key nodes
         if nodes_to_visit is None:
-            #If no target nodes are provided we aim for the key nodes not visited by the ant
-            nodes_to_visit = self.graph.key_nodes - self.visited_nodes
+            nodes_to_visit = self.key_nodes - self.visited_nodes
+
         if nodes_to_visit:
-            active_targets = list(nodes_to_visit)
+            # Get indices of target key nodes in our distance matrix
+            key_nodes_list = list(self.key_nodes)
+            target_indices = np.array([
+                key_nodes_list.index(t) for t in nodes_to_visit
+            ], dtype=np.int32)
 
-        for neighbor in neighbors:
-            if neighbor in self.visited_nodes:
-                continue
-
-            edge_cost = self.graph[current_node][neighbor]["cost"]
-            #Ant Compass. We decide if by going in a node we are getting closer to some key node
-            if active_targets:
-                min_distances = {
-                    neighbor: min(self.graph.dist_matrix[neighbor, self.graph.key_node_to_idx[t]]  for t in active_targets)
-                    for neighbor in neighbors
-                }
-            else:
-                min_distances = {neighbor: 0.0 for neighbor in neighbors}
-
-            dist_to_target = min_distances[neighbor]
-            #Total effort will be the edge cost + how close we are to a key node
-            total_estimated_effort = edge_cost + dist_to_target
-            #Key nodes have a better heuristic chance to be chosen
-            if neighbor in self.graph.key_nodes and neighbor not in self.visited_nodes:
-                total_estimated_effort *= key_nodes_bias
-
-            #Pheromone retrieval
-            edge_id = self.graph[current_node][neighbor]["edge_id"]
-            pheromone = self.shared_pheromones[self.colony_id][edge_id]
-
-            sum_pheromones = 0
-            for colony_id in range(self.n_colonies):
-                sum_pheromones += self.shared_pheromones[colony_id][edge_id]
-
-            pheromones_dominance_factor = pheromone/sum_pheromones
-            pheromone *= (pheromones_dominance_factor*pheromones_dominance_factor)
-
-            #pheromone = pheromone * (pheromones_dominance_factor**2)
-            #pheromones_dominance_factor = pheromone/sum(all pheromone types)
-
-            prob = (pheromone ** self.alpha) * (total_estimated_effort ** self.beta)
-            candidates[neighbor] = prob
-        #If the ant is stuck it can go in an already visited node. We don't care about the only 1 visit rule because we'll prune the path later
-        if not candidates:
-            neighbors = [n for n in self.graph[current_node]]
-            return random.choice(neighbors)
-
-        if random.random() <= self.q0:
-            #Random chance to exploit instead of exploring
-            best_node = max(candidates, key=candidates.get)
-            return best_node
+            # Extract distances using our compact matrix
+            dist_to_targets = self.dist_to_key_nodes[neighbors_arr][:, target_indices].min(axis=1)
         else:
-            #Roulette wheel selection
-            keys = list(candidates.keys())
-            weights = list(candidates.values())
-            selected_node = random.choices(keys, weights=weights, k=1)[0]
-            return selected_node
+            dist_to_targets = np.zeros(n_neighbors, dtype=np.float32)
+
+        # Calculate total effort
+        total_effort = edge_costs + dist_to_targets
+        total_effort = 1/(total_effort+0.001)
+        # Apply key node bias
+        key_nodes_bias = 20.0
+        is_key_node = self.key_nodes_array[neighbors_arr].astype(bool)
+        total_effort[is_key_node] *= key_nodes_bias
+
+        # Get pheromones with dominance factor
+        pheromones = np.zeros(n_neighbors, dtype=np.float32)
+        for i, neighbor in enumerate(neighbors):
+            edge_id = int(self.edge_id_csr[current_node, neighbor]) - 1
+
+            if edge_id >= 0:
+                colony_pher = self.shared_pheromones[self.colony_id][edge_id]
+
+                # Calculate pheromone dominance
+                sum_pher = sum(
+                    self.shared_pheromones[c][edge_id]
+                    for c in range(self.n_colonies)
+                )
+
+                if sum_pher > 0:
+                    dominance = colony_pher / sum_pher
+                    pheromones[i] = colony_pher * (dominance ** 2)
+
+        # Calculate probabilities
+        probs = (pheromones ** self.alpha) * (total_effort ** self.beta)
+
+        # Normalize
+        prob_sum = probs.sum()
+        if prob_sum > 0:
+            probs = probs / prob_sum
+        else:
+            probs = np.ones(n_neighbors) / n_neighbors
+
+        # Selection: exploitation vs exploration
+        if random.random() <= self.q0:
+            # Exploitation: choose best
+            return neighbors[np.argmax(probs)]
+        else:
+            # Exploration: roulette wheel
+            return np.random.choice(neighbors, p=probs)
 
     def calculate_path(self, starting_node, log_print: bool = False, TSP: bool = False):
-        self.path.append(starting_node)
-        current_node = starting_node
-        nodes_to_visit = self.graph.key_nodes.copy()
-        if current_node in nodes_to_visit:
-            nodes_to_visit.remove(current_node)
-        #Cycle used to search all key nodes
+        """Calculate path visiting all key nodes"""
         if log_print:
             t0 = time.time()
+
+        self.path.append(starting_node)
+        self.visited_array[starting_node] = True
+        self.visited_nodes.add(starting_node)
+
+        current_node = starting_node
+        nodes_to_visit = self.key_nodes.copy()
+
+        if current_node in nodes_to_visit:
+            nodes_to_visit.remove(current_node)
+
+        # Visit all key nodes
         while nodes_to_visit:
-            next_node = self.select_next_node(current_node)
-            #If we are stuck with no way out we dump the invalid path
+            next_node = self.select_next_node(current_node, nodes_to_visit)
+
             if next_node is None:
+                if log_print:
+                    print("Ant got stuck, returning partial path")
                 return self.path
-            #Add the new node to all the important data structures
+
             self.path.append(next_node)
             self.visited_nodes.add(next_node)
+            self.visited_array[next_node] = True
+
             if next_node in nodes_to_visit:
                 nodes_to_visit.remove(next_node)
 
             current_node = next_node
 
+        # TSP: return to start
         if TSP:
-            self.graph.add_temporary_target_to_dist_matrix(starting_node)
-            #In this way the ant's compass will guide it toward the starting node
             nodes_to_visit = {starting_node}
             while current_node != starting_node:
                 next_node = self.select_next_node(current_node, nodes_to_visit)
-                #If we are stuck with no way out we dump the invalid path
+
                 if next_node is None:
+                    if log_print:
+                        print("Ant couldn't return to start")
                     return self.path
 
-                #Add the new node to all the important data structures
                 self.path.append(next_node)
                 self.visited_nodes.add(next_node)
+                self.visited_array[next_node] = True
 
                 current_node = next_node
 
-        if log_print:
-            t1 = time.time()
-        #Heuristic Used to refine the path and avoid redundancy
+        t1 = time.time()
+        # Optimization heuristics
         self.path_pruning_optimization()
+        t2 = time.time()
+        self.two_opt_heuristic()
+        t3 = time.time()
+
         if log_print:
-            t2 = time.time()
-        self.TwoOptHeuristic()
-        if log_print:
-            t3 = time.time()
-            print(f"Path construction: {t1 - t0:.2f}s, Pruning: {t2 - t1:.2f}s, 2-opt: {t3 - t2:.2f}s")
+            print(f"Ant {self.ant_id} from Colony {self.colony_id}: Path Cons {t1-t0:.2f}s - Pruning {t2-t1:.2f}s - 2-Opt {t3-t2:.2f}")
+
         return self.path
 
     def path_pruning_optimization(self):
-        path_array = np.array(self.path, dtype=np.int32)
-        adjacency_matrix = nx.to_numpy_array(self.graph, weight=None).astype(np.int32)
+        """Remove redundant nodes using shortcuts"""
+        if len(self.path) < 3:
+            return
 
-        shortcuts = find_shortcuts_numba(path_array, adjacency_matrix, self.key_nodes_array)
+        path_array = np.array(self.path, dtype=np.int32)
+
+        # Convert CSR to dense for numba (only adjacency, small cost)
+        adjacency_dense = self.adjacency_csr.toarray().astype(np.int32)
+
+        shortcuts = find_shortcuts_numba(path_array, adjacency_dense, self.key_nodes_array)
+
+        # Apply shortcuts in reverse order
         for i, shortcut_idx in reversed(shortcuts):
             del self.path[i + 1:shortcut_idx]
 
-    def TwoOptHeuristic(self):
-        path_array = np.array(self.path, dtype=np.int32)
-        cost_matrix = nx.to_numpy_array(self.graph, weight='cost')
-        adjacency_matrix = nx.to_numpy_array(self.graph, weight=None)
+    def two_opt_heuristic(self):
+        """2-opt optimization"""
+        if len(self.path) < 4:
+            return
 
-        optimized_path = two_opt_numba(path_array, cost_matrix, adjacency_matrix)
+        path_array = np.array(self.path, dtype=np.int32)
+
+        # Convert sparse to dense for numba
+        cost_dense = self.edge_costs_csr.toarray()
+        adjacency_dense = self.adjacency_csr.toarray()
+
+        optimized_path = two_opt_numba(path_array, cost_dense, adjacency_dense)
         self.path = optimized_path.tolist()
+
+    def calc_path_cost(self, path):
+        """Calculate total path cost"""
+        cost = 0.0
+        for i in range(len(path) - 1):
+            cost += self.edge_costs_csr[path[i], path[i + 1]]
+        return cost
+
 
 @jit(nopython=True)
 def find_shortcuts_numba(path_array, adjacency_matrix, key_nodes_array):
     """
-    Trova shortcuts nel path senza ricostruire dict Python
+    Find shortcuts in path without skipping key nodes
     """
     n = len(path_array)
     shortcuts = []
@@ -194,10 +254,15 @@ def find_shortcuts_numba(path_array, adjacency_matrix, key_nodes_array):
         curr = path_array[i]
         best_shortcut_idx = -1
 
-        for j in range(i + 2, n):
+        # Look ahead for shortcut opportunities
+        max_look = min(i + 50, n)  # Limit search window
+
+        for j in range(i + 2, max_look):
             neighbor = path_array[j]
 
+            # Check if direct edge exists
             if adjacency_matrix[curr, neighbor] > 0:
+                # Check if any key nodes would be skipped
                 has_key_node = False
                 for k in range(i + 1, j):
                     if key_nodes_array[path_array[k]] > 0:
@@ -216,10 +281,11 @@ def find_shortcuts_numba(path_array, adjacency_matrix, key_nodes_array):
 
     return shortcuts
 
+
 @jit(nopython=True)
 def two_opt_numba(path_array, cost_matrix, adjacency_matrix, window_size=30):
     """
-    2-opt with numba
+    2-opt optimization with limited window
     """
     n = len(path_array)
     improved = True
