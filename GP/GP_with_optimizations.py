@@ -196,9 +196,9 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
             # increase in elevation difference in at least res/2 edges (in the remaining ones, it's assumed to be a decrease, which does 
             # not impact total penalty)
             # as the cost for crossing water is vary high, as some sort of likelihood to encounter water nodes, we consider the number of 
-            # nodes with water that are present in the grid over the resolution
+            # nodes with water that are present in the grid over the total nodes in the grid
 
-            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d/2, water_count/res])
+            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d/2, water_count/res**2])
             normalized_penalty = penalty/manhattan_matrix
             normalized_penalty = np.sum(normalized_penalty)
             total_penalty += normalized_penalty
