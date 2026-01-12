@@ -45,3 +45,6 @@ threadpoolctl==3.6.0
 tzdata==2025.2
 urllib3==2.5.0
 xyzservices==2025.11.0
+
+deap~=1.4.3
+pydot~=4.0.1
