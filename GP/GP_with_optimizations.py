@@ -403,12 +403,12 @@ def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15, 
 
 if __name__ == "__main__":
     experiments = [
-        [],
-        [],
-        [],
-        [],
-        [],
-        []
+        [500,15,15],
+        [500,20,15],
+        [500,25,15],
+        [1000, 15, 15],
+        [1000, 20, 15],
+        [1000, 25, 15],
     ]
     res = 200
     today = datetime.now().strftime("%d_%m_%Y")
@@ -441,4 +441,4 @@ if __name__ == "__main__":
 
         main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations, base_folder = base_folder)
         print("Small pause for CPU cooling")
-        sleep(10*60)
+        sleep(1*60)

@@ -122,15 +122,15 @@ def from_tree_to_string(string, pset):
     return gp.PrimitiveTree(expr)
 
 # adds new data to a json file for finetuning
-def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/res", sub_run_idx: int = -1, logs = None):
+def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/res", sub_run_idx: int = -1, logs = None, plot_tree = False):
     title = f"{population}pop_{scenario_dur}gen_run{run}_res{res}"
     if sub_run_idx != -1:
         title = f"{title}_{sub_run_idx}subrun"
-    path_hof = f"{path}/hof/{title}"
-    if not os.path.exists(path_hof):
-        os.makedirs(path_hof)
-    path = f"{path}/{title}"
-    if population >=500:
+
+    if population >=500 and plot_tree:
+        path_hof = f"{path}/hof/{title}"
+        if not os.path.exists(path_hof):
+            os.makedirs(path_hof)
         for i in range(len(hof)):
             try:
                 tree_plotter(hof[i], f"{title}_{i+1}best_tree", fitness=hof[i].fitness.values[0],pset = pset, destination = path_hof)
@@ -154,6 +154,6 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
     tree_diz["runtime_in_seconds"] = diff
     if logs is not None:
         tree_diz["logs"] = logs
-    path = f"{path}.json"
+    path = f"{path}/{title}.json"
     with open(path, 'w') as f:
         json.dump([tree_diz], f, indent=4)
