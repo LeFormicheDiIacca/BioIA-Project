@@ -1,0 +1,35 @@
+[
+    {
+        "run": 8,
+        "resolution": 200,
+        "population": 1000,
+        "scenario_duration": 15,
+        "best_individual": "if_then_else(identity_water(identity_water(identity_water(identity_water(identity_water(identity_water(is_water)))))), add(protected_div(elevation_v, 5.551), mul(steepness, distance)), mul(mul(3.19, elevation_u), protected_div(distance, 5.038)))",
+        "best_individual_fitness": [
+            37911.38066416768
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "if_then_else(identity_water(identity_water(identity_water(identity_water(identity_water(identity_water(is_water)))))), add(protected_div(elevation_v, 5.551), mul(steepness, distance)), mul(mul(3.19, elevation_u), protected_div(distance, 5.038)))",
+                "fitness": 37911.38066416768
+            },
+            {
+                "individual": "if_then_else(identity_water(identity_water(identity_water(identity_water(is_water)))), add(protected_div(elevation_v, 5.551), mul(steepness, distance)), mul(mul(3.19, elevation_u), protected_div(distance, 5.038)))",
+                "fitness": 37911.38066416768
+            },
+            {
+                "individual": "if_then_else(identity_water(identity_water(is_water)), add(protected_div(elevation_v, 5.551), mul(steepness, distance)), mul(mul(3.19, elevation_u), protected_div(distance, 5.038)))",
+                "fitness": 37911.38066416768
+            },
+            {
+                "individual": "if_then_else(identity_water(identity_water(identity_water(is_water))), add(protected_div(elevation_v, 5.455), mul(steepness, distance)), mul(mul(3.504, elevation_u), protected_div(distance, 5.87)))",
+                "fitness": 37919.024140749876
+            },
+            {
+                "individual": "if_then_else(identity_water(identity_water(is_water)), add(protected_div(elevation_v, 0.729), mul(steepness, distance)), mul(mul(4.285, elevation_u), protected_div(distance, 3.479)))",
+                "fitness": 37926.39727328024
+            }
+        ],
+        "runtime_in_seconds": 57.18014144897461
+    }
+]
