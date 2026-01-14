@@ -1,0 +1,35 @@
+[
+    {
+        "run": 4,
+        "resolution": 200,
+        "population": 1000,
+        "scenario_duration": 20,
+        "best_individual": "if_then_else(is_water, mul(add(elevation_u, add(add(elevation_v, 8.825), steepness)), 1.442), distance)",
+        "best_individual_fitness": [
+            101735.7661493402
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "if_then_else(is_water, mul(add(elevation_u, add(add(elevation_v, 8.825), steepness)), 1.442), distance)",
+                "fitness": 101735.7661493402
+            },
+            {
+                "individual": "if_then_else(is_water, mul(add(elevation_u, add(elevation_u, elevation_v)), elevation_u), mul(add(distance, steepness), distance))",
+                "fitness": 101814.1163332634
+            },
+            {
+                "individual": "if_then_else(is_water, mul(add(elevation_u, elevation_v), elevation_u), mul(add(distance, steepness), distance))",
+                "fitness": 101814.1163332634
+            },
+            {
+                "individual": "if_then_else(is_water, mul(add(elevation_u, steepness), elevation_u), add(elevation_v, add(distance, neg(add(distance, elevation_v)))))",
+                "fitness": 103086.35212402784
+            },
+            {
+                "individual": "if_then_else(is_water, mul(add(elevation_u, steepness), 9.737), add(elevation_v, add(distance, add(distance, steepness))))",
+                "fitness": 150172.20000603955
+            }
+        ],
+        "runtime_in_seconds": 74.55912899971008
+    }
+]
