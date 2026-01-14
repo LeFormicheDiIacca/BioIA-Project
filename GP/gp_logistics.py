@@ -60,30 +60,43 @@ def round_random(a,b):
 random_gen = partial(round_random, 0,10)
 
 
-def tree_plotter(tree, title, fitness, pset, destination = "GP/hof" ):
+import os
+import platform
+import pydot
+
+def tree_plotter(tree, title, pset, destination = "GP/hof"):
+    if platform.system() == "Windows":
+        conda_prefix = os.environ.get('CONDA_PREFIX')
+        if conda_prefix:
+            graphviz_bin_path = os.path.join(conda_prefix, 'Library', 'bin')
+            if graphviz_bin_path not in os.environ['PATH']:
+                os.environ['PATH'] = graphviz_bin_path + os.pathsep + os.environ['PATH']
     if not isinstance(tree, gp.PrimitiveTree):
         try:
             tree = gp.PrimitiveTree.from_string(tree, pset)
         except TypeError:    
-            tree = from_tree_to_string(tree, pset)
+            tree = from_tree_to_string(tree, pset)         
     nodes, edges, labels = gp.graph(tree)
     f = "digraph G {\n"
-    f += "    size=\"20,20\";\n"  
-    f += "    dpi=300;\n"          
+    f += "    margin=0.5;\n"
+    f += "    center=1;\n"
+    f += "    rankdir=TB;\n"
     f += "    labelloc=\"t\";\n"    
-    f += f"    label=\"{title, fitness}\n\\n\";\n"
-    f += "    labelloc = \"t\";\n"
-    f += "    size = \"20,20\";\n"
-    f += "    dpi = 300;\n"     
+    f += f"    label=\"{title}\\n\\n\";\n"
     for node in nodes:
-        f += f'    {node} [label="{labels[node]}", shape=ellipse, style=filled, fillcolor=white, fontname="Arial", fixedsize=false, margin=0.2];\n'
+        f += f'    {node} [label="{labels[node]}", shape=ellipse, style=filled, fillcolor=white, fontname="Arial", margin=0.1];\n' 
     for edge in edges:
         f += f"    {edge[0]} -> {edge[1]};\n"
     f += "}"
     graphs = pydot.graph_from_dot_data(f)
     graph = graphs[0]
-    graph.write(f"{destination}/{title}.svg", format="svg")
-    print("ciao")
+    if not os.path.exists(destination):
+        os.makedirs(destination)
+    output_path = f"{destination}/{title}"
+    try:
+        graph.write(f"{output_path}.svg", format="svg")
+    except Exception as e:
+        print(f"SVG printing error: {e}")
 
 # to solve TypeError problem
 def from_tree_to_string(string, pset):
@@ -133,7 +146,7 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
             os.makedirs(path_hof)
         for i in range(len(hof)):
             try:
-                tree_plotter(hof[i], f"{title}_{i+1}best_tree", fitness=hof[i].fitness.values[0],pset = pset, destination = path_hof)
+                tree_plotter(hof[i], f"{title}_{i+1}best_tree",pset = pset, destination = path_hof)
             except Exception as e:
                 print(f"Could not plot tree: {e}")
     hof_list = []
@@ -157,3 +170,86 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
     path = f"{path}/{title}.json"
     with open(path, 'w') as f:
         json.dump([tree_diz], f, indent=4)
+
+
+if __name__ == "__main__":
+    import os
+    from GP_with_optimizations import pset
+    pop_size = [500, 1000, 2000, 2500, 3000, 5000]
+    runs = [15,20,25]
+    min_fit = 100000000
+    second_min_fit = 1000000001
+    third_min_fit = 1000000002
+    fourth_min_fit = 100000000
+    fifth_min_fit = 100000000
+    for size in pop_size:
+        for run in runs:
+            for i in range(1, run+1):
+                with open(f"GP/res/runs_12_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json") as f:
+                    diz = json.load(f)
+                diz = diz[0]
+                hof = diz["hall_of_fame"]
+                if i < run:
+                    #tree_plotter(hof[0]["individual"], f"best_tree_{size}pop_15gen_{run}runs_res200_{i}subrun", pset = pset, destination = f"GP/hof_12_01_2026/{size}pop/{run}runs")
+                    if float(hof[0]["fitness"])< min_fit:
+                        min_fit = float(hof[0]["fitness"])
+                        best_ind = f"size{size}, run{run}.{i}"
+                        best_tree = hof[0]["individual"]
+                    elif float(hof[0]["fitness"]) > min_fit and float(hof[0]["fitness"]) < second_min_fit:
+                        second_min_fit = float(hof[0]["fitness"])
+                        second_best_ind = f"size{size}, run{run}.{i}"
+                        second_best_tree = hof[0]["individual"]
+                    elif float(hof[0]["fitness"]) < third_min_fit and float(hof[0]["fitness"]) > second_min_fit:
+                        third_min_fit = float(hof[0]["fitness"])
+                        third_best_ind = f"size{size}, run{run}.{i}"
+                        third_best_tree = hof[0]["individual"]
+                    elif float(hof[0]["fitness"]) < fourth_min_fit and float(hof[0]["fitness"]) > third_min_fit:
+                        fourth_min_fit = float(hof[0]["fitness"])
+                        fourth_best_ind = f"size{size}, run{run}.{i}"
+                        fourth_best_tree = hof[0]["individual"]
+                    elif float(hof[0]["fitness"]) < fifth_min_fit and float(hof[0]["fitness"]) > fourth_min_fit:
+                        fifth_min_fit = float(hof[0]["fitness"])
+                        fifth_best_ind = f"size{size}, run{run}.{i}"
+                        fifth_best_tree = hof[0]["individual"]
+                else:
+                    for j in range(len(hof)):
+                        #tree_plotter(hof[j]["individual"], f"best_{j+1}tree_{size}pop_15gen_{run}runs_res200_{i}subrun", pset = pset, destination = f"GP/hof_12_01_2026/{size}pop/{run}runs")
+                        if float(hof[j]["fitness"])< min_fit:
+                            min_fit = float(hof[j]["fitness"])
+                            best_ind = f"size{size}, run{run}.{i}"
+                            best_tree = hof[j]["individual"]
+                        elif float(hof[j]["fitness"]) > min_fit and float(hof[j]["fitness"]) < second_min_fit:
+                            second_min_fit = float(hof[j]["fitness"])
+                            second_best_ind = f"size{size}, run{run}.{i}"
+                            second_best_tree = hof[j]["individual"]
+                        elif float(hof[j]["fitness"]) > second_min_fit and float(hof[j]["fitness"]) < third_min_fit:
+                            third_min_fit = float(hof[j]["fitness"])
+                            third_best_ind = f"size{size}, run{run}.{i}"
+                            third_best_tree = hof[j]["individual"]
+                        elif float(hof[j]["fitness"]) < fourth_min_fit and float(hof[j]["fitness"]) > third_min_fit:
+                            fourth_min_fit = float(hof[j]["fitness"])
+                            fourth_best_ind = f"size{size}, run{run}.{i}"
+                            fourth_best_tree = hof[j]["individual"]
+                        elif float(hof[j]["fitness"]) < fifth_min_fit and float(hof[j]["fitness"]) > fourth_min_fit:
+                            fifth_min_fit = float(hof[0]["fitness"])
+                            fifth_best_ind = f"size{size}, run{run}.{i}"
+                            fifth_best_tree = hof[j]["individual"]
+                            
+    print(min_fit, best_ind, best_tree)
+    print(second_min_fit, second_best_ind, second_best_tree)
+    print(third_min_fit, third_best_ind, third_best_tree)
+    import pandas as pd
+    best = [{"place":1, "tree_string" : best_tree, "individual": best_ind, "fitness": min_fit},
+            {"place":2, "tree_string" : second_best_tree,"individual": second_best_ind, "fitness": second_min_fit},
+            {"place":3, "tree_string" : third_best_tree,"individual": third_best_ind, "fitness": third_min_fit},
+            {"place":4, "tree_string" : fourth_best_tree,"individual": fourth_best_ind, "fitness": fourth_min_fit},
+            {"place":5, "tree_string" : fifth_best_tree,"individual": fifth_best_ind, "fitness": fifth_min_fit},
+            ]
+    with open("GP/best_trees.json", "w") as f:
+        json.dump(best, f)
+    print("Best individuals have been saved")
+
+
+
+
+        
