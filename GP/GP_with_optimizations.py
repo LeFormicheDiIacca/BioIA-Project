@@ -179,7 +179,7 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
 
             dp = STEEPNESS_COEFFICIENT*incl + STEEPNESS_PENALTY * max(0, incl-1/3)
 
-            elev_diff = max(e_v - e_u, 0.0)
+            elev_diff = abs(e_v - e_u)
 
             penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water])
 
