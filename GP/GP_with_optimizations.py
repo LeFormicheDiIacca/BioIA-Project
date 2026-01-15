@@ -181,7 +181,7 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
 
             elev_diff = abs(e_v - e_u)
 
-            penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water])
+            penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water, ELEVATION_COEFFICIENT*e_v, ELEVATION_COEFFICIENT*e_u ])
 
             # Normalize total penalty w.r.t. to the Manhattan distance, aka the average length of the shortest path between two random
             # points in a resolution^2 grid
@@ -197,7 +197,7 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
             # as the cost for crossing water is vary high, as some sort of likelihood to encounter water nodes, we consider the number of 
             # nodes with water that are present in the grid over the total nodes in the grid
 
-            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d/2, water_count/res**2])
+            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d, water_count/res**2, manhattan_d, manhattan_d])
             normalized_penalty = penalty/manhattan_matrix
             normalized_penalty = np.sum(normalized_penalty)
             total_penalty += normalized_penalty
