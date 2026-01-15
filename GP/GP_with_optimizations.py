@@ -428,21 +428,21 @@ if __name__ == "__main__":
     if water_count == 0:
         print("No Water Node. Can't continue.")
         exit(-1)
-    # for experiment in experiments:
-    #     population = experiment[0]
-    #     runs = experiment[1]
-    #     generations = experiment[2]
+    for experiment in experiments:
+        population = experiment[0]
+        runs = experiment[1]
+        generations = experiment[2]
 
-    #     base_folder = f"{runs_today_folder}/{population}pop_{generations}gen_{runs}run_{res}res"
-    #     if not os.path.exists(base_folder):
-    #         os.makedirs(base_folder)
-    #     else:
-    #         i=0
-    #         while os.path.exists(base_folder):
-    #             i += 1
-    #             base_folder = f"{base_folder}_{i}"
-    #         os.makedirs(base_folder)
+        base_folder = f"{runs_today_folder}/{population}pop_{generations}gen_{runs}run_{res}res"
+        if not os.path.exists(base_folder):
+            os.makedirs(base_folder)
+        else:
+            i=0
+            while os.path.exists(base_folder):
+                i += 1
+                base_folder = f"{base_folder}_{i}"
+            os.makedirs(base_folder)
 
-    #     main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations, base_folder = base_folder)
-    #     print("Small pause for CPU cooling")
-    #     sleep(1*60)
+        main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations, base_folder = base_folder)
+        print("Small pause for CPU cooling")
+        sleep(1*60)
