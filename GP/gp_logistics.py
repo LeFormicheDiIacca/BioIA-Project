@@ -3,7 +3,6 @@ import math
 import numpy as np
 from deap import gp
 import pydot
-import os
 import json
 from functools import partial 
 from collections import deque
@@ -173,8 +172,8 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
 
 
 if __name__ == "__main__":
-    import os
-    from GP_with_optimizations import pset
+    
+    #from GP_with_optimizations import pset
     pop_size = [500, 1000, 2000, 2500, 3000, 5000]
     runs = [15,20,25]
     min_fit = 100000000

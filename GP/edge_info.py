@@ -21,7 +21,6 @@ def get_edge_metadata(G, u, v):
     
     is_water = 1.0 if (node_u['is_water'] or node_v['is_water']) else 0.0
     return np.array([dist, abs(inclination), elev_u, elev_v, is_water]).astype(float)
-    #return (dist, abs(float(inclination)), float(elev_u), float(elev_v), is_water)
 
 def create_edge_dict(graph):
     edge_dict = {}
@@ -39,12 +38,4 @@ def create_edge_dict(graph):
     for el in edge_dict:
         edge_dict[el] /= norm_matrix
     return edge_dict
-
-
-# with open(f"edge_dict_res{n}.json", "w") as f:
-#     json.dump(edge_dict, f)
-
-
-# TODO: normalizzo i valori nella mia funzione evaluate (max_normalization, dove max_distance è resolution-specific)
-
 

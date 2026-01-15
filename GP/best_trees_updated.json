@@ -1,0 +1,6 @@
+[{"place": 1, "tree_string": "add(7.828, if_then_else(is_water, add(distance, elevation_v), mul(steepness, mul(distance, mul(elevation_u, elevation_u)))))", "individual": "size2000, run25.20", "fitness": 4002.0683126204012}, 
+{"place": 2, "tree_string": "if_then_else(is_water, mul(add(distance, elevation_v), elevation_u), mul(mul(add(1.701, steepness), 0.117), distance))", "individual": "1000, 20gen, 25.9", "fitness": 5430.373722332625}, 
+{"place": 3, "tree_string": "add(if_then_else(is_water, steepness, sub(elevation_u, mul(distance, elevation_v))), sub(8.341, steepness))", "individual": "5000, 20gen, 15.11", "fitness": 6931.097273666013}, 
+{"place": 4, "tree_string": "add(mul(elevation_u, distance), if_then_else(is_water, 7.863, add(sub(neg(elevation_v), mul(steepness, distance)), steepness)))", "individual": "size2000, run20.20", "fitness": 9055.215375728265}, 
+{"place": 5, "tree_string": "add(mul(elevation_u, distance), sub(if_then_else(identity_water(identity_water(is_water)), 9.361, steepness), add(elevation_v, elevation_u)))", "individual": "size5000, run15.12", "fitness": 9439.533133768025}
+]
