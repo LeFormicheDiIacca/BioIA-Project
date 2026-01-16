@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 import json
 import time
 import numpy as np
@@ -8,12 +9,12 @@ from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
 from GP.edge_info import create_edge_dict
 from TerrainGraph.meshgraph import MeshGraph
-from GP.sanity_check import weight_func
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
-from cost_functions import best_CF, second_best_CF
+from cost_functions import second_best_CF
 
-OUTPUT_FOLDER = "Results"
+today = datetime.now().strftime("%d_%m_%Y")
+OUTPUT_FOLDER = f"Results/day_{today}"
 FILENAME = "PathOutputs"
 
 def get_closest_indices(key_coords, bounds, resolution):
@@ -41,17 +42,87 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 150,
+        "resolution": 200,
         "area" : BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)    
     }
 
     key_coords = [
-        (46.060883,11.236782), # Pergine
-        (46.066461,11.126490), # Trento
-        (46.072764,11.058383), # Sopramonte
-        (46.038994,11.057160), # Vason
+        #Local benchmark 1
+        [
+            (46.060883,11.236782), # Pergine
+            (46.066461,11.126490), # Trento
+            (46.072764,11.058383), # Sopramonte
+            (46.038994,11.057160), # Vason
+        ],
+        # Local benchmark 2
+        [
+            (45.91838, 10.88651),  # Arco
+            (45.88457, 10.83964),  # Riva
+            (45.86911, 10.87644),  # Torbole
+            (45.85176, 10.97466),  # Mori
+
+        ],
+        # Local benchmark 3
+        [
+            (45.85176, 10.97466),  # Mori
+            (45.8422, 11.0110),  # Marco
+            (45.8862, 11.0457),  # Rovereto
+            (45.91581, 11.06203),  # Volano
+            (45.93480, 11.09430),  # Calliano
+
+        ],
+        # Local benchmark 4
+        [
+            (46.060883,11.236782),  # Pergine
+            (45.99148, 11.26167),  # Caldonazzo
+            (46.0072, 11.3008),  # Levico
+            (46.0530, 11.4546),  # Borgo Valsugana
+        ],
+        # Local benchmark 5
+        [
+            (45.88457, 10.83964),  # Riva
+            (45.91838, 10.88651),  # Arco
+            (45.96129, 10.91183),  # Dro
+            (46.04571, 10.95105),  # Sarche
+        ],
+        # Provincial benchmark 1
+        [
+            (45.7345, 10.9379),  # Avio
+            (45.7575, 11.0004),  # Ala
+            (45.8862, 11.0457),  # Rovereto
+            (46.066461,11.126490),  # Trento
+            (46.13952, 11.11044),  # Lavis
+            (46.2145, 11.1206),  # Mezzocorona
+        ],
+        # Provincial benchmark 2
+        [
+            (45.88457, 10.83964),  # Riva
+            (45.85176, 10.97466),  # Mori
+            (45.8862, 11.0457),  # Rovereto
+            (46.066461,11.126490),  # Trento
+            (46.060883,11.236782),  # Pergine
+            (46.0530, 11.4546),  # Borgo Valsugana
+        ],
+        # Provincial benchmark 3
+        [
+            (45.88457, 10.83964),  # Riva
+            (45.91838, 10.88651),  # Arco
+            (45.96129, 10.91183),  # Dro
+            (46.04571, 10.95105),  # Sarche
+            (46.08627, 11.06332),  # Cadine
+            (46.066461,11.126490),  # Trento
+        ],
+        # Provincial benchmark 4
+        [
+            (46.066461,11.126490),  # Trento
+            (46.21061, 11.09327),  # Mezzolombardo
+            (46.29435, 11.07199),  # Mollaro
+            (46.3647, 11.0316),  # Cles
+            (46.35107, 10.91303),  # Malè
+            (46.32180, 10.83964),  # Mestriago
+        ],
     ]
-    key_nodes = get_closest_indices(key_coords, mesh_graph_parameters["area"],mesh_graph_parameters["resolution"]);
+    n_test_cases = len(key_coords)
 
     ant_colony_parameters = {
         "alpha": 1, # influence of pheromones 
@@ -62,15 +133,15 @@ if __name__ == '__main__':
         "max_iterations": 100, # number of epochs
         "max_no_updates": 15, # how many times sim accepts not having updates before resetting
         "n_best_ants": 5, # how much elitism do you want
-        "average_cycle_length": 9000, # serve per inizializzare i feromoni con dei valori sensati 'cit davide'
+        "average_cycle_length": 5000, # serve per inizializzare i feromoni con dei valori sensati 'cit davide'
         "n_iterations_before_spawn_in_key_nodes": 8
     }
     config_data = {
         "MeshGraph": mesh_graph_parameters,
         "AntColony": ant_colony_parameters,
-        "KeyNodes": list(key_nodes)
+        "KeyNodes": list(key_coords),
     }
-    n_iterations = 1 # how many times to run the entire simulation from scratch (used for performance evaluation) 
+    n_iterations = 18 # how many times to run the entire simulation from scratch (used for performance evaluation)
     resilience_factor = 1 # how many independent paths to find
 
     # Debug configs
@@ -80,16 +151,6 @@ if __name__ == '__main__':
     save_rendered_paths = True 
     writer = None
     synthetic_data = False
-
-    """
-    n_paths = 8
-    consider_key_nodes_neighborhood = False
-    if n_paths > mesh_graph_parameters["n_neighbours"]:
-        if consider_key_nodes_neighborhood:
-            print("WARNING: More paths than node connections. We are considering the key nodes neighborhood but could be not enough.")
-        else:
-            raise Exception("Error: n_paths must be equal or lower to n_neighbours")
-    """
 
     if log_data:
         #creates JSON file with all config of the iteration
@@ -110,11 +171,12 @@ if __name__ == '__main__':
 
     #Creates a random mesh graph for testing
     if synthetic_data:
-        mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
         #mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
         mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], mesh_graph_parameters["area"])
+        key_nodes = get_closest_indices(key_coords[0], mesh_graph_parameters["area"],
+                                        mesh_graph_parameters["resolution"])
         mesh_graph.assign_key_nodes(key_nodes)
         edge_dict = create_edge_dict(mesh_graph)
         for v in mesh_graph.nodes():
@@ -135,9 +197,12 @@ if __name__ == '__main__':
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
     try:
         for i in range(n_iterations):
+            key_nodes_idx = i%n_test_cases
+            key_nodes = get_closest_indices(key_coords[key_nodes_idx], mesh_graph_parameters["area"], mesh_graph_parameters["resolution"])
+            aco.construct_key_nodes_data(key_nodes)
             #Simulate a colony
             start_time = time.perf_counter()
-            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = resilience_factor)
+            paths = aco.simulation(retrieve_n_best_paths = 1, log_print = True, TSP = False, resilience_factor = resilience_factor)
             end_time = time.perf_counter() - start_time
             for (path, path_cost) in paths:
                 #Write path info in CSV
@@ -154,28 +219,26 @@ if __name__ == '__main__':
                     print(f"Time: {end_time} - Path_cost: {path_cost} - Path: {path}\n")
                 if (print_graph or save_rendered_paths) and path is not None:
                     res_paths.append(path)
+            if print_graph:
+                print("Plotting mesh graph...")
+                mesh_graph.plot_graph(figsize=(35, 35), paths=res_paths, paths_colors=color)
+            if save_rendered_paths:
+                file_path_html = create_file_path("html")
+                print("Generating road visualization...")
+                visualize_paths(
+                    mesh_graph=mesh_graph,
+                    paths=res_paths,
+                    key_nodes=key_nodes,
+                    output_file=file_path_html,
+                )
+            print("Small CPU sleep of 1 minute for cooling")
+            time.sleep(1 * 60)
 
-    finally:
-        if print_graph:
-            print("Plotting mesh graph...")
-            mesh_graph.plot_graph(figsize=(35, 35), paths = res_paths, paths_colors = color)
-        if save_rendered_paths:
-            print("Generating road visualization...")
-            visualize_paths(
-                mesh_graph=mesh_graph,
-                paths=res_paths,
-                key_nodes=key_nodes,
-                output_file="my_geo_paths.html",
-            )
+    except Exception as e:
+        print(f"Eh kaput :(")
+        print(f"Exception: {e}")
 
 
 
 #Ants no longer stupids as fuck. Now just a little bit stupid. Maybe it was my fault :(. Sorry ants
 #Glory to C and the Ants🫡
-"""            
-TODO:          
-    1. Need to fine tune the ACO hyperparameters and we are done
-    2. Need to improve 2-opt and path optimization
-    3. Sometimes tsp problem ignored and some nodes are repeated? Ignore
-    4. Formalize better the steiner tree mode?
-"""
