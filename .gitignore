@@ -235,7 +235,7 @@ old_hof
 GP/GP_tree_5k_20_runs.json
 GP/plot_logs.py
 GP/gp_run.py
-GP/correct_results.py
+GP/quick_fix.py
 GP/res
 GP/runs_14_01_2026
 
