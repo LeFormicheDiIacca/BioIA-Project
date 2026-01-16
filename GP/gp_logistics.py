@@ -181,7 +181,7 @@ if __name__ == "__main__":
     for size in pop_size:
         for run in runs:
             for i in range(1, run + 1):
-                file_path = f"GP/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
+                file_path = f"GP/res/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
                 try:
                     with open(file_path) as f:
                         data = json.load(f)[0]
