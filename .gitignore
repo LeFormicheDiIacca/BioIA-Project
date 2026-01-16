@@ -220,7 +220,6 @@ cache/
 .vscode
 
 # our stuff
-Results/
 my_geo_paths.html
 GP/tree_diz_davide.json
 GP/tree_diz_mop.json

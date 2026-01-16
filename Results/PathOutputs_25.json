@@ -1,0 +1,30 @@
+{
+    "MeshGraph": {
+        "n_neighbours": 8,
+        "resolution": 100,
+        "area": [
+            11.014309,
+            45.990134,
+            11.348362,
+            46.118939
+        ]
+    },
+    "AntColony": {
+        "alpha": 1,
+        "beta": 2,
+        "rho": 0.1,
+        "q0": 0.1,
+        "ant_number": 50,
+        "max_iterations": 100,
+        "max_no_updates": 15,
+        "n_best_ants": 5,
+        "average_cycle_length": 9000,
+        "n_iterations_before_spawn_in_key_nodes": 8
+    },
+    "KeyNodes": [
+        6654,
+        3359,
+        1364,
+        1338
+    ]
+}
