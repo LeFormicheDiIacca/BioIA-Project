@@ -1,0 +1,35 @@
+[
+    {
+        "run": 1,
+        "resolution": 200,
+        "population": 500,
+        "scenario_duration": 15,
+        "best_individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 6.53), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(add(elevation_v, elevation_v)))))",
+        "best_individual_fitness": [
+            903618.618815066
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 6.53), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(add(elevation_v, elevation_v)))))",
+                "fitness": 903618.618815066
+            },
+            {
+                "individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 9.909), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(add(elevation_v, elevation_v)))))",
+                "fitness": 903618.618815066
+            },
+            {
+                "individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 6.728), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), if_then_else(identity_water(identity_water(identity_water(identity_water(is_water)))), steepness, elevation_v))), neg(neg(add(elevation_v, elevation_v)))))",
+                "fitness": 903618.618815066
+            },
+            {
+                "individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 6.728), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), add(neg(distance), add(elevation_u, elevation_u)))), neg(neg(add(elevation_v, elevation_v)))))",
+                "fitness": 903618.618815066
+            },
+            {
+                "individual": "neg(add(sub(if_then_else(identity_water(is_water), sub(steepness, 6.728), add(distance, elevation_u)), sub(sub(elevation_u, elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(add(elevation_v, elevation_v)))))",
+                "fitness": 903618.618815066
+            }
+        ],
+        "runtime_in_seconds": 53.94693851470947
+    }
+]

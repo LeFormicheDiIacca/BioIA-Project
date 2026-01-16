@@ -181,8 +181,7 @@ if __name__ == "__main__":
     for size in pop_size:
         for run in runs:
             for i in range(1, run + 1):
-                file_path = f"GP/res/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
-                
+                file_path = f"GP/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
                 try:
                     with open(file_path) as f:
                         data = json.load(f)[0]
@@ -199,7 +198,7 @@ if __name__ == "__main__":
                             "individual_id": f"size{size}, run{run}.{i}"
                         })
                 except (FileNotFoundError, IndexError, KeyError):
-                    continue # Skip files that are missing or formatted incorrectly
+                    print("NOT WORKING") # Skip files that are missing or formatted incorrectly
 
     # 1. Sort by fitness (lowest is best)
     all_candidates.sort(key=lambda x: x["fitness"])
@@ -224,16 +223,6 @@ if __name__ == "__main__":
             "individual": item["individual_id"],
             "fitness": item["fitness"]
         })                 
-    # print(min_fit, best_ind, best_tree)
-    # print(second_min_fit, second_best_ind, second_best_tree)
-    # print(third_min_fit, third_best_ind, third_best_tree)
-    # import pandas as pd
-    # best = [{"place":1, "tree_string" : best_tree, "individual": best_ind, "fitness": min_fit},
-    #         {"place":2, "tree_string" : second_best_tree,"individual": second_best_ind, "fitness": second_min_fit},
-    #         {"place":3, "tree_string" : third_best_tree,"individual": third_best_ind, "fitness": third_min_fit},
-    #         {"place":4, "tree_string" : fourth_best_tree,"individual": fourth_best_ind, "fitness": fourth_min_fit},
-    #         {"place":5, "tree_string" : fifth_best_tree,"individual": fifth_best_ind, "fitness": fifth_min_fit},
-    #         ]
     with open("GP/best_trees.json", "w") as f:
         json.dump(best, f, indent=4)
     print("Best individuals have been saved")
