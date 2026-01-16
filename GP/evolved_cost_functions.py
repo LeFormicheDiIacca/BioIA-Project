@@ -12,8 +12,8 @@ def best_CF(distance, elev_u, elev_v, steepness, is_water):
     if is_water == 1.0:
         ret = math.log(3.148, 9.535)
     else:
-        ret = distance + (-1)*(-1)*distance
-    tmp = [(-1)*((-1)*distance + (-1)*3.685) - (elev_u/4.164)*(-1)*elev_u] - elev_v 
+        ret = 2*distance
+    tmp = ((distance+3.685) + (elev_u/4.164)*elev_u) - elev_v
     if is_water == 1.0:
         tmp -= steepness
     else:

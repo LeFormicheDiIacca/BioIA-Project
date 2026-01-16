@@ -6,11 +6,12 @@ from pathlib import Path
 
 from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
-from cost_functions import test_cost_assignment
+from GP.edge_info import create_edge_dict
 from TerrainGraph.meshgraph import MeshGraph
 from GP.sanity_check import weight_func
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
+from cost_functions import best_CF, second_best_CF
 
 OUTPUT_FOLDER = "Results"
 FILENAME = "PathOutputs"
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     #Config values for the entire simulation
     mesh_graph_parameters = {
         "n_neighbours": 8,
-        "resolution": 100,
+        "resolution": 150,
         "area" : BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)    
     }
 
@@ -54,8 +55,8 @@ if __name__ == '__main__':
 
     ant_colony_parameters = {
         "alpha": 1, # influence of pheromones 
-        "beta": 3, # influence of edge costs
-        "rho": 0.2, # pheromone evaporation rate
+        "beta": 2, # influence of edge costs
+        "rho": 0.1, # pheromone evaporation rate
         "q0": 0.1, # greedy choice probability
         "ant_number": 50,
         "max_iterations": 100, # number of epochs
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     resilience_factor = 1 # how many independent paths to find
 
     # Debug configs
-    log_data = False 
+    log_data = True
     print_res = True
     print_graph = False
     save_rendered_paths = True 
@@ -111,13 +112,17 @@ if __name__ == '__main__':
     if synthetic_data:
         mesh_graph = MeshGraph(key_nodes=key_nodes,**mesh_graph_parameters)
         edges_metadata = dict()
-        mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
+        #mesh_graph.cost_assignment(edges_metadata, test_cost_assignment, print_assignment=False)
     else:
         mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], mesh_graph_parameters["area"])
         mesh_graph.assign_key_nodes(key_nodes)
+        edge_dict = create_edge_dict(mesh_graph)
         for v in mesh_graph.nodes():
             for u in mesh_graph[v]:
-                cost = weight_func(mesh_graph, v,u, None)
+                u_ordered, v_ordered = min(u, v), max(u, v)
+                key = f"{u_ordered}-{v_ordered}"
+                metadata = edge_dict[key]
+                cost = second_best_CF(metadata[0],metadata[1],metadata[2],metadata[3],metadata[4])
                 mesh_graph[v][u]['cost'] = cost
         mesh_graph.cost_normalization()
 
