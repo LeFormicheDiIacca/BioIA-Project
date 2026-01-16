@@ -173,6 +173,13 @@ class ACO_simulator:
         self.key_nodes_mask = self._build_key_nodes_array()
         self.dist_matrix = self._build_dist_to_key_nodes()
 
+        self.shared_map['key_nodes_mask'] = create_shared_array(self.key_nodes_mask)
+        self.shared_map['dist_matrix'] = create_shared_array(self.dist_matrix)
+
+        self.worker_config['key_nodes_list'] = self.key_nodes_list
+        self.worker_config['n_keys'] = len(self.key_nodes_list)
+
+
     def _build_sparse_costs_matrix(self):
         n = self.graph.number_of_nodes()
         costs = lil_matrix((n, n), dtype=np.float32)

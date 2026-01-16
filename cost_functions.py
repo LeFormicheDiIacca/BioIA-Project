@@ -10,6 +10,7 @@ import math
 #   OR if you want to implement get_edge_metadata edge by edge
 
 def best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = 2*steepness
     if is_water == 1.0:
         ret = math.log(3.148, 9.535)
     else:
@@ -26,6 +27,7 @@ def best_CF(distance, steepness, elev_u, elev_v, is_water):
 
 
 def second_best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = steepness*2
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
@@ -33,7 +35,8 @@ def second_best_CF(distance, steepness, elev_u, elev_v, is_water):
         ret += elev_u * elev_v * steepness
     return ret
 
-def third_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def third_best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = 2*steepness
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += steepness - elev_v
@@ -42,7 +45,8 @@ def third_best_CF(distance, elev_u, elev_v, steepness, is_water):
     return ret
 
 
-def fourth_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def fourth_best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = 2*steepness
     if is_water == 1.0:
         ret = distance
     else:
@@ -55,7 +59,8 @@ def fourth_best_CF(distance, elev_u, elev_v, steepness, is_water):
     return ret
 
 
-def fifth_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def fifth_best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = 2*steepness
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance

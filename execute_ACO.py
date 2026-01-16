@@ -194,6 +194,7 @@ if __name__ == '__main__':
     print("Running ACO simulation...")
     #Simulate n_iterations times
     res_paths = []
+    res_paths_alls = []
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
     try:
         for i in range(n_iterations):
@@ -231,6 +232,8 @@ if __name__ == '__main__':
                     key_nodes=key_nodes,
                     output_file=file_path_html,
                 )
+            res_paths_alls.append(res_paths)
+            res_paths = []
             print("Small CPU sleep of 1 minute for cooling")
             time.sleep(1 * 60)
 
