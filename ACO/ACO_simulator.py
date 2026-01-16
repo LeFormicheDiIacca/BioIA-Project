@@ -3,7 +3,8 @@ import math
 import multiprocessing
 import random
 import time
-from typing import List
+import ctypes
+from typing import List, Tuple
 
 import numpy as np
 import networkx as nx
@@ -12,35 +13,76 @@ from scipy.sparse import csr_matrix, lil_matrix
 from ACO.Ant import Ant
 from TerrainGraph.meshgraph import MeshGraph
 
-shared_pheromones_arrays = None
-shared_graph_data = None
+# Variabili globali per i worker (tengono le views numpy sulla memoria condivisa)
+global_shared_data = {}
 
 
-def init_worker(shared_array, graph_data):
-    """Initialize worker with shared memory"""
-    global shared_pheromones_arrays, shared_graph_data
-    shared_pheromones_arrays = shared_array
-    shared_graph_data = graph_data
+def create_shared_array(np_array):
+    """Crea un RawArray compatibile con multiprocessing dai dati numpy"""
+    c_type = np.ctypeslib.as_ctypes_type(np_array.dtype)
+    # RawArray non ha lock, è più veloce e leggero
+    shared_arr = multiprocessing.RawArray(c_type, np_array.flatten())
+    return shared_arr
+
+
+def init_worker(shared_map, config):
+    """
+    Inizializza il worker ricostruendo le views numpy dai buffer condivisi.
+    Non alloca memoria extra per i dati del grafo.
+    """
+    global global_shared_data
+
+    # Ricostruiamo le views numpy dai buffer condivisi
+    # Topology (CSR standard: indptr punta ai blocchi in indices)
+    indptr_arr = np.frombuffer(shared_map['indptr'], dtype=np.int32)
+    indices_arr = np.frombuffer(shared_map['indices'], dtype=np.int32)
+
+    # Data arrays
+    costs_arr = np.frombuffer(shared_map['costs'], dtype=np.float32)
+    edge_ids_arr = np.frombuffer(shared_map['edge_ids'], dtype=np.int32)
+    key_nodes_arr = np.frombuffer(shared_map['key_nodes_mask'], dtype=np.int32)
+
+    # Distanze (Flattened -> Reshaped)
+    dist_arr = np.frombuffer(shared_map['dist_matrix'], dtype=np.float32)
+    dist_matrix = dist_arr.reshape((config['n_nodes'], config['n_keys']))
+
+    # Feromoni (Lista di views)
+    pheromones_views = [
+        np.frombuffer(shared_map[f'pheromones_{i}'], dtype=np.float64)
+        for i in range(config['n_colonies'])
+    ]
+
+    global_shared_data = {
+        'indptr': indptr_arr,
+        'indices': indices_arr,
+        'costs': costs_arr,
+        'edge_ids': edge_ids_arr,
+        'key_nodes_mask': key_nodes_arr,
+        'dist_matrix': dist_matrix,
+        'pheromones': pheromones_views,
+        'key_nodes_list': config['key_nodes_list'],
+        'n_nodes': config['n_nodes']
+    }
 
 
 def run_synchronized_ant(args):
-    """Run a single ant using pre-computed structures"""
+    """Esegue una formica usando i dati globali condivisi"""
     (alpha, beta, q0, starting_in_key_nodes, colony_id, resilience_factor,
-     TSP, log_print, start_node) = args
+     TSP, log_print, start_node, ant_id) = args
 
-    global shared_pheromones_arrays, shared_graph_data
-
+    global global_shared_data
     random.seed()
 
     try:
+        # Passiamo direttamente il dizionario globale che contiene le views
         ant = Ant(
-            graph_data=shared_graph_data,
-            shared_pheromones=shared_pheromones_arrays,
+            shared_data=global_shared_data,
             alpha=alpha,
             beta=beta,
             q0=q0,
             colony_id=colony_id,
             n_colonies=resilience_factor,
+            ant_id=ant_id
         )
 
         path = ant.calculate_path(start_node, log_print=log_print, TSP=TSP)
@@ -48,19 +90,17 @@ def run_synchronized_ant(args):
         if path is None or len(path) == 0:
             return None
 
-        # Calculate path cost using pre-computed data
         path_cost = ant.calc_path_cost(path)
-
         return (path, path_cost)
     except Exception as e:
         if log_print:
             print(f"Error in ant: {e}")
+            import traceback
+            traceback.print_exc()
         return None
 
 
 class ACO_simulator:
-    """Main controller for the ant colony with optimized sparse matrices"""
-
     def __init__(self,
                  graph: MeshGraph,
                  alpha: float = 1.0,
@@ -84,341 +124,275 @@ class ACO_simulator:
         self.max_iterations = max_iterations
         self.ant_number = ant_number
         self.max_no_updates = max_no_updates
-        self.shared_pheromones_arrays = None
         self.average_cycle_length = average_cycle_length
         self.n_best_ants = n_best_ants
-        self.tau_min = {0: 0.0}
-        self.tau_max = {0: 1.0}
         self.elitism_weight = elitism_weight
         self.n_iterations_before_spawn_in_key_nodes = n_iterations_before_spawn_in_key_nodes
         self.early_stopping_threshold = early_stopping_threshold
+        self.tau_min = {0: 0.0}
+        self.tau_max = {0: 1.0}
 
-        # PRE-COMPUTE ALL STRUCTURES
-        self.edge_costs_csr = self._build_sparse_costs_matrix()
-        self.adjacency_csr = self._build_sparse_adjacency_matrix()
-        self.edge_id_csr = self._build_sparse_edge_id_matrix()
-        self.key_nodes_array = self._build_key_nodes_array()
-        self.key_nodes_list = list(graph.key_nodes)
-        self.neighbors_list = self._build_neighbors_list()
-        self.dist_to_key_nodes_matrix = self._build_dist_to_key_nodes()
+        # --- 1. COSTRUZIONE MATRICI SPARSE ---
+        # Usiamo cost matrix come riferimento topologico
+        costs_csr = self._build_sparse_costs_matrix()
+        self.key_nodes_list = list(self.graph.key_nodes)
+        self.key_nodes_mask = self._build_key_nodes_array()
+        self.dist_matrix = self._build_dist_to_key_nodes()
 
-        # Create shared graph data dictionary
-        self.graph_data = {
-            'n_nodes': graph.number_of_nodes(),
-            'n_edges': graph.number_of_edges(),
-            'key_nodes': self.key_nodes_list,
-            'key_nodes_array': self.key_nodes_array,
-            'neighbors_list': self.neighbors_list,
-            'edge_costs_csr': self.edge_costs_csr,
-            'adjacency_csr': self.adjacency_csr,
-            'edge_id_csr': self.edge_id_csr,
-            'dist_to_key_nodes': self.dist_to_key_nodes_matrix,
-            'edge_mapping': graph.edge_mapping,  # For pheromone updates
+        # Estraiamo i dati grezzi numpy
+        self.indptr = costs_csr.indptr.astype(np.int32)
+        self.indices = costs_csr.indices.astype(np.int32)
+        self.data_costs = costs_csr.data.astype(np.float32)
+
+        # Costruiamo array paralleli per Edge IDs usando la STESSA topologia
+        self.data_edge_ids = self._build_aligned_edge_ids(costs_csr)
+
+        # --- 2. MEMORIA CONDIVISA ---
+        # Creiamo dizionario di RawArrays da passare a init_worker
+        self.shared_map = {
+            'indptr': create_shared_array(self.indptr),
+            'indices': create_shared_array(self.indices),
+            'costs': create_shared_array(self.data_costs),
+            'edge_ids': create_shared_array(self.data_edge_ids),
+            'key_nodes_mask': create_shared_array(self.key_nodes_mask),
+            'dist_matrix': create_shared_array(self.dist_matrix),
         }
 
+        # Configurazione leggera per worker
+        self.worker_config = {
+            'n_nodes': graph.number_of_nodes(),
+            'n_keys': len(self.key_nodes_list),
+            'key_nodes_list': self.key_nodes_list,
+            'n_colonies': 0  # Sarà aggiornato in simulation
+        }
+
+    def construct_key_nodes_data(self, key_nodes):
+        self.graph.assign_key_nodes(key_nodes)
+        # Distanze e Key Nodes
+        self.key_nodes_list = list(self.graph.key_nodes)
+        self.key_nodes_mask = self._build_key_nodes_array()
+        self.dist_matrix = self._build_dist_to_key_nodes()
+
+        self.shared_map['key_nodes_mask'] = create_shared_array(self.key_nodes_mask)
+        self.shared_map['dist_matrix'] = create_shared_array(self.dist_matrix)
+
+        self.worker_config['key_nodes_list'] = self.key_nodes_list
+        self.worker_config['n_keys'] = len(self.key_nodes_list)
+
+
     def _build_sparse_costs_matrix(self):
-        """Build sparse cost matrix (CSR format)"""
         n = self.graph.number_of_nodes()
         costs = lil_matrix((n, n), dtype=np.float32)
-
         for u, v, data in self.graph.edges(data=True):
             cost = data.get('cost', 1.0)
             costs[u, v] = cost
             costs[v, u] = cost
-
         return costs.tocsr()
 
-    def _build_sparse_adjacency_matrix(self):
-        """Build sparse adjacency matrix"""
-        n = self.graph.number_of_nodes()
-        adj = lil_matrix((n, n), dtype=np.bool_)
+    def _build_aligned_edge_ids(self, ref_csr):
+        """Costruisce array di Edge ID allineato con indices del CSR dei costi"""
+        n_edges = len(ref_csr.data)
+        edge_ids = np.zeros(n_edges, dtype=np.int32)
 
-        for u, v in self.graph.edges():
-            adj[u, v] = True
-            adj[v, u] = True
+        # Iteriamo sugli stessi indici del CSR
+        rows, cols = ref_csr.nonzero()
+        for i, (u, v) in enumerate(zip(rows, cols)):
+            eid = self.graph[u][v]['edge_id'] + 1
+            edge_ids[i] = eid
 
-        return adj.tocsr()
-
-    def _build_sparse_edge_id_matrix(self):
-        """Build sparse edge ID matrix (+1 offset, 0 = no edge)"""
-        n = self.graph.number_of_nodes()
-        edge_ids = lil_matrix((n, n), dtype=np.int32)
-
-        for u, v, data in self.graph.edges(data=True):
-            edge_id = data['edge_id']
-            edge_ids[u, v] = edge_id + 1
-            edge_ids[v, u] = edge_id + 1
-
-        return edge_ids.tocsr()
+        return edge_ids
 
     def _build_key_nodes_array(self):
-        """Build boolean array for key nodes"""
-        key_array = np.zeros(self.graph.number_of_nodes(), dtype=np.int32)
+        arr = np.zeros(self.graph.number_of_nodes(), dtype=np.int32)
         for node in self.graph.key_nodes:
-            key_array[node] = 1
-        return key_array
-
-    def _build_neighbors_list(self):
-        """Pre-compute neighbors list for O(1) access"""
-        neighbors = {}
-        for node in self.graph.nodes():
-            neighbors[node] = list(self.graph[node].keys())
-        return neighbors
+            arr[node] = 1
+        return arr
 
     def _build_dist_to_key_nodes(self):
-        """
-        Compute distance matrix only to key nodes
-        Result: (n_nodes × n_key_nodes) instead of (n_nodes × n_nodes)
-        Much smaller memory footprint!
-        """
         n_nodes = self.graph.number_of_nodes()
-        key_list = list(self.graph.key_nodes)
+        key_list = self.key_nodes_list
         n_keys = len(key_list)
-
         dist_matrix = np.full((n_nodes, n_keys), np.inf, dtype=np.float32)
-
-        print(f"Computing distances to {n_keys} key nodes...")
-
         for i, key_node in enumerate(key_list):
             lengths = nx.single_source_dijkstra_path_length(
                 self.graph, key_node, weight='cost'
             )
             for node, dist in lengths.items():
                 dist_matrix[node, i] = dist
-
         return dist_matrix
 
-    def _estimate_memory_saving(self):
-        """Estimate memory saving vs dense matrices"""
-        n = self.graph.number_of_nodes()
-        n_keys = len(self.graph.key_nodes)
-
-        # Dense would be: 3 full matrices (n×n) + full dist matrix (n×n)
-        dense_size = n * n * 4 * 4  # 4 matrices, float32
-
-        # Sparse: CSR data + our small dist matrix
-        sparse_size = (
-                self.edge_costs_csr.data.nbytes +
-                self.edge_costs_csr.indices.nbytes +
-                self.edge_costs_csr.indptr.nbytes +
-                self.adjacency_csr.data.nbytes +
-                self.adjacency_csr.indices.nbytes +
-                self.adjacency_csr.indptr.nbytes +
-                self.edge_id_csr.data.nbytes +
-                self.edge_id_csr.indices.nbytes +
-                self.edge_id_csr.indptr.nbytes +
-                n * n_keys * 4  # dist_to_key_nodes
-        )
-
-        return (dense_size - sparse_size) / (1024 * 1024)
-
-    def _calculate_min_max_pheromones(self, best_path_cost, colony_id: int = 0):
-        """Calculate adaptive tau_min and tau_max"""
+    def _calculate_min_max_pheromones(self, best_path_cost, colony_id):
         self.tau_max[colony_id] = 1.0 / ((1 - self.rho) * best_path_cost)
         tau_min = self.tau_max[colony_id] / (2 * self.graph.number_of_nodes())
         self.tau_min[colony_id] = max(tau_min, 1e-10)
 
-    def _path_pheromone_update(self, path, pheromone_view, colony_id: int = 0,
-                               elitism_weight: float = 1.0):
-        """Update pheromones along path using NumPy view"""
+
+    def _calc_path_cost_fast(self, path):
+        cost = 0.0
+        for i in range(len(path) - 1):
+            u, v = path[i], path[i + 1]
+            start_idx = self.indptr[u]
+            end_idx = self.indptr[u + 1]
+            for k in range(start_idx, end_idx):
+                if self.indices[k] == v:
+                    cost += self.data_costs[k]
+                    break
+        return cost
+
+    def _path_pheromone_update(self, path, pheromone_view, colony_id=0, elitism_weight=1.0):
         path_cost = self._calc_path_cost_fast(path)
         deposit = elitism_weight * self.rho / path_cost
         tau_max = self.tau_max[colony_id]
 
         for i in range(len(path) - 1):
-            source, destination = path[i], path[i + 1]
-            edge_id = int(self.edge_id_csr[source, destination]) - 1
+            u, v = path[i], path[i + 1]
+            # Trova edge ID
+            start_idx = self.indptr[u]
+            end_idx = self.indptr[u + 1]
+            for k in range(start_idx, end_idx):
+                if self.indices[k] == v:
+                    eid = self.data_edge_ids[k] - 1
+                    if eid >= 0:
+                        curr = pheromone_view[eid]
+                        pheromone_view[eid] = min(curr + deposit, tau_max)
+                    break
 
-            if edge_id >= 0:
-                curr_val = pheromone_view[edge_id]
-                pheromone_view[edge_id] = min(curr_val + deposit, tau_max)
-
-    def _calc_path_cost_fast(self, path):
-        """Fast path cost calculation using CSR matrix"""
-        cost = 0.0
-        for i in range(len(path) - 1):
-            cost += self.edge_costs_csr[path[i], path[i + 1]]
-        return cost
-
-    def _global_pheromone_evaporation(self, pheromone_views, resilience_factor: int = 2):
-        """Evaporate pheromones using NumPy views"""
+    def _global_pheromone_evaporation(self, pheromone_views, resilience_factor):
         for colony_id in range(resilience_factor):
             tau_min = self.tau_min[colony_id]
             pheromone_views[colony_id][:] = np.maximum(
-                (1 - self.rho) * pheromone_views[colony_id],
-                tau_min
+                (1 - self.rho) * pheromone_views[colony_id], tau_min
             )
 
-    def _check_convergence(self, recent_costs: List[float]) -> bool:
-        """Check if algorithm has converged"""
-        if len(recent_costs) < 10:
-            return False
+    def _check_convergence(self, recent_costs):
+        if len(recent_costs) < 10: return False
+        recent = sum(recent_costs[-10:]) / 10
+        older = sum(recent_costs[-20:-10]) / 10 if len(recent_costs) >= 20 else recent
+        if older == 0: return False
+        return (abs(older - recent) / older) < self.early_stopping_threshold
 
-        recent_avg = sum(recent_costs[-10:]) / 10
-        older_avg = sum(recent_costs[-20:-10]) / 10 if len(recent_costs) >= 20 else recent_avg
+    def simulation(self, retrieve_n_best_paths=1, log_print=False, draw_heatmap=False, TSP=False, resilience_factor=2):
+        # Setup Feromoni Shared
+        n_edges = self.graph.number_of_edges()
 
-        if older_avg == 0:
-            return False
+        # Aggiungiamo i feromoni alla shared map
+        self.worker_config['n_colonies'] = resilience_factor
+        for i in range(resilience_factor):
+            # Allocazione memoria condivisa per feromoni
+            arr = multiprocessing.RawArray(ctypes.c_double, n_edges)
+            self.shared_map[f'pheromones_{i}'] = arr
 
-        improvement = abs(older_avg - recent_avg) / older_avg
-        return improvement < self.early_stopping_threshold
+            # Inizializzazione
+            np_arr = np.frombuffer(arr, dtype=np.float64)
+            self._calculate_min_max_pheromones(self.average_cycle_length, i)
+            np_arr[:] = self.tau_max[i]
 
-    def simulation(self, retrieve_n_best_paths: int = 1, log_print: bool = False,
-                   draw_heatmap: bool = False, TSP: bool = False, resilience_factor: int = 2):
-        """Run the colony simulation"""
-        current_best_path_per_colony = {colony_id: None for colony_id in range(resilience_factor)}
-        current_best_path_cost_per_colony = {colony_id: math.inf for colony_id in range(resilience_factor)}
-        epoch = 0
-        current_no_updates_per_colony = {colony_id: 0 for colony_id in range(resilience_factor)}
-        best_paths_before_stagnation = []
-        cost_history = {i: [] for i in range(resilience_factor)}
-
-        # Initialize pheromones
-        self.shared_pheromones_arrays = [
-            multiprocessing.Array('d', self.graph.number_of_edges(), lock=False)
-            for _ in range(resilience_factor)
+        # Viste locali per l'aggiornamento nel processo padre
+        pheromone_views = [
+            np.frombuffer(self.shared_map[f'pheromones_{i}'], dtype=np.float64)
+            for i in range(resilience_factor)
         ]
 
-        # Create NumPy views
-        pheromone_views = [np.frombuffer(arr) for arr in self.shared_pheromones_arrays]
+        current_best_path_per_colony = {i: None for i in range(resilience_factor)}
+        current_best_path_cost_per_colony = {i: math.inf for i in range(resilience_factor)}
+        current_no_updates = {i: 0 for i in range(resilience_factor)}
+        cost_history = {i: [] for i in range(resilience_factor)}
+        best_paths_before_stagnation = []
+        epoch = 0
 
-        for colony_id in range(resilience_factor):
-            self._calculate_min_max_pheromones(self.average_cycle_length, colony_id)
-            tau_max = self.tau_max[colony_id]
-            pheromone_views[colony_id][:] = tau_max
-
-        # MultiProcessing Pool
+        # Pool Initialization
         with multiprocessing.Pool(
                 processes=multiprocessing.cpu_count(),
                 initializer=init_worker,
-                initargs=(self.shared_pheromones_arrays, self.graph_data)
+                initargs=(self.shared_map, self.worker_config)
         ) as pool:
-            while epoch < self.max_iterations:
-                best_ants_all_colonies = []
 
+            while epoch < self.max_iterations:
                 if log_print:
                     print(f"\n=== Epoch {epoch} started ===")
-                    epoch_start = time.perf_counter()
+                    t_start = time.perf_counter()
+
+                best_ants_epoch = []
 
                 for colony_id in range(resilience_factor):
-                    if log_print:
-                        print(f"  Colony {colony_id} starting")
-                        start_time = time.perf_counter()
-
-                    # Determine starting nodes
-                    spawn_in_key_nodes = (
-                            current_no_updates_per_colony[colony_id] >=
-                            self.n_iterations_before_spawn_in_key_nodes
-                    )
-
-                    if spawn_in_key_nodes:
-                        start_nodes = [random.choice(self.key_nodes_list)
-                                       for _ in range(self.ant_number)]
+                    # Logica spawn
+                    spawn_key = (current_no_updates[colony_id] >= self.n_iterations_before_spawn_in_key_nodes)
+                    if spawn_key:
+                        starts = [random.choice(self.key_nodes_list) for _ in range(self.ant_number)]
                     else:
-                        start_nodes = [random.randint(0, self.graph.number_of_nodes() - 1)
-                                       for _ in range(self.ant_number)]
+                        starts = [random.randint(0, self.graph.number_of_nodes() - 1) for _ in range(self.ant_number)]
 
-                    # Create task arguments (no graph passed!)
                     task_args = [
-                        (self.alpha, self.beta, self.q0, spawn_in_key_nodes,
-                         colony_id, resilience_factor, TSP, log_print, start_node)
-                        for start_node in start_nodes
+                        (self.alpha, self.beta, self.q0, spawn_key, colony_id, resilience_factor,
+                         TSP, log_print, s, ant_id) for ant_id,s in enumerate(starts)
                     ]
 
-                    # Run ants in parallel
+                    # Esecuzione parallela
                     results = pool.map(run_synchronized_ant, task_args)
-                    paths = [
-                        (path, path_cost, colony_id)
-                        for item in results
-                        if item is not None
-                        for (path, path_cost) in [item]
-                        if path is not None
-                    ]
 
-                    if log_print:
-                        res_time = time.perf_counter() - start_time
-                        print(f"  Colony {colony_id} finished in {res_time:.2f}s, "
-                              f"valid paths: {len(paths)}/{self.ant_number}")
+                    # Filtra risultati validi
+                    valid_paths = []
+                    for res in results:
+                        if res:
+                            valid_paths.append((*res, colony_id))
 
-                    if not paths:
-                        if log_print:
-                            print(f"  Colony {colony_id}: No valid paths found")
-                        continue
+                    if not valid_paths: continue
 
-                    # Select best ants
-                    paths.sort(key=lambda x: x[1])
-                    best_ants = paths[:self.n_best_ants]
-                    best_ants_all_colonies.extend(best_ants)
+                    # Ordina e prendi i migliori
+                    valid_paths.sort(key=lambda x: x[1])
+                    best_epoch = valid_paths[:self.n_best_ants]
+                    best_ants_epoch.extend(best_epoch)
 
-                    # Update pheromone bounds
-                    avg_best_cost = sum(cost for _, cost, _ in best_ants) / len(best_ants)
-                    self._calculate_min_max_pheromones(avg_best_cost, colony_id)
+                    # Statistiche Colony
+                    best_p, best_c, _ = valid_paths[0]
+                    cost_history[colony_id].append(best_c)
 
-                    # Track improvements
-                    best_path, best_cost, _ = paths[0]
-                    cost_history[colony_id].append(best_cost)
+                    # Adaptive Min/Max
+                    avg_cost = sum(c for _, c, _ in best_epoch) / len(best_epoch)
+                    self._calculate_min_max_pheromones(avg_cost, colony_id)
 
-                    if best_cost < current_best_path_cost_per_colony[colony_id]:
-                        current_best_path_per_colony[colony_id] = best_path
-                        current_best_path_cost_per_colony[colony_id] = best_cost
-                        current_no_updates_per_colony[colony_id] = 0
-
-                        if log_print:
-                            print(f"  Colony {colony_id}: New best = {best_cost:.2f}")
+                    if best_c < current_best_path_cost_per_colony[colony_id]:
+                        current_best_path_per_colony[colony_id] = best_p
+                        current_best_path_cost_per_colony[colony_id] = best_c
+                        current_no_updates[colony_id] = 0
+                        if log_print: print(f"  Colony {colony_id} New Best: {best_c:.2f}")
                     else:
-                        current_no_updates_per_colony[colony_id] += 1
+                        current_no_updates[colony_id] += 1
 
-                # Evaporate pheromones
+                # Evaporazione e Aggiornamento
                 self._global_pheromone_evaporation(pheromone_views, resilience_factor)
 
-                # Lay pheromones on best paths
-                for path, cost, colony_id in best_ants_all_colonies:
-                    weight = (self.elitism_weight
-                              if path == current_best_path_per_colony[colony_id]
-                              else 1.0)
-                    self._path_pheromone_update(path, pheromone_views[colony_id],
-                                                colony_id, weight)
+                for path, _, c_id in best_ants_epoch:
+                    w = self.elitism_weight if path == current_best_path_per_colony[c_id] else 1.0
+                    self._path_pheromone_update(path, pheromone_views[c_id], c_id, w)
 
-                # Handle stagnation
-                for colony_id in range(resilience_factor):
-                    if current_no_updates_per_colony[colony_id] > self.max_no_updates:
-                        if log_print:
-                            print(f"  Colony {colony_id}: Restarting due to stagnation")
+                # Stagnation check
+                for c_id in range(resilience_factor):
+                    if current_no_updates[c_id] > self.max_no_updates:
+                        if log_print: print(f"  Colony {c_id} Stagnation Restart")
+                        # Salva best corrente
+                        bp, bc = current_best_path_per_colony[c_id], current_best_path_cost_per_colony[c_id]
+                        if bp and (bp, bc) not in best_paths_before_stagnation:
+                            best_paths_before_stagnation.append((bp, bc))
 
-                        best_path = current_best_path_per_colony[colony_id]
-                        best_cost = current_best_path_cost_per_colony[colony_id]
-                        if (best_path, best_cost) not in best_paths_before_stagnation:
-                            best_paths_before_stagnation.append((best_path, best_cost))
+                        # Reset
+                        pheromone_views[c_id][:] = self.tau_max[c_id]
+                        current_no_updates[c_id] = 0
 
-                        # Reset pheromones
-                        tau_max = self.tau_max[colony_id]
-                        pheromone_views[colony_id][:] = tau_max
-                        current_no_updates_per_colony[colony_id] = 0
-
-                # Early stopping check
+                # Early Stopping
                 if epoch > 100:
-                    converged_colonies = sum(
-                        1 for cid in range(resilience_factor)
-                        if self._check_convergence(cost_history[cid])
-                    )
-                    if converged_colonies == resilience_factor:
-                        if log_print:
-                            print(f"\nEarly stopping at epoch {epoch}: All colonies converged")
+                    conv = sum(1 for i in range(resilience_factor) if self._check_convergence(cost_history[i]))
+                    if conv == resilience_factor:
+                        if log_print: print("Converged.")
                         break
-
-                if log_print:
-                    epoch_time = time.perf_counter() - epoch_start
-                    print(f"=== Epoch {epoch} finished in {epoch_time:.2f}s ===")
 
                 epoch += 1
 
-        # Collect final best paths
-        for colony_id in range(resilience_factor):
-            best_path = current_best_path_per_colony[colony_id]
-            best_cost = current_best_path_cost_per_colony[colony_id]
-            if best_path and (best_path, best_cost) not in best_paths_before_stagnation:
-                best_paths_before_stagnation.append((best_path, best_cost))
+        # Final Collection
+        for i in range(resilience_factor):
+            bp, bc = current_best_path_per_colony[i], current_best_path_cost_per_colony[i]
+            if bp and (bp, bc) not in best_paths_before_stagnation:
+                best_paths_before_stagnation.append((bp, bc))
 
-        # Return top paths
-        n_paths = retrieve_n_best_paths * resilience_factor
-        return heapq.nsmallest(n_paths, best_paths_before_stagnation, key=lambda x: x[1])
+        return heapq.nsmallest(retrieve_n_best_paths * resilience_factor, best_paths_before_stagnation,
+                               key=lambda x: x[1])
