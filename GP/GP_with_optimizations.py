@@ -407,13 +407,8 @@ def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15, 
 
 if __name__ == "__main__":
     experiments = [
-        [500,15,15],
-        [500,20,15],
-        [500,25,15],
-        [1000, 15, 15],
-        [1000, 20, 15],
-        [1000, 25, 15],
-    ]
+        [500,20,25],
+        [500,20,20]]
     res = 200
     today = datetime.now().strftime("%d_%m_%Y")
     runs_today_folder = f"GP/res/runs_{today}"

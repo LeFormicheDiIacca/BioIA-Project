@@ -174,78 +174,68 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
 if __name__ == "__main__":
     
     #from GP_with_optimizations import pset
-    pop_size = [500, 1000, 2000, 2500, 3000, 5000]
+    pop_size = [500, 1000, 2000, 2500, 5000]
     runs = [15,20,25]
-    min_fit = 100000000
-    second_min_fit = 1000000001
-    third_min_fit = 1000000002
-    fourth_min_fit = 100000000
-    fifth_min_fit = 100000000
+    all_candidates = []
+
     for size in pop_size:
         for run in runs:
-            for i in range(1, run+1):
-                with open(f"GP/res/runs_12_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json") as f:
-                    diz = json.load(f)
-                diz = diz[0]
-                hof = diz["hall_of_fame"]
-                if i < run:
-                    #tree_plotter(hof[0]["individual"], f"best_tree_{size}pop_15gen_{run}runs_res200_{i}subrun", pset = pset, destination = f"GP/hof_12_01_2026/{size}pop/{run}runs")
-                    if float(hof[0]["fitness"])< min_fit:
-                        min_fit = float(hof[0]["fitness"])
-                        best_ind = f"size{size}, run{run}.{i}"
-                        best_tree = hof[0]["individual"]
-                    elif float(hof[0]["fitness"]) > min_fit and float(hof[0]["fitness"]) < second_min_fit:
-                        second_min_fit = float(hof[0]["fitness"])
-                        second_best_ind = f"size{size}, run{run}.{i}"
-                        second_best_tree = hof[0]["individual"]
-                    elif float(hof[0]["fitness"]) < third_min_fit and float(hof[0]["fitness"]) > second_min_fit:
-                        third_min_fit = float(hof[0]["fitness"])
-                        third_best_ind = f"size{size}, run{run}.{i}"
-                        third_best_tree = hof[0]["individual"]
-                    elif float(hof[0]["fitness"]) < fourth_min_fit and float(hof[0]["fitness"]) > third_min_fit:
-                        fourth_min_fit = float(hof[0]["fitness"])
-                        fourth_best_ind = f"size{size}, run{run}.{i}"
-                        fourth_best_tree = hof[0]["individual"]
-                    elif float(hof[0]["fitness"]) < fifth_min_fit and float(hof[0]["fitness"]) > fourth_min_fit:
-                        fifth_min_fit = float(hof[0]["fitness"])
-                        fifth_best_ind = f"size{size}, run{run}.{i}"
-                        fifth_best_tree = hof[0]["individual"]
-                else:
-                    for j in range(len(hof)):
-                        #tree_plotter(hof[j]["individual"], f"best_{j+1}tree_{size}pop_15gen_{run}runs_res200_{i}subrun", pset = pset, destination = f"GP/hof_12_01_2026/{size}pop/{run}runs")
-                        if float(hof[j]["fitness"])< min_fit:
-                            min_fit = float(hof[j]["fitness"])
-                            best_ind = f"size{size}, run{run}.{i}"
-                            best_tree = hof[j]["individual"]
-                        elif float(hof[j]["fitness"]) > min_fit and float(hof[j]["fitness"]) < second_min_fit:
-                            second_min_fit = float(hof[j]["fitness"])
-                            second_best_ind = f"size{size}, run{run}.{i}"
-                            second_best_tree = hof[j]["individual"]
-                        elif float(hof[j]["fitness"]) > second_min_fit and float(hof[j]["fitness"]) < third_min_fit:
-                            third_min_fit = float(hof[j]["fitness"])
-                            third_best_ind = f"size{size}, run{run}.{i}"
-                            third_best_tree = hof[j]["individual"]
-                        elif float(hof[j]["fitness"]) < fourth_min_fit and float(hof[j]["fitness"]) > third_min_fit:
-                            fourth_min_fit = float(hof[j]["fitness"])
-                            fourth_best_ind = f"size{size}, run{run}.{i}"
-                            fourth_best_tree = hof[j]["individual"]
-                        elif float(hof[j]["fitness"]) < fifth_min_fit and float(hof[j]["fitness"]) > fourth_min_fit:
-                            fifth_min_fit = float(hof[0]["fitness"])
-                            fifth_best_ind = f"size{size}, run{run}.{i}"
-                            fifth_best_tree = hof[j]["individual"]
-                            
-    print(min_fit, best_ind, best_tree)
-    print(second_min_fit, second_best_ind, second_best_tree)
-    print(third_min_fit, third_best_ind, third_best_tree)
-    import pandas as pd
-    best = [{"place":1, "tree_string" : best_tree, "individual": best_ind, "fitness": min_fit},
-            {"place":2, "tree_string" : second_best_tree,"individual": second_best_ind, "fitness": second_min_fit},
-            {"place":3, "tree_string" : third_best_tree,"individual": third_best_ind, "fitness": third_min_fit},
-            {"place":4, "tree_string" : fourth_best_tree,"individual": fourth_best_ind, "fitness": fourth_min_fit},
-            {"place":5, "tree_string" : fifth_best_tree,"individual": fifth_best_ind, "fitness": fifth_min_fit},
-            ]
+            for i in range(1, run + 1):
+                file_path = f"GP/res/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
+                
+                try:
+                    with open(file_path) as f:
+                        data = json.load(f)[0]
+                        hof = data["hall_of_fame"]
+                    
+                    # If i < run, we only look at the top individual in HOF
+                    # Otherwise, we look at the whole HOF list
+                    candidates_to_check = [hof[0]] if i < run else hof
+                    
+                    for entry in candidates_to_check:
+                        all_candidates.append({
+                            "fitness": float(entry["fitness"]),
+                            "tree_string": entry["individual"],
+                            "individual_id": f"size{size}, run{run}.{i}"
+                        })
+                except (FileNotFoundError, IndexError, KeyError):
+                    continue # Skip files that are missing or formatted incorrectly
+
+    # 1. Sort by fitness (lowest is best)
+    all_candidates.sort(key=lambda x: x["fitness"])
+
+    # 2. Filter for unique fitness values
+    unique_best = []
+    seen_fitness = set()
+
+    for cand in all_candidates:
+        if cand["fitness"] not in seen_fitness:
+            seen_fitness.add(cand["fitness"])
+            unique_best.append(cand)
+        if len(unique_best) == 5: # Stop once we have top 5
+            break
+
+    # 3. Format for your final output
+    best = []
+    for idx, item in enumerate(unique_best):
+        best.append({
+            "place": idx + 1,
+            "tree_string": item["tree_string"],
+            "individual": item["individual_id"],
+            "fitness": item["fitness"]
+        })                 
+    # print(min_fit, best_ind, best_tree)
+    # print(second_min_fit, second_best_ind, second_best_tree)
+    # print(third_min_fit, third_best_ind, third_best_tree)
+    # import pandas as pd
+    # best = [{"place":1, "tree_string" : best_tree, "individual": best_ind, "fitness": min_fit},
+    #         {"place":2, "tree_string" : second_best_tree,"individual": second_best_ind, "fitness": second_min_fit},
+    #         {"place":3, "tree_string" : third_best_tree,"individual": third_best_ind, "fitness": third_min_fit},
+    #         {"place":4, "tree_string" : fourth_best_tree,"individual": fourth_best_ind, "fitness": fourth_min_fit},
+    #         {"place":5, "tree_string" : fifth_best_tree,"individual": fifth_best_ind, "fitness": fifth_min_fit},
+    #         ]
     with open("GP/best_trees.json", "w") as f:
-        json.dump(best, f)
+        json.dump(best, f, indent=4)
     print("Best individuals have been saved")
 
 
