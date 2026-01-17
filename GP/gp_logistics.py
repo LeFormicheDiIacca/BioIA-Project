@@ -180,25 +180,23 @@ if __name__ == "__main__":
 
     for size in pop_size:
         for run in runs:
-            for i in range(1, run + 1):
-                file_path = f"GP/res/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{i}_res200_{i-1}subrun.json"
-                try:
-                    with open(file_path) as f:
-                        data = json.load(f)[0]
-                        hof = data["hall_of_fame"]
-                    
-                    # If i < run, we only look at the top individual in HOF
-                    # Otherwise, we look at the whole HOF list
-                    candidates_to_check = [hof[0]] if i < run else hof
-                    
-                    for entry in candidates_to_check:
-                        all_candidates.append({
-                            "fitness": float(entry["fitness"]),
-                            "tree_string": entry["individual"],
-                            "individual_id": f"size{size}, run{run}"
-                        })
-                except (FileNotFoundError, IndexError, KeyError):
-                    print("NOT WORKING") # Skip files that are missing or formatted incorrectly
+            # we take only the individuals in the final hall of fame
+            file_path = f"GP/res/runs_15_01_2026/{size}pop_15gen_{run}run_200res/{size}pop_15gen_run{run}_res200_{run-1}subrun.json"
+            try:
+                with open(file_path) as f:
+                    data = json.load(f)[0]
+                    hof = data["hall_of_fame"]
+                
+                candidates_to_check = hof
+                
+                for entry in candidates_to_check:
+                    all_candidates.append({
+                        "fitness": float(entry["fitness"]),
+                        "tree_string": entry["individual"],
+                        "individual_id": f"size{size}, run{run}, gen15"
+                    })
+            except (FileNotFoundError, IndexError, KeyError):
+                print("NOT WORKING") # Skip files that are missing or formatted incorrectly
 
     # 1. Sort by fitness (lowest is best)
     all_candidates.sort(key=lambda x: x["fitness"])

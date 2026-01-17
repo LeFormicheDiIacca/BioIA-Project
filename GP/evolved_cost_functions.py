@@ -12,14 +12,14 @@ def best_CF(distance, elev_u, elev_v, steepness, is_water):
     if is_water == 1.0:
         ret = math.log(3.148, 9.535)
     else:
-        ret = 2*distance
-    tmp = ((distance+3.685) + (elev_u/4.164)*elev_u) - elev_v
+        ret = distance + distance
+    tmp = ((distance+3.685) - (-1)*(elev_u/4.164)*elev_u) - elev_v
     if is_water == 1.0:
         tmp -= steepness
     else:
         tmp -= elev_v
     ret -= tmp
-    ret = ret + (-1)*(2.41/3.978)
+    ret = ret + (-1)*(2.41**3.978)
     ret = (-1)*ret
     return ret
 
@@ -41,24 +41,21 @@ def third_best_CF(distance, elev_u, elev_v, steepness, is_water):
     return ret
 
 def fourth_best_CF(distance, elev_u, elev_v, steepness, is_water):
-    if is_water == 1.0:
-        ret = distance
-    else:
-        ret = elev_u
-    if is_water == 1.0:
-        ret += elev_v
-    else:
-        ret += 1.774
-    ret -= (steepness - distance - distance)
-    return ret
-    
-
-def fifth_best_CF(distance, elev_u, elev_v, steepness, is_water):
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
     else:
         ret += elev_u - elev_v
+    return ret
+    
+
+def fifth_best_CF(distance, elev_u, elev_v, steepness, is_water):
+    ret = distance
+    if is_water == 1.0:
+        tmp = distance
+    else:
+        tmp = steepness
+    ret = ret - (elev_u - tmp - elev_v)
     return ret
 
 
@@ -68,88 +65,103 @@ if __name__ == "__main__":
     from GP_with_optimizations import pset
     with open("GP/best_trees.json") as f:
         best_trees = json.load(f)
-    min_string, min_ind, min_fit = best_trees[0]["tree_string"], best_trees[0]["individual"], best_trees[0]["fitness"]
-    second_min_string, second_min_ind, second_min_fit = best_trees[1]["tree_string"], best_trees[1]["individual"], best_trees[1]["fitness"]
-    third_min_string,  third_min_ind, third_min_fit = best_trees[2]["tree_string"], best_trees[2]["individual"], best_trees[2]["fitness"]
-    fourth_min_string,  fourth_min_ind,fourth_min_fit= best_trees[3]["tree_string"], best_trees[3]["individual"], best_trees[3]["fitness"]
-    fifth_min_string,  fifth_min_ind, fifth_min_fit = best_trees[4]["tree_string"], best_trees[4]["individual"], best_trees[4]["fitness"]
-
-    tree_combos = [(1000,15), (5000,15), (500, 20)]
+    tree_combos = [(5000,15), (500,20), (1000,15)]
     durs = [20, 25]
     results = []
 
     for el in tree_combos:
         for dur in durs:
-            for i in range(el[1]):
-                path = f"GP/res/runs_15_01_2026/{el[0]}pop_{dur}gen_{el[1]}run_200res/{el[0]}pop_{dur}gen_run{i+1}_res200_{i}subrun.json"
-                
+            # we take only individuals from the final hall of fame
+            path = f"GP/res/runs_15_01_2026/{el[0]}pop_{dur}gen_{el[1]}run_200res/{el[0]}pop_{dur}gen_run{el[1]}_res200_{el[1]-1}subrun.json"   
+            try:
                 with open(path) as f:
-                    diz = json.load(f)[0]
+                    data = json.load(f)[0]
+                    hof = data["hall_of_fame"]
                 
-                # Store the current individual's data
-                results.append({
-                    "tree_string": diz["best_individual"],
-                    "individual": f"{el[0]}, {dur}gen, {el[1]}",
-                    "fitness": diz["best_individual_fitness"][0]
-                })
+                candidates_to_check = hof
+                
+                for entry in candidates_to_check:
+                    results.append({
+                        "fitness": float(entry["fitness"]),
+                        "tree_string": entry["individual"],
+                        "individual_id": f"size{el[1]}, run{el[0]}, gen{dur}"
+                    })
+            except (FileNotFoundError, IndexError, KeyError):
+                print("NOT WORKING") # Skip files that are missing or formatted incorrectly
+                print(path)
+
     for i in range(len(best_trees)):
         results.append(best_trees[i])
-
-    # 1. Sort the list based on fitness (ascending)
+    # Sort the list based on fitness (ascending)
     results.sort(key=lambda x: x["fitness"])
 
-    # 2. Filter for unique fitness values
+    # Filter for unique fitness values
     unique_results = []
     seen_fitness = set()
-
     for entry in results:
         fit = entry["fitness"]
-        if entry["tree_string"] != "add(if_then_else(is_water, distance, neg(if_then_else(is_water, elevation_u, mul(elevation_v, steepness)))), elevation_v)" and entry["tree_string"]!= "mul(0.032, add(if_then_else(is_water, if_then_else(is_water, mul(elevation_v, elevation_u), steepness), 0.309), distance))":
-            if fit not in seen_fitness:
-                seen_fitness.add(fit)
-                unique_results.append(entry)
-            
-            # Optional: Stop once we have our top 5 unique values
-            if len(unique_results) == 5:
-                break
+        if fit not in seen_fitness:
+            seen_fitness.add(fit)
+            unique_results.append(entry)
+        #Stop once we have our top 10 unique values, we'll exclude trees that are missing one or more inputs (and due to non-active branches have passed our checks) and choose the first five fit individuals
+        if len(unique_results) == 10:
+            break
 
-    # 3. Assign rankings
-    for index, item in enumerate(unique_results):
-        item["place"] = index + 1
 
-    best = unique_results # This now contains exactly 5 items with unique fitnesses
-    print(best)
-    with open("GP/best_trees_updated.json", "w") as f:
-        json.dump(best, f, indent=4)
-    print("Best individuals have been saved")
+    best = unique_results 
     
-    tree_plotter(best[0]["tree_string"], "Best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
-    tree_plotter(best[1]["tree_string"], "Second-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
-    tree_plotter(best[2]["tree_string"], "Third-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
-    tree_plotter(best[3]["tree_string"], "Fourth-best evolved cost function tree", pset, "GP/best_trees_updated/")
-    tree_plotter(best[4]["tree_string"], "Fifth-best evolved cost function tree", pset, "GP/best_trees_updated/")
+    for i in range(10):
+        tree_plotter(best[i]["tree_string"], f"{i+1} best evolved tree", pset, "GP/potential_final_trees")
 
-    to_prune = best[0]["tree_string"]
-    print("BEFORE PRUNING")
-    print(to_prune)
-    to_prune = to_prune.replace("identity_water(", "")
-    to_prune = to_prune.replace("if_then_else(is_water), protected_log(3.148, 9.535), sub(distance, 4.705))", "protected_log(3.148, 9.535)")
-    to_prune = to_prune.replace("if_then_else(is_water))))", "if_then_else(is_water)")
-    to_prune = to_prune.replace("if_then_else(is_water, steepness, elevation_v)))", "if_then_else(is_water, steepness, elevation_v))")
-    print("Have all leftover parentheses been removed?", to_prune.count("(") == to_prune.count(")"))
-    print("AFTER PRUNING (eliminating non-active branches and deleting 'identity_water' functions)")
-    print(to_prune)
-    tree_plotter(to_prune, "Best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
-    print(best[1]["tree_string"])
-    to_prune2 = best[1]["tree_string"]
-    to_prune2 = to_prune2.replace("identity_water(is_water)", "is_water")
-    tree_plotter(to_prune2, "Second-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
-    print(best[2]["tree_string"])
-    to_prune3 = best[2]["tree_string"]
-    to_prune3 = to_prune3.replace("identity_water(is_water)", "is_water")
-    tree_plotter(to_prune3, "Third-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+    # tree selection
+    # tree 1 is missing steepness
+    # tree 2 is missing elevation_u
+    # tree 3 has all of them
+    # tree 4 has all of them
+    # tree 5 has all of them
+    # tree 6 has all of them
+    # tree 7 has all of them
+    # we stop
+
+    best_updated = []
+    i = 1
+    for el in range(3,8):
+        best[el-1]["place"] = i
+        best_updated.append(best[el-1])
+        i += 1
+    print(best_updated)
+
+    tree_plotter(best_updated[0]["tree_string"], "Best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
+    tree_plotter(best_updated[1]["tree_string"], "Second-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
+    tree_plotter(best_updated[2]["tree_string"], "Third-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
+    tree_plotter(best_updated[3]["tree_string"], "Fourth-best evolved cost function tree", pset, "GP/best_trees_updated/")
+    tree_plotter(best_updated[4]["tree_string"], "Fifth-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
+
+    # PRUNING
+    # we remove the "identity_water" function and, if present upon visual inspection, we remove nested "if_then_else" functions with "dead" (inactive)
+    
+    for el in best_updated:
+        el["tree_string"] = el["tree_string"].replace("identity_water(is_water)", "is_water")
+    
+    # these have been correctly pruned
+    tree_plotter(best_updated[1]["tree_string"], "Second-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+    tree_plotter(best_updated[2]["tree_string"], "Third-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")    
+    
+    # here we need to remove an inactive branch
+    best_updated[4]["tree_string"] = best_updated[4]["tree_string"].replace("if_then_else(is_water, distance, if_then_else(is_water, distance, steepness)))","if_then_else(is_water, distance, steepness))" )
+    tree_plotter(best_updated[4]["tree_string"], "Fifth-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+
+    # here we need to remove multiple nested identity_water functions
+
+    best_updated[0]["tree_string"] = best_updated[0]["tree_string"].replace("neg(add(sub(if_then_else(identity_water(identity_water(identity_water(is_water))), if_then_else(is_water, protected_log(3.148, 9.535), sub(distance, 4.705)), add(distance, neg(neg(distance)))), sub(sub(sub(neg(add(neg(distance), neg(3.685))), mul(neg(protected_div(elevation_u, 4.164)), elevation_u)), elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(neg(neg(neg(protected_pow(2.41, 3.978))))))))", "neg(add(sub(if_then_else(is_water, protected_log(3.148, 9.535), add(distance,distance)), sub(sub(sub(add(distance, 3.685), mul(neg(protected_div(elevation_u, 4.164)), elevation_u)), elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(protected_pow(2.41, 3.978))))")
+    tree_plotter(best_updated[0]["tree_string"], "Best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
 
 
+
+    
+    with open("GP/best_trees_updated.json", "w") as f:
+        json.dump(best_updated, f, indent=4)
+    print("Best individuals have been saved")
 
 
 
