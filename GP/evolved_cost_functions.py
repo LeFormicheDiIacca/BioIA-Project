@@ -8,23 +8,23 @@ import math
 
 #   OR if you want to implement get_edge_metadata edge by edge
 
-def best_CF(distance, elev_u, elev_v, steepness, is_water):
+def best_CF(distance, steepness, elev_u, elev_v, is_water):
     if is_water == 1.0:
         ret = math.log(3.148, 9.535)
     else:
         ret = distance + distance
-    tmp = ((distance+3.685) - (-1)*(elev_u/4.164)*elev_u) - elev_v
+    tmp = ((distance+3.685) + (elev_u*elev_u/4.164)) - elev_v
     if is_water == 1.0:
         tmp -= steepness
     else:
         tmp -= elev_v
     ret -= tmp
-    ret = ret + (-1)*(2.41**3.978)
+    ret -= (2.41**3.978)
     ret = (-1)*ret
     return ret
 
 
-def second_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def second_best_CF(distance, steepness, elev_u, elev_v, is_water):
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
@@ -32,7 +32,7 @@ def second_best_CF(distance, elev_u, elev_v, steepness, is_water):
         ret += elev_u*elev_v*steepness
     return ret
 
-def third_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def third_best_CF(distance, steepness, elev_u, elev_v, is_water):
     ret = elev_u*steepness*distance
     if is_water == 1.0:
         ret += steepness - elev_v
@@ -40,7 +40,7 @@ def third_best_CF(distance, elev_u, elev_v, steepness, is_water):
         ret += elev_u - elev_v
     return ret
 
-def fourth_best_CF(distance, elev_u, elev_v, steepness, is_water):
+def fourth_best_CF(distance, steepness, elev_u, elev_v, is_water):
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
@@ -49,13 +49,12 @@ def fourth_best_CF(distance, elev_u, elev_v, steepness, is_water):
     return ret
     
 
-def fifth_best_CF(distance, elev_u, elev_v, steepness, is_water):
-    ret = distance
+def fifth_best_CF(distance, steepness, elev_u, elev_v, is_water):
     if is_water == 1.0:
         tmp = distance
     else:
         tmp = steepness
-    ret = ret - (elev_u - tmp - elev_v)
+    ret = distance - elev_u + tmp + elev_v
     return ret
 
 
