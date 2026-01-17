@@ -195,7 +195,7 @@ if __name__ == "__main__":
                         all_candidates.append({
                             "fitness": float(entry["fitness"]),
                             "tree_string": entry["individual"],
-                            "individual_id": f"size{size}, run{run}.{i}"
+                            "individual_id": f"size{size}, run{run}"
                         })
                 except (FileNotFoundError, IndexError, KeyError):
                     print("NOT WORKING") # Skip files that are missing or formatted incorrectly

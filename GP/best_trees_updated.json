@@ -2,61 +2,31 @@
     {
         "place": 1,
         "tree_string": "neg(add(sub(if_then_else(identity_water(identity_water(identity_water(identity_water(is_water)))), if_then_else(identity_water(is_water), protected_log(3.148, 9.535), sub(distance, 4.705)), add(distance, neg(neg(distance)))), sub(sub(sub(neg(add(neg(distance), neg(3.685))), mul(neg(protected_div(elevation_u, 4.164)), elevation_u)), elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(neg(neg(neg(protected_pow(2.41, 3.978))))))))",
-        "individual": "size500, run20.5",
+        "individual": "size500, run20",
         "fitness": 14024.380519671733
     },
     {
         "place": 2,
         "tree_string": "add(mul(mul(elevation_u, steepness), distance), if_then_else(identity_water(is_water), distance, mul(mul(elevation_u, elevation_v), steepness)))",
-        "individual": "size1000, run15.12",
+        "individual": "size1000, run15",
         "fitness": 14763.850406941343
     },
     {
         "place": 3,
         "tree_string": "add(mul(mul(elevation_u, steepness), distance), if_then_else(identity_water(is_water), sub(steepness, elevation_v), sub(elevation_u, elevation_v)))",
-        "individual": "size1000, run15.15",
+        "individual": "size1000, run15",
         "fitness": 15220.912139449714
     },
     {
         "tree_string": "add(if_then_else(is_water, distance, elevation_u), sub(if_then_else(is_water, elevation_v, 1.774), sub(sub(steepness, distance), distance)))",
-        "individual": "500, 25gen, 20.4",
+        "individual": "500, 25gen, 20",
         "fitness": 15232.16312669513,
         "place": 4
     },
     {
         "place": 5,
         "tree_string": "add(mul(mul(elevation_u, steepness), distance), if_then_else(is_water, distance, sub(elevation_u, elevation_v)))",
-        "individual": "size1000, run15.15",
+        "individual": "size1000, run15",
         "fitness": 15273.040771597814
-    },
-    {
-        "tree_string": "sub(distance, sub(sub(elevation_u, if_then_else(is_water, distance, if_then_else(is_water, distance, steepness))), elevation_v))",
-        "individual": "1000, 20gen, 15.14",
-        "fitness": 54345.77073447619,
-        "place": 6
-    },
-    {
-        "tree_string": "if_then_else(is_water, sub(5.083, steepness), add(5.502, add(elevation_u, add(elevation_u, if_then_else(is_water, elevation_v, distance)))))",
-        "individual": "500, 20gen, 20.7",
-        "fitness": 62424.83808215834,
-        "place": 7
-    },
-    {
-        "tree_string": "add(sub(if_then_else(is_water, steepness, 4.381), elevation_v), add(if_then_else(is_water, 4.543, add(elevation_u, elevation_u)), distance))",
-        "individual": "5000, 20gen, 15.11",
-        "fitness": 101885.65282226501,
-        "place": 8
-    },
-    {
-        "tree_string": "if_then_else(is_water, sub(mul(steepness, 9.692), elevation_v), mul(elevation_u, mul(distance, mul(distance, distance))))",
-        "individual": "5000, 20gen, 15.1",
-        "fitness": 116861.80043975145,
-        "place": 9
-    },
-    {
-        "tree_string": "if_then_else(is_water, elevation_u, add(mul(mul(elevation_u, steepness), steepness), mul(mul(elevation_v, steepness), distance)))",
-        "individual": "5000, 25gen, 15.12",
-        "fitness": 120114.12524314885,
-        "place": 10
     }
 ]

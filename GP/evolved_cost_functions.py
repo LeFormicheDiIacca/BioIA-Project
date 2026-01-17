@@ -89,7 +89,7 @@ if __name__ == "__main__":
                 # Store the current individual's data
                 results.append({
                     "tree_string": diz["best_individual"],
-                    "individual": f"{el[0]}, {dur}gen, {el[1]}.{i+1}",
+                    "individual": f"{el[0]}, {dur}gen, {el[1]}",
                     "fitness": diz["best_individual_fitness"][0]
                 })
     for i in range(len(best_trees)):
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                 unique_results.append(entry)
             
             # Optional: Stop once we have our top 5 unique values
-            if len(unique_results) == 10:
+            if len(unique_results) == 5:
                 break
 
     # 3. Assign rankings
@@ -124,8 +124,8 @@ if __name__ == "__main__":
     print("Best individuals have been saved")
     
     tree_plotter(best[0]["tree_string"], "Best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
-    tree_plotter(best[1]["tree_string"], "Second-best evolved cost function tree", pset, "GP/best_trees_updated/")
-    tree_plotter(best[2]["tree_string"], "Third-best evolved cost function tree", pset, "GP/best_trees_updated/")
+    tree_plotter(best[1]["tree_string"], "Second-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
+    tree_plotter(best[2]["tree_string"], "Third-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
     tree_plotter(best[3]["tree_string"], "Fourth-best evolved cost function tree", pset, "GP/best_trees_updated/")
     tree_plotter(best[4]["tree_string"], "Fifth-best evolved cost function tree", pset, "GP/best_trees_updated/")
 
@@ -140,6 +140,15 @@ if __name__ == "__main__":
     print("AFTER PRUNING (eliminating non-active branches and deleting 'identity_water' functions)")
     print(to_prune)
     tree_plotter(to_prune, "Best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+    print(best[1]["tree_string"])
+    to_prune2 = best[1]["tree_string"]
+    to_prune2 = to_prune2.replace("identity_water(is_water)", "is_water")
+    tree_plotter(to_prune2, "Second-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+    print(best[2]["tree_string"])
+    to_prune3 = best[2]["tree_string"]
+    to_prune3 = to_prune3.replace("identity_water(is_water)", "is_water")
+    tree_plotter(to_prune3, "Third-best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
+
 
 
 

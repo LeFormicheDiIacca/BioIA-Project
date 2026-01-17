@@ -9,7 +9,7 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(40 445.42)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-409.42 706.13,-409.42 706.13,4 -4,4"/>
-<text text-anchor="middle" x="351.07" y="-388.82" font-family="Times New Roman,serif" font-size="14.00">Second&#45;best evolved cost function tree</text>
+<text text-anchor="middle" x="351.07" y="-388.82" font-family="Times New Roman,serif" font-size="14.00">Second&#45;best evolved cost function tree, before pruning</text>
 <!-- 0 -->
 <g id="node1" class="node">
 <title>0</title>
