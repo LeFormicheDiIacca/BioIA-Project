@@ -120,18 +120,18 @@ if __name__ == '__main__':
 
     ant_colony_parameters = {
         "alpha": 1,
-        "beta": 2,
+        "beta": 3,
         "rho": 0.1,
         "q0": 0.1,
         "ant_number": 50,
         "max_iterations": 100,
         "max_no_updates": 15,
         "n_best_ants": 5,
-        "average_cycle_length": 5000,
-        "n_iterations_before_spawn_in_key_nodes": 8
+        "average_cycle_length": 4000,
+        "n_iterations_before_spawn_in_key_nodes": 10
     }
 
-    n_iterations = 1
+    n_iterations = 3
     resilience_factor = 1
 
     log_data = True
@@ -141,7 +141,6 @@ if __name__ == '__main__':
     synthetic_data = False
 
     cost_functions_list = [best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF]
-    cost_functions_list = cost_functions_list[:1]
     fields_csv = ["iteration_time", "path_cost", "path", "cost_function"]
 
     print("Running ACO simulation...")
@@ -196,7 +195,7 @@ if __name__ == '__main__':
                     with open(file_path_json, 'w') as file:
                         json.dump(config_data, file, indent=4)
                 start_time = time.perf_counter()
-                paths = aco.simulation(retrieve_n_best_paths = 1, log_print = True, TSP = False, resilience_factor = resilience_factor)
+                paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = resilience_factor)
                 end_time = time.perf_counter() - start_time
 
                 for (path, path_cost) in paths:
@@ -240,8 +239,8 @@ if __name__ == '__main__':
 
                 res_paths_alls.append(res_paths)
                 res_paths = []
-            # print("Small CPU sleep of 5 minutes for cooling")
-            # time.sleep(5 * 60)
+        print("Small CPU sleep of 5 minutes for cooling")
+        time.sleep(5 * 60)
 
     # except Exception as e:
     #     print(f"Eh kaput :(")
