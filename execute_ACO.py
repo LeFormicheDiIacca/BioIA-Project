@@ -116,7 +116,7 @@ if __name__ == '__main__':
             (46.3647, 11.0316),
         ],
     ]
-    key_coords_list = key_coords_list[:1]
+    #key_coords_list = key_coords_list[:1]
 
     ant_colony_parameters = {
         "alpha": 1,
