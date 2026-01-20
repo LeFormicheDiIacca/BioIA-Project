@@ -125,7 +125,7 @@ if __name__ == '__main__':
         "q0": 0.1,
         "ant_number": 50,
         "max_iterations": 100,
-        "max_no_updates": 15,
+        "max_no_updates": 10,
         "n_best_ants": 5,
         "average_cycle_length": 4000,
         "n_iterations_before_spawn_in_key_nodes": 10
