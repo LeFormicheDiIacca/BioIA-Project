@@ -26,7 +26,7 @@
     {
         "fitness": 54345.77073447619,
         "tree_string": "sub(distance, sub(sub(elevation_u, if_then_else(is_water, distance, steepness)), elevation_v))",
-        "individual_id": "size15, run1000, gen20",
+        "individual_id": "size1000, run15, gen20",
         "place": 5
     }
 ]

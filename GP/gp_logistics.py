@@ -7,6 +7,11 @@ import json
 from functools import partial 
 from collections import deque
 import re
+import os
+import platform
+import pydot
+
+# for primitive set
 
 def protected_div(n1, n2):
     if isinstance(n1, complex):
@@ -48,20 +53,12 @@ def if_then_else(condition, out1, out2):
 def identity_water(x):
     return x
 
-def dynamic_penalty(inclination):
-    if inclination >= round(30/90, 4): # if normalized inclination is more than 1/3 (= aka inclination is >=30%)
-        return 50000*inclination
-    else:
-        return 5*inclination
 
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
 random_gen = partial(round_random, 0,10)
 
-
-import os
-import platform
-import pydot
+# plots tree given the PrimitiveTree OR the string
 
 def tree_plotter(tree, title, pset, destination = "GP/hof"):
     if platform.system() == "Windows":
@@ -98,6 +95,7 @@ def tree_plotter(tree, title, pset, destination = "GP/hof"):
         print(f"SVG printing error: {e}")
 
 # to solve TypeError problem
+
 def from_tree_to_string(string, pset):
     tokens = re.split("[ \t\n\r\f\v(),]", string)
     expr = []
@@ -134,6 +132,7 @@ def from_tree_to_string(string, pset):
     return gp.PrimitiveTree(expr)
 
 # adds new data to a json file for finetuning
+
 def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/res", sub_run_idx: int = -1, logs = None, plot_tree = False):
     title = f"{population}pop_{scenario_dur}gen_run{run}_res{res}"
     if sub_run_idx != -1:
@@ -170,10 +169,30 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
     with open(path, 'w') as f:
         json.dump([tree_diz], f, indent=4)
 
+# computes average chebyshev distance for penalty normalization
+
+def compute_chebyshev(res):
+
+    total_sum = 0
+    total_nodes = res * res
+    totale_couples = total_nodes* total_nodes
+
+    counts = [0] * res
+    counts[0] = res  
+    for k in range(1, res):
+        counts[k] = 2 * (res - k)
+
+    for dx in range(res):
+        for dy in range(res):
+            weight = counts[dx] * counts[dy]
+            distance = max(dx, dy)
+            total_sum += weight * distance
+
+    return total_sum / totale_couples
 
 if __name__ == "__main__":
     
-    #from GP_with_optimizations import pset
+    # computes first round of fittest individuals with fixed generations-per-run equal to 15
     pop_size = [500, 1000, 2000, 2500, 5000]
     runs = [15,20,25]
     all_candidates = []
@@ -196,12 +215,12 @@ if __name__ == "__main__":
                         "individual_id": f"size{size}, run{run}, gen15"
                     })
             except (FileNotFoundError, IndexError, KeyError):
-                print("NOT WORKING") # Skip files that are missing or formatted incorrectly
+                print("NOT WORKING") 
 
-    # 1. Sort by fitness (lowest is best)
+    # Sort by fitness (lowest is best)
     all_candidates.sort(key=lambda x: x["fitness"])
 
-    # 2. Filter for unique fitness values
+    # Filter for unique fitness values (vs. similar trees)
     unique_best = []
     seen_fitness = set()
 
@@ -212,7 +231,7 @@ if __name__ == "__main__":
         if len(unique_best) == 5: # Stop once we have top 5
             break
 
-    # 3. Format for your final output
+    # Saves best five trees
     best = []
     for idx, item in enumerate(unique_best):
         best.append({

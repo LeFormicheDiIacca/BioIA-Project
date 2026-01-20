@@ -15,7 +15,13 @@ from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
 import time
-from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, random_gen, save_run
+from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, random_gen, save_run, compute_chebyshev
+import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import dijkstra
+from collections import defaultdict
+from numba import njit
+from deap import gp
 
 # global variables
 
@@ -26,14 +32,11 @@ ELEVATION_PENALTY = 500.0
 WATER_COEFFICIENT = 5000.0
 PENALTY_MISSING_VALUES = 1e8
 
-# define primitive set
-
+# for strongly typed gp
 class WaterArg: pass
-
-
 class OtherArgs: pass
 
-
+# define primitive set
 # strongly typed # chosen to limit if_then function
 
 pset = gp.PrimitiveSetTyped("MAIN", [OtherArgs, OtherArgs, OtherArgs, OtherArgs, WaterArg], OtherArgs)
@@ -56,6 +59,7 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin, pset=
 
 toolbox = base.Toolbox()
 
+# to create only trees that have all the required inputs
 
 def create_valid_individual():
     while True:
@@ -101,40 +105,33 @@ toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value=15))
 toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value=5))
 toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=15))
 
-
-# fitness function
-import numpy as np
-from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import dijkstra
-from collections import defaultdict
-from numba import njit
-from deap import gp
+# variables for multiprocessing to avoid data duplication
 
 _GLOBAL_EDGE_LOOKUP = None
 _GLOBAL_EDGE_DATA = None
 _GLOBAL_NODE_LIST = None
 _GLOBAL_PSET = None
 
+# Initialize Workers with shared data without need to copy variables
+
 def init_worker(edge_lookup, edge_data, node_list, pset):
-    """Initialize Workers with shared data without need to copy variables"""
     global _GLOBAL_EDGE_LOOKUP, _GLOBAL_EDGE_DATA, _GLOBAL_NODE_LIST, _GLOBAL_PSET
     _GLOBAL_EDGE_LOOKUP = edge_lookup
     _GLOBAL_EDGE_DATA = edge_data
     _GLOBAL_NODE_LIST = node_list
     _GLOBAL_PSET = pset
 
+# Turn graph into csr matrix for better performance
 
 def create_edge_index_matrix(graph, node_to_idx):
-    """Turn graph into csr matrix for better performance"""
     rows = []
     cols = []
     data = []
     for i, (u, v) in enumerate(graph.edges()):
         u_idx, v_idx = node_to_idx[u], node_to_idx[v]
-        # Memorizziamo l'indice i (0-based) dell'arco
         rows.append(u_idx)
         cols.append(v_idx)
-        data.append(i + 1)  # +1 per distinguere dallo zero della matrice sparsa
+        data.append(i + 1)  
 
         rows.append(v_idx)
         cols.append(u_idx)
@@ -145,7 +142,7 @@ def create_edge_index_matrix(graph, node_to_idx):
 #Penalty function with numba for better calculations with JIT e vectorial operations
 @njit
 def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
-                                csr_indices, csr_indptr, csr_data, edge_data, water_count, res):
+                                csr_indices, csr_indptr, csr_data, edge_data, water_count, res, chebyshev):
     total_penalty = 0.0
 
     for end_idx in end_nodes:
@@ -187,34 +184,22 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
 
             penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water, e_v, e_u ])
 
-            # Normalize total penalty w.r.t. to the Manhattan distance, aka the average length of the shortest path between two random
-            # points in a resolution^2 grid
-            
-            manhattan_d = 2*(res+1)/3
+            # We estimate the average distance to be equal to the average Chebyshev distance and use this value to normalize
+            # the penalty, as a grid with more nodes will have an inherently higher distance
+            # as the cost for crossing water is vary high, we consider the number of nodes with water that are present in the
+            # grid over the total nodes in the grid (less total nodes, less water nodes)
 
-
-            # In the average path, the total penalty will be equal to:
-            # total_penalty = manhattan_d * d + manhattan_d * dp * d + 10.0 * manhattan_d/2 * elev_diff + water_count/res * 5000.0 * water
-            # we assume that, in the average path, there will be on each edge at least one-unit dp increase, as well as a one-unit
-            # increase in elevation difference in at least res/2 edges (in the remaining ones, it's assumed to be a decrease, which does 
-            # not impact total penalty)
-            # as the cost for crossing water is vary high, as some sort of likelihood to encounter water nodes, we consider the number of 
-            # nodes with water that are present in the grid over the total nodes in the grid
-
-            manhattan_matrix = np.array([manhattan_d, manhattan_d, manhattan_d, water_count/res**2, manhattan_d, manhattan_d])
-            normalized_penalty = penalty/manhattan_matrix
+            chebyshev_matrix = np.array([chebyshev, chebyshev, chebyshev, water_count/res**2, chebyshev, chebyshev])
+            normalized_penalty = penalty/chebyshev_matrix
             normalized_penalty = np.sum(normalized_penalty)
             total_penalty += normalized_penalty
             curr = prev
 
     return total_penalty
 
-
+# Turns graph data into simple arrays for better performance and use with numba&numpy
 
 def precompute_edge_lookup_simple(graph, edge_dict, node_to_idx):
-    """
-    Turns graph data into simple arrays for better performance and use with numba&numpy
-    """
     edge_lookup_list = []
     edge_data_list = []
 
@@ -237,7 +222,7 @@ def precompute_edge_lookup_simple(graph, edge_dict, node_to_idx):
 
 
 
-def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_columns, csr_template, csr_components, water_nodes,res):
+def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_columns, csr_template, csr_components, water_nodes,res, chebyshev):
     global _GLOBAL_EDGE_DATA, _GLOBAL_PSET
 
     #Vectorial cost computation
@@ -273,7 +258,7 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
     for i, start_idx in enumerate(sources):
         total_penalty += compute_total_penalty_numba(
             preds[i], np.array(grouped[start_idx], dtype=np.int64), start_idx,
-            csr_indices, csr_indptr, csr_data, _GLOBAL_EDGE_DATA, water_nodes, res
+            csr_indices, csr_indptr, csr_data, _GLOBAL_EDGE_DATA, water_nodes, res, chebyshev
         )
 
     #Penalties for missing values
@@ -284,7 +269,7 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
     return (total_penalty,)
 
 # algorithm-running function
-def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder):
+def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder, chebyshev):
     all_logs = []
     pop = toolbox.population(n=population)
     # for info about fitness of the evolved trees
@@ -318,14 +303,12 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
     edge_features_columns = [np.array(c, dtype=np.float32) for c in zip(*edge_features)]
     water_count = sum(1 for features in edge_dict.values() if features[4] > 0)
 
-    # Crea un template CSR fisso
+    # creates fixed CSR template
     n_nodes = len(node_to_idx)
     row_idx_ext = np.concatenate([row_idx, col_idx])
     col_idx_ext = np.concatenate([col_idx, row_idx])
     dummy_data = np.zeros(len(row_idx_ext))
     csr_template = csr_matrix((dummy_data, (row_idx_ext, col_idx_ext)), shape=(n_nodes, n_nodes))
-
-    # Passa questi al toolbox
 
     pool = multiprocessing.Pool(
         processes=multiprocessing.cpu_count() - 1,
@@ -340,15 +323,16 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
         toolbox.register("evaluate", evaluate_fully_optimized,
                          scenarios=current_scenario,
                          node_to_idx=node_to_idx,
-                         edge_features_columns=edge_features_columns,  # Array di colonne
-                         csr_template=csr_template,  # Matrice pre-allocata
+                         edge_features_columns=edge_features_columns, 
+                         csr_template=csr_template,  
                          csr_components=csr_components, res = res,
-                         water_nodes = water_count)
+                         water_nodes = water_count, chebyshev = chebyshev)
         for ind in pop:
             del ind.fitness.values
         pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
                                        ngen=scenario_dur, stats=mstats, halloffame=hof, verbose=False)
         # archives runtime info
+
         flattened_log = []
         gens = log.select("gen")
         nevals = log.select("nevals")
@@ -356,9 +340,11 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
         fit_max = log.chapters["fitness"].select("max")
         fit_std = log.chapters["fitness"].select("std")
         fit_min = log.chapters["fitness"].select("min")
+        
         # size_avg = log.chapters["size"].select("avg")
 
         # Reconstruct the list of dictionaries
+
         for i_gen in range(len(gens)):
             entry = {
                 'gen': str(i + 1) + "." + str(gens[i_gen]),
@@ -367,7 +353,6 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
                 'fit_max': fit_max[i_gen],
                 'fit_min': fit_min[i_gen],
                 'fit_std': fit_std[i_gen]
-                # 'size_avg': size_avg[i_gen]
             }
             flattened_log.append(entry)
 
@@ -387,12 +372,13 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
 
 # main function to run, executes the code and saves logs
 
-def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15, ):
+def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15):
     scenarios = generate_scenarios(runs, graph, res)
     print(
         f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     start = time.time()
-    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder=base_folder)
+    chebyshev = compute_chebyshev(res)
+    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder=base_folder, chebyshev=chebyshev)
     end = time.time()
     diff = end - start
     hours, tmp = divmod(diff, 3600)

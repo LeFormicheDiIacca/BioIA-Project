@@ -1,12 +1,5 @@
 import math
 
-# NB. all the parameters I used to evaluate the function can be found in the edge_info.py file,
-# please choose whether YOU 
-
-#   prefer to pass the entire edge_dict at the beginning of the run (to get immediately information 
-#   about all the edges in the graph
-
-#   OR if you want to implement get_edge_metadata edge by edge
 
 def best_CF(distance, elev_u, elev_v, steepness, is_water):
     if is_water == 1.0:
@@ -60,6 +53,9 @@ def fifth_best_CF(distance, elev_u, elev_v, steepness, is_water):
 
 
 if __name__ == "__main__":
+
+    # found the last, final round of best individuals
+
     import json
     from gp_logistics import tree_plotter
     from GP_with_optimizations import pset
@@ -84,15 +80,15 @@ if __name__ == "__main__":
                     results.append({
                         "fitness": float(entry["fitness"]),
                         "tree_string": entry["individual"],
-                        "individual_id": f"size{el[1]}, run{el[0]}, gen{dur}"
+                        "individual_id": f"size{el[0]}, run{el[1]}, gen{dur}"
                     })
             except (FileNotFoundError, IndexError, KeyError):
-                print("NOT WORKING") # Skip files that are missing or formatted incorrectly
+                print("NOT WORKING") 
                 print(path)
 
     for i in range(len(best_trees)):
         results.append(best_trees[i])
-    # Sort the list based on fitness (ascending)
+    # Sort the list based on fitness
     results.sort(key=lambda x: x["fitness"])
 
     # Filter for unique fitness values
@@ -138,7 +134,8 @@ if __name__ == "__main__":
     tree_plotter(best_updated[4]["tree_string"], "Fifth-best evolved cost function tree, before pruning", pset, "GP/best_trees_updated/")
 
     # PRUNING
-    # we remove the "identity_water" function and, if present upon visual inspection, we remove nested "if_then_else" functions with "dead" (inactive)
+    # we remove the "identity_water" function and, if present upon visual inspection, we remove nested "if_then_else" functions with "dead" (inactive) branches
+    # we'll also remove multiple negatives and other unnecessary operations
     
     for el in best_updated:
         el["tree_string"] = el["tree_string"].replace("identity_water(is_water)", "is_water")
@@ -156,9 +153,6 @@ if __name__ == "__main__":
     best_updated[0]["tree_string"] = best_updated[0]["tree_string"].replace("neg(add(sub(if_then_else(identity_water(identity_water(identity_water(is_water))), if_then_else(is_water, protected_log(3.148, 9.535), sub(distance, 4.705)), add(distance, neg(neg(distance)))), sub(sub(sub(neg(add(neg(distance), neg(3.685))), mul(neg(protected_div(elevation_u, 4.164)), elevation_u)), elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(neg(neg(neg(neg(protected_pow(2.41, 3.978))))))))", "neg(add(sub(if_then_else(is_water, protected_log(3.148, 9.535), add(distance,distance)), sub(sub(sub(add(distance, 3.685), mul(neg(protected_div(elevation_u, 4.164)), elevation_u)), elevation_v), if_then_else(is_water, steepness, elevation_v))), neg(protected_pow(2.41, 3.978))))")
     tree_plotter(best_updated[0]["tree_string"], "Best evolved cost function tree, after pruning", pset, "GP/best_trees_updated/")
 
-
-
-    
     with open("GP/best_trees_updated.json", "w") as f:
         json.dump(best_updated, f, indent=4)
     print("Best individuals have been saved")

@@ -28,7 +28,7 @@ def generate_scenarios(runs, graph, res):
     # let's divide the graph into quadrants to ensure points are distant enough
     x, y = np.indices((res, res))
 
-    # Mask for the SW quadrant (Quad 1)
+   
     mask1 = (x < half) & (y < half)
     mask2 = (x >= half) & (y < half) 
     mask3 = (x >= half) & (y>= half)
