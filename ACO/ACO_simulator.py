@@ -2,51 +2,45 @@ import heapq
 import math
 import multiprocessing
 import random
-import time
 import ctypes
-from typing import List, Tuple
-
 import numpy as np
 import networkx as nx
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import lil_matrix
 
 from ACO.Ant import Ant
 from TerrainGraph.meshgraph import MeshGraph
 
-# Variabili globali per i worker (tengono le views numpy sulla memoria condivisa)
+#Global variables for the workers
 global_shared_data = {}
 
 
 def create_shared_array(np_array):
-    """Crea un RawArray compatibile con multiprocessing dai dati numpy"""
+    #Create RawArray for shared memory
     c_type = np.ctypeslib.as_ctypes_type(np_array.dtype)
-    # RawArray non ha lock, è più veloce e leggero
     shared_arr = multiprocessing.RawArray(c_type, np_array.flatten())
     return shared_arr
 
 
 def init_worker(shared_map, config):
     """
-    Inizializza il worker ricostruendo le views numpy dai buffer condivisi.
-    Non alloca memoria extra per i dati del grafo.
+    Create worker without cloning data
     """
     global global_shared_data
 
-    # Ricostruiamo le views numpy dai buffer condivisi
-    # Topology (CSR standard: indptr punta ai blocchi in indices)
+    #Topology CSR
     indptr_arr = np.frombuffer(shared_map['indptr'], dtype=np.int32)
     indices_arr = np.frombuffer(shared_map['indices'], dtype=np.int32)
 
-    # Data arrays
+    #Data arrays
     costs_arr = np.frombuffer(shared_map['costs'], dtype=np.float32)
     edge_ids_arr = np.frombuffer(shared_map['edge_ids'], dtype=np.int32)
     key_nodes_arr = np.frombuffer(shared_map['key_nodes_mask'], dtype=np.int32)
 
-    # Distanze (Flattened -> Reshaped)
+    #Distances
     dist_arr = np.frombuffer(shared_map['dist_matrix'], dtype=np.float32)
     dist_matrix = dist_arr.reshape((config['n_nodes'], config['n_keys']))
 
-    # Feromoni (Lista di views)
+    #Pheromones
     pheromones_views = [
         np.frombuffer(shared_map[f'pheromones_{i}'], dtype=np.float64)
         for i in range(config['n_colonies'])
@@ -66,7 +60,7 @@ def init_worker(shared_map, config):
 
 
 def run_synchronized_ant(args):
-    """Esegue una formica usando i dati globali condivisi"""
+    """Run an Ant with Shared Memory"""
     (alpha, beta, q0, starting_in_key_nodes, colony_id, resilience_factor,
      TSP, log_print, start_node, ant_id) = args
 
@@ -74,7 +68,6 @@ def run_synchronized_ant(args):
     random.seed()
 
     try:
-        # Passiamo direttamente il dizionario globale che contiene le views
         ant = Ant(
             shared_data=global_shared_data,
             alpha=alpha,
@@ -132,23 +125,19 @@ class ACO_simulator:
         self.tau_min = {0: 0.0}
         self.tau_max = {0: 1.0}
 
-        # --- 1. COSTRUZIONE MATRICI SPARSE ---
-        # Usiamo cost matrix come riferimento topologico
+        #Create CSR matrices
         costs_csr = self._build_sparse_costs_matrix()
         self.key_nodes_list = list(self.graph.key_nodes)
         self.key_nodes_mask = self._build_key_nodes_array()
         self.dist_matrix = self._build_dist_to_key_nodes()
 
-        # Estraiamo i dati grezzi numpy
         self.indptr = costs_csr.indptr.astype(np.int32)
         self.indices = costs_csr.indices.astype(np.int32)
         self.data_costs = costs_csr.data.astype(np.float32)
 
-        # Costruiamo array paralleli per Edge IDs usando la STESSA topologia
         self.data_edge_ids = self._build_aligned_edge_ids(costs_csr)
 
-        # --- 2. MEMORIA CONDIVISA ---
-        # Creiamo dizionario di RawArrays da passare a init_worker
+        #Initialize shared memory
         self.shared_map = {
             'indptr': create_shared_array(self.indptr),
             'indices': create_shared_array(self.indices),
@@ -158,17 +147,16 @@ class ACO_simulator:
             'dist_matrix': create_shared_array(self.dist_matrix),
         }
 
-        # Configurazione leggera per worker
+        #Configuration for workers
         self.worker_config = {
             'n_nodes': graph.number_of_nodes(),
             'n_keys': len(self.key_nodes_list),
             'key_nodes_list': self.key_nodes_list,
-            'n_colonies': 0  # Sarà aggiornato in simulation
+            'n_colonies': 0
         }
 
     def construct_key_nodes_data(self, key_nodes):
         self.graph.assign_key_nodes(key_nodes)
-        # Distanze e Key Nodes
         self.key_nodes_list = list(self.graph.key_nodes)
         self.key_nodes_mask = self._build_key_nodes_array()
         self.dist_matrix = self._build_dist_to_key_nodes()
@@ -190,11 +178,10 @@ class ACO_simulator:
         return costs.tocsr()
 
     def _build_aligned_edge_ids(self, ref_csr):
-        """Costruisce array di Edge ID allineato con indices del CSR dei costi"""
+        """Align Edge Ids with CSR matrices"""
         n_edges = len(ref_csr.data)
         edge_ids = np.zeros(n_edges, dtype=np.int32)
 
-        # Iteriamo sugli stessi indici del CSR
         rows, cols = ref_csr.nonzero()
         for i, (u, v) in enumerate(zip(rows, cols)):
             eid = self.graph[u][v]['edge_id'] + 1
@@ -246,7 +233,7 @@ class ACO_simulator:
 
         for i in range(len(path) - 1):
             u, v = path[i], path[i + 1]
-            # Trova edge ID
+            #Find edge id
             start_idx = self.indptr[u]
             end_idx = self.indptr[u + 1]
             for k in range(start_idx, end_idx):
@@ -271,23 +258,17 @@ class ACO_simulator:
         if older == 0: return False
         return (abs(older - recent) / older) < self.early_stopping_threshold
 
-    def simulation(self, retrieve_n_best_paths=1, log_print=False, draw_heatmap=False, TSP=False, resilience_factor=2):
-        # Setup Feromoni Shared
+    def simulation(self, retrieve_n_best_paths=1, log_print=False, TSP=False, resilience_factor=2):
+        #Create shared pheromones
         n_edges = self.graph.number_of_edges()
-
-        # Aggiungiamo i feromoni alla shared map
         self.worker_config['n_colonies'] = resilience_factor
         for i in range(resilience_factor):
-            # Allocazione memoria condivisa per feromoni
             arr = multiprocessing.RawArray(ctypes.c_double, n_edges)
             self.shared_map[f'pheromones_{i}'] = arr
-
-            # Inizializzazione
             np_arr = np.frombuffer(arr, dtype=np.float64)
             self._calculate_min_max_pheromones(self.average_cycle_length, i)
             np_arr[:] = self.tau_max[i]
 
-        # Viste locali per l'aggiornamento nel processo padre
         pheromone_views = [
             np.frombuffer(self.shared_map[f'pheromones_{i}'], dtype=np.float64)
             for i in range(resilience_factor)
@@ -310,12 +291,11 @@ class ACO_simulator:
             while epoch < self.max_iterations:
                 if log_print:
                     print(f"\n=== Epoch {epoch} started ===")
-                    t_start = time.perf_counter()
 
                 best_ants_epoch = []
 
                 for colony_id in range(resilience_factor):
-                    # Logica spawn
+                    #Spawn in key nodes logic
                     spawn_key = (current_no_updates[colony_id] >= self.n_iterations_before_spawn_in_key_nodes)
                     if spawn_key:
                         starts = [random.choice(self.key_nodes_list) for _ in range(self.ant_number)]
@@ -327,10 +307,10 @@ class ACO_simulator:
                          TSP, log_print, s, ant_id) for ant_id,s in enumerate(starts)
                     ]
 
-                    # Esecuzione parallela
+                    #Parallel execution
                     results = pool.map(run_synchronized_ant, task_args)
 
-                    # Filtra risultati validi
+                    #Save only valid results
                     valid_paths = []
                     for res in results:
                         if res:
@@ -338,12 +318,12 @@ class ACO_simulator:
 
                     if not valid_paths: continue
 
-                    # Ordina e prendi i migliori
+                    #get only best paths
                     valid_paths.sort(key=lambda x: x[1])
                     best_epoch = valid_paths[:self.n_best_ants]
                     best_ants_epoch.extend(best_epoch)
 
-                    # Statistiche Colony
+                    #Colony stats
                     best_p, best_c, _ = valid_paths[0]
                     cost_history[colony_id].append(best_c)
 
@@ -359,7 +339,7 @@ class ACO_simulator:
                     else:
                         current_no_updates[colony_id] += 1
 
-                # Evaporazione e Aggiornamento
+                #Pheromones Evaporation and updates
                 self._global_pheromone_evaporation(pheromone_views, resilience_factor)
 
                 for path, _, c_id in best_ants_epoch:
@@ -370,16 +350,16 @@ class ACO_simulator:
                 for c_id in range(resilience_factor):
                     if current_no_updates[c_id] > self.max_no_updates:
                         if log_print: print(f"  Colony {c_id} Stagnation Restart")
-                        # Salva best corrente
+                        #Save current best
                         bp, bc = current_best_path_per_colony[c_id], current_best_path_cost_per_colony[c_id]
                         if bp and (bp, bc) not in best_paths_before_stagnation:
                             best_paths_before_stagnation.append((bp, bc))
 
-                        # Reset
+                        #Reset
                         pheromone_views[c_id][:] = self.tau_max[c_id]
                         current_no_updates[c_id] = 0
 
-                # Early Stopping
+                #Early Stopping
                 if epoch > 100:
                     conv = sum(1 for i in range(resilience_factor) if self._check_convergence(cost_history[i]))
                     if conv == resilience_factor:
@@ -388,7 +368,7 @@ class ACO_simulator:
 
                 epoch += 1
 
-        # Final Collection
+        #Final Collection
         for i in range(resilience_factor):
             bp, bc = current_best_path_per_colony[i], current_best_path_cost_per_colony[i]
             if bp and (bp, bc) not in best_paths_before_stagnation:

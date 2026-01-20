@@ -14,26 +14,27 @@ def best_CF(distance, steepness, elev_u, elev_v, is_water):
     if is_water == 1.0:
         ret = math.log(3.148, 9.535)
     else:
-        ret = 2*distance
-    tmp = ((distance+3.685) + (elev_u/4.164)*elev_u) - elev_v
+        ret = distance + distance
+    tmp = ((distance + 3.685) + (elev_u * elev_u / 4.164)) - elev_v
     if is_water == 1.0:
         tmp -= steepness
     else:
         tmp -= elev_v
     ret -= tmp
-    ret = ret + (-1)*(2.41/3.978)
-    ret = (-1)*ret
+    ret -= (2.41 ** 3.978)
+    ret = (-1) * ret
     return ret
 
 
 def second_best_CF(distance, steepness, elev_u, elev_v, is_water):
-    steepness = steepness*2
+    steepness = 2*steepness
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
     else:
         ret += elev_u * elev_v * steepness
     return ret
+
 
 def third_best_CF(distance, steepness, elev_u, elev_v, is_water):
     steepness = 2*steepness
@@ -47,23 +48,19 @@ def third_best_CF(distance, steepness, elev_u, elev_v, is_water):
 
 def fourth_best_CF(distance, steepness, elev_u, elev_v, is_water):
     steepness = 2*steepness
-    if is_water == 1.0:
-        ret = distance
-    else:
-        ret = elev_u
-    if is_water == 1.0:
-        ret += elev_v
-    else:
-        ret += 1.774
-    ret -= (steepness - distance - distance)
-    return ret
-
-
-def fifth_best_CF(distance, steepness, elev_u, elev_v, is_water):
-    steepness = 2*steepness
     ret = elev_u * steepness * distance
     if is_water == 1.0:
         ret += distance
     else:
         ret += elev_u - elev_v
+    return ret
+
+
+def fifth_best_CF(distance, steepness, elev_u, elev_v, is_water):
+    steepness = 2*steepness
+    if is_water == 1.0:
+        tmp = distance
+    else:
+        tmp = steepness
+    ret = distance - elev_u + tmp + elev_v
     return ret
