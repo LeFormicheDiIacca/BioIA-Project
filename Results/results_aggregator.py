@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-
+#Extract stats from the html files
 def extract_path_statistics(html_file_path):
     with open(html_file_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
@@ -26,13 +26,12 @@ def extract_path_statistics(html_file_path):
             value_tag = b_tag.find_next('span')
             if value_tag:
                 raw_value = value_tag.get_text(strip=True)
-                # Estrae numeri float anche se ci sono % o km
                 clean_value = re.findall(r"[-+]?\d*\.\d+|\d+", raw_value)[0]
                 results[labels[label_text]] = float(clean_value)
     return results
 
-
-# Mappatura nodi
+date = "17_01_2026"
+#Nodes Mapping to paths
 key_nodes = dict()
 key_nodes[(34321, 16744, 5971, 5628)] = "Pergine Valsugana, Trento\nSopramonte, Vason"
 key_nodes[(7028, 5678, 16099, 23538, 34371)] = "Trento, Lavis\nCembra, Capriana"
@@ -43,7 +42,6 @@ key_nodes[(6428, 5688, 34371)] = "Trento, Mezzocorona\nLaives"
 key_nodes[(5628, 17371, 34309)] = "Mezzocorona, Cavalese\nCanal San Bovo"
 key_nodes[(34228, 24297, 17937, 5771)] = "Trento, Mezzolombardo\nDenno, Cles"
 
-# Lista per raccogliere tutti i dati per il DataFrame finale
 data_records = []
 
 for i in range(5):
@@ -53,23 +51,18 @@ for i in range(5):
     path_3d_length = dict()
     path_avg_inclination = dict()
 
-    # Lettura e processamento dati (identico al tuo script originale)
     try:
         print(i)
-        with open(f"day_17_01_2026/{i}/PathOutputs.csv", newline="", encoding="ISO-8859-1") as file_csv:
+        with open(f"day_{date}/{i}/PathOutputs.csv", newline="", encoding="ISO-8859-1") as file_csv:
             open_csv = csv.reader(file_csv)
-            next(open_csv)  # Salta header
+            next(open_csv)  #Avoid Header
             for j, lines in enumerate(open_csv):
                 # JSON Parsing
-                json_path = f"day_17_01_2026/{i}/PathOutputs_{j}.json"
+                json_path = f"day_{date}/{i}/PathOutputs_{j}.json"
                 try:
                     with open(json_path) as json_file:
                         json_data = json.load(json_file)
                         path_id = key_nodes.get(tuple(json_data["KeyNodes"]))
-
-                        # Se il path_id non è mappato, saltiamo o gestiamo l'errore
-                        if path_id is None: continue
-
                         results.setdefault(path_id, 0)
                         results[path_id] += float(lines[1])
                         results_count.setdefault(path_id, 0)
@@ -79,7 +72,7 @@ for i in range(5):
                     continue
 
                 # HTML Parsing
-                file_path = f"day_17_01_2026/{i}/PathOutputs_{j}.html"
+                file_path = f"day_{date}/{i}/PathOutputs_{j}.html"
                 try:
                     data = extract_path_statistics(file_path)
 
@@ -98,13 +91,12 @@ for i in range(5):
         print(f"Directory or CSV not found for index {i}")
         continue
 
-    # Calcolo medie e salvataggio nella lista globale
+    #Avg and saving in
     for pid in results.keys():
         count = results_count[pid]
         if count > 0:
-            # Aggiungiamo un record (riga) per ogni Path ID trovato in questa Cost Function
             data_records.append({
-                "Cost Function": f"CF {i+1}",  # Etichetta per la funzione di costo
+                "Cost Function": f"CF {i+1}",
                 "Path ID": pid,
                 "Average Cost": results[pid] / count,
                 "2D Length": path_2d_length.get(pid, 0) / count,
@@ -114,35 +106,23 @@ for i in range(5):
 
     print(f"Processed Cost Function {i}")
 
-# ---------------------------------------------------------
-# CREAZIONE DEI GRAFICI CON SEABORN
-# ---------------------------------------------------------
-
-# Creiamo il DataFrame
+#Plotting with seaborn
 df = pd.DataFrame(data_records)
-
-# Impostiamo lo stile di Seaborn
 sns.set_theme(style="whitegrid")
-
-# Definiamo le 4 metriche che vogliamo plottare (nomi delle colonne del DF)
 metrics = ["Average Cost", "2D Length", "3D Length", "Avg Inclination"]
 titles = ["Average Cost", "Average Planar Length (km)", "Average Real Length (km)", "Average Steepness (%)"]
 
-# Creiamo una figura con 4 sottografici (2 righe, 2 colonne)
-fig, axes = plt.subplots(1,1, figsize=(16, 12))
 
 for idx, metric in enumerate(metrics):
     fig, ax = plt.subplots(1, 1, figsize=(16, 12))
-
-    # Creazione del Barplot Raggruppato
     sns.barplot(
         data=df,
         x="Path ID",
         y=metric,
-        hue="Cost Function",  # Questo crea le colonne colorate diverse per ogni CF
+        hue="Cost Function",
         ax=ax,
-        palette="viridis",  # Palette di colori
-        edgecolor="black"  # Bordo nero per le barre
+        palette="viridis",
+        edgecolor="black"
     )
 
     ax.set_title(titles[idx], fontsize=14, fontweight='bold')

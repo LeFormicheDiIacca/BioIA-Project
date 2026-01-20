@@ -241,7 +241,3 @@ if __name__ == '__main__':
                 res_paths = []
         print("Small CPU sleep of 5 minutes for cooling")
         time.sleep(5 * 60)
-
-    # except Exception as e:
-    #     print(f"Eh kaput :(")
-    #     print(f"Exception: {e}")
