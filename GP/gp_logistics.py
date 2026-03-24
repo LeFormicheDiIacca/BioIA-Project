@@ -2,7 +2,6 @@ import random
 import math
 import numpy as np
 from deap import gp
-import pydot
 import json
 from functools import partial 
 from collections import deque
@@ -16,42 +15,27 @@ BASE = math.e
 # for primitive set
 
 def protected_div(n1, n2):
-    if isinstance(n1, complex):
-        n1 = n2.real
-    if isinstance(n2, complex):
-        n2 = n2.real
-    if n2 == 0:
-        return 0
-    else:
-        return n1/n2
-    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = n1 / n2
+        return np.where(np.isfinite(res), res, 1.0)
+
+
 def protected_log(x, base):
-    if isinstance(x, complex):
-        x = x.real
-    if isinstance(base, complex):
-        base = base.real
-    if x > 0 and base > 0 and base!=1:
-        return math.log(x, base)
-    else:
-        return 1
+    with np.errstate(divide='ignore', invalid='ignore'):
+        safe_x = np.abs(x) + 1e-9
+        safe_base = np.abs(base) + 1e-9
+        res = np.log(safe_x) / np.log(safe_base)
+        return np.where(np.isfinite(res), res, 1.0)
 
 def protected_pow(n1, n2):
-    if isinstance(n1, complex):
-        n1 = n2.real
-    if isinstance(n2, complex):
-        n2 = n2.real
-    if n1 == 0:
-        return 0
-    try:
-        base = float(np.abs(n1))
-        exponent = np.clip(float(n2), -5, 5)
-        return np.power(base, exponent)
-    except (OverflowError, ValueError): 
-        return 1e10
-
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        base = np.abs(n1)
+        base = np.clip(base, 0, 1e10)
+        exponent = np.clip(n2, -5, 5)
+        res = np.power(base, exponent)
+        return np.where(np.isfinite(res), res, 1e10)
 def if_then_else(condition, out_true, out_false):
-    return out_true if condition else out_false
-
+    return np.where(condition, out_true, out_false)
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
 
@@ -132,8 +116,8 @@ def from_tree_to_string(string, pset):
 
 # adds new data to a json file for finetuning
 
-def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "GP/res", logs = None, plot_tree = False):
-    title = f"{population}pop_{gens}gen_{scen_number}scenarios_res{res}"
+def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "GP/res", logs = None, plot_tree = False, generation = 1):
+    title = f"{population}pop_{gens}gen_{scen_number}scenarios_res{res}_gen{generation}"
     if population >=500 and plot_tree:
         path_hof = f"{path}/hof/{title}"
         if not os.path.exists(path_hof):
