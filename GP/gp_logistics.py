@@ -11,6 +11,8 @@ import os
 import platform
 import pydot
 
+BASE = math.e
+
 # for primitive set
 
 def protected_div(n1, n2):
@@ -47,16 +49,13 @@ def protected_pow(n1, n2):
     except (OverflowError, ValueError): 
         return 1e10
 
-def if_then_else(condition, out1, out2):
-    return np.where(condition > 0.5, out1, out2) 
-
-def identity_water(x):
-    return x
-
+def if_then_else(condition, out_true, out_false):
+    return out_true if condition else out_false
 
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
-random_gen = partial(round_random, 0,10)
+
+random_gen = partial(round_random, 0, BASE)
 
 # plots tree given the PrimitiveTree OR the string
 
@@ -133,11 +132,8 @@ def from_tree_to_string(string, pset):
 
 # adds new data to a json file for finetuning
 
-def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP/res", sub_run_idx: int = -1, logs = None, plot_tree = False):
-    title = f"{population}pop_{scenario_dur}gen_run{run}_res{res}"
-    if sub_run_idx != -1:
-        title = f"{title}_{sub_run_idx}subrun"
-
+def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "GP/res", logs = None, plot_tree = False):
+    title = f"{population}pop_{gens}gen_{scen_number}scenarios_res{res}"
     if population >=500 and plot_tree:
         path_hof = f"{path}/hof/{title}"
         if not os.path.exists(path_hof):
@@ -155,10 +151,10 @@ def save_run(population, hof, diff, run,scenario_dur, res, pset, path: str = "GP
         ind_diz["fitness"] = ind.fitness.values[0]
         hof_list.append(ind_diz)
     tree_diz = dict()
-    tree_diz["run"] = run
+    tree_diz["generations"] = gens
     tree_diz["resolution"] = res
     tree_diz["population"] = population
-    tree_diz["scenario_duration"] = scenario_dur
+    tree_diz["scenarios"] = scen_number
     tree_diz["best_individual"] = str(best)
     tree_diz["best_individual_fitness"] = best.fitness.values
     tree_diz["hall_of_fame"] = hof_list

@@ -5,144 +5,21 @@ import networkx as nx
 import matplotlib as mpl
 import numpy as np
 
-# two nodes are directly connected IF:
-#   - their edge number is +-1 (i.e., vertically connected)
-#   - their edge number is +-res (i.e., horizontally connected)
-#   - their edge number is +- res+1 (i.e., diagonally, on the SW-NE axis)
-#   - their edge number is +- res-1 (i.e., diagonally, on the NW-SE axis)
 
-# I want my function to loop through all nodes AND find n lists of tuples with:
-# -  two connected water nodes and a non-connected node that is linearly reachable only going through water
-#   (if no two connected water nodes, a whatever water node a non connected one)
-# -  a high point and a low point that are not directly connected 
-# -  two points that are actually at the extremes of the graph
-
-def generate_scenarios(runs, graph, res):
-    if res%2 != 0:
-        res -=1 # it will exclude the last row on the left but it will work, at least
-        print(f"Even number needed: a resolution of {res} will be considered")
-    
-    res = int(res)
-    half = res//2
-
-    # let's divide the graph into quadrants to ensure points are distant enough
-    x, y = np.indices((res, res))
-
-   
-    mask1 = (x < half) & (y < half)
-    mask2 = (x >= half) & (y < half) 
-    mask3 = (x >= half) & (y>= half)
-    mask4 = (x < half) & (y >= half)
-
-    quad1_ind = np.where(mask1.flatten())[0]
-    quad2_ind = np.where(mask2.flatten())[0]
-    quad3_ind = np.where(mask3.flatten())[0]
-    quad4_ind = np.where(mask4.flatten())[0]
-
-    quad1 = set(quad1_ind.tolist())
-    quad2 = set(quad2_ind.tolist())
-    quad3 = set(quad3_ind.tolist())
-    quad4 = set(quad4_ind.tolist())
-
+def generate_scenarios(scenarios_number, graph):
     taken = set()
-    categories = {
-    "water": set(),
-    "low": set(),
-    "high": set()}
-
-    for node, data in graph.nodes(data=True):
-        if data.get("is_water"):
-            categories["water"].add(node)
-        elif data.get("elevation", 0) < 600:
-            categories["low"].add(node)
-        else:
-            categories["high"].add(node)
-
-    # now I set the start and finish nodes for each type of route 
-    elevation_couples = list() # high vs low
-    water_couples = list() # easiest path crosses water
-    distant_couples = list() # nodes that are far apart
-
-    low = list(categories["low"])
-    high = list(categories["high"])
-    water = list(categories["water"])
-    #random shuffle
-    random.shuffle(low)
-    random.shuffle(high)
-    random.shuffle(water)
-    # I need as many scenario couples as the number of separate runs n
-    for _ in range(runs): 
-
-        # pick a low node and a high node
-        if not low or not high: break
-        start = low.pop()
-        while start in taken and low:
-            start = low.pop()
-        taken.add(start)
-        finish = high.pop()
-        while finish in taken and high:
-            finish = high.pop()
-        taken.add(finish)
-        elev_tuple = [start,finish]
-        random.shuffle(elev_tuple)
-        elevation_couples.append(tuple(elev_tuple))
-        
-        #pick a node nearby a water node and another one on the same line
-        wat1 = water.pop()
-        num_nodes = res * res
-        
-        if wat1 in quad1 or wat1 in quad4:
-            potential_start = wat1 - res
-            potential_finish = wat1 + (num_nodes // 2)
-        else:
-            potential_start = wat1 + res
-            potential_finish = wat1 - (num_nodes // 2)
-
-        # Clamp values to valid node range and ensure they exist
-        start = max(0, min(num_nodes - 1, potential_start))
-        finish = max(0, min(num_nodes - 1, potential_finish))
-        
-        # Ensure we don't pick a node that isn't in our mapping
-        if start in graph and finish in graph:
-            taken.add(start)
-            taken.add(finish)
-            couple = [start, finish]
-            random.shuffle(couple)
-            water_couples.append(tuple(couple))
-        
-        # pick two nodes that are on the furthermost edges
-
-        quad1_left = quad1_ind[:res//10].tolist()
-        quad4_left = quad4_ind[:res//10].tolist()
-        quad2_right = quad2_ind[-res//10:].tolist()
-        quad3_right = quad2_ind[-res//10:].tolist()
-
-        random.shuffle(quad1_left)
-        random.shuffle(quad4_left)
-        random.shuffle(quad2_right)
-        random.shuffle(quad3_right)
-
-        r = random.random()
-
-        if r< 0.5:
-            while start in taken and quad1_left:
-                start = quad1_left.pop()
-            taken.add(start)
-            while finish in taken and quad3_right:
-                finish = quad3_right.pop()    
-            taken.add(finish) 
-        else:
-            while start in taken and quad4_left:
-                start = quad4_left.pop()
-            taken.add(start)
-            while finish in taken and quad2_right:
-                finish = quad2_right.pop()    
-            taken.add(finish) 
-        couple = [start, finish]
-        random.shuffle(couple)
-        distant_couples.append(tuple(couple))
-    scenarios = [water_couples, elevation_couples, distant_couples]
-    #visualize_scenarios(graph, scenarios, runs, dpi = 200)
+    # take only nodes that are not water nodes
+    ground_nodes = [node for node, data in graph.nodes(data=True) if not data.get("is_water")]
+    random.shuffle(ground_nodes)
+    scenarios = []
+    # find scenarios_number randomly-picked start_node, end_node couples
+    # ensures no repetition
+    for _ in range(scenarios_number):
+        ground_nodes = list(set(ground_nodes)-taken)
+        start = ground_nodes.pop()
+        end = ground_nodes.pop()
+        taken.update(start,end)
+        scenarios.append((start,end))
     return scenarios
 
 def visualize_scenarios(graph,scenario, runs,

@@ -2,41 +2,42 @@ import math
 import json
 import numpy as np
 
+# adjusted with Haversine formula
+
+
 def get_edge_metadata(G, u, v):
     
-    node_u = G.nodes[u]
+    # get edges coordinates
+    node_u = G.nodes[u] 
     node_v = G.nodes[v]
 
-    dx = (node_u['x'] - node_v['x']) * 77000 # back to kms (meridian width in Trento)
-    dy = (node_u['y'] - node_v['y']) * 111320 # back to kms 
-    dist = math.sqrt(dx**2 + dy**2) # in meters
-    
+    # Earth's ray in meters
+    r = 6731000
+
+    lat1 = math.radians(node_u["x"])
+    lat2 = math.radians(node_v["x"])
+    delta_lat = math.radians(node_v["x"] - node_u["x"])
+    delta_lon = math.radians(node_v["y"] - node_u["y"])
+
+    a = math.sin(delta_lat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2)**2
+
+    distance = 2 * r * math.asin(math.sqrt(a))
+
     # steepness
     elev_diff = node_v['elevation'] - node_u['elevation']
-    inclination = (elev_diff / dist) * 100 if dist != 0 else 0 # in %
-
-    # elevation    
-    elev_u = node_u['elevation']
-    elev_v = node_v['elevation']
+    steepness = (elev_diff / distance) if distance != 0 else 0 # in %
     
-    is_water = 1.0 if (node_u['is_water'] or node_v['is_water']) else 0.0
-    return np.array([dist, abs(inclination), elev_u, elev_v, is_water]).astype(float)
+    is_water = True if (node_u['is_water'] or node_v['is_water']) else False
+    return np.array([distance, abs(steepness), is_water]).astype(float)
+
+# AS GRAPH IS NOT DIRECTED
 
 def create_edge_dict(graph):
-    edge_dict = {}
-    max_elev = 0
-    max_dist = 0
+    edge_dict = {}    
     for u,v in graph.edges():
         u_ordered, v_ordered = min(u, v), max(u, v)
         key = f"{u_ordered}-{v_ordered}"
         ret = get_edge_metadata(graph, u,v)
         edge_dict[key] = ret
-        max_elev = max(max_elev, ret[2], ret[3])
-        max_dist = max(max_dist, ret[0])
-    norm_matrix = np.array([max_dist, 90, max_elev, max_elev, 1])
-    
-    # normalization gives more robustness in case of varying resolution
-    for el in edge_dict:
-        edge_dict[el] /= norm_matrix
     return edge_dict
 

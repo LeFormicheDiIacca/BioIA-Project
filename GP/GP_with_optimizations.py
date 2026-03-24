@@ -15,42 +15,47 @@ from TerrainGraph.terraingraph import create_graph
 from scenario import generate_scenarios
 from edge_info import create_edge_dict
 import time
-from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, identity_water, if_then_else, random_gen, save_run, compute_chebyshev
+from gp_logistics import protected_div, protected_log, protected_pow, tree_plotter, if_then_else, random_gen, save_run, compute_chebyshev, BASE
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
 from collections import defaultdict
 from numba import njit
 from deap import gp
+import math
 
-# global variables
-
-STEEPNESS_COEFFICIENT = 5.0
-STEEPNESS_PENALTY = 50000.0
-ELEVATION_COEFFICIENT = 10.0
-ELEVATION_PENALTY = 500.0
-WATER_COEFFICIENT = 5000.0
+# shall we keep it?
 PENALTY_MISSING_VALUES = 1e8
 
-# for strongly typed gp
-class WaterArg: pass
-class OtherArgs: pass
+# new equation takes the edge parameters: distance and steepness (floats) and is_water (boolean)
 
-# define primitive set
-# strongly typed # chosen to limit if_then function
+pset = gp.PrimitiveSetTyped("MAIN", [float, float, bool], float) # output is also float
+pset.renameArguments(ARG0="distance", ARG1="steepness", ARG2="is_water")
+pset.addPrimitive(operator.add, [float,float], float)
+pset.addPrimitive(operator.mul, [float,float], float)
+pset.addPrimitive(protected_pow, [float,float], float)
+pset.addPrimitive(operator.sub, [float,float], float)
+pset.addPrimitive(operator.neg, [float], float)
+pset.addPrimitive(protected_log, [float,float], float)
+pset.addPrimitive(protected_div, [float,float], float)
 
-pset = gp.PrimitiveSetTyped("MAIN", [OtherArgs, OtherArgs, OtherArgs, OtherArgs, WaterArg], OtherArgs)
-pset.renameArguments(ARG0="distance", ARG1="steepness", ARG2="elevation_u", ARG3="elevation_v", ARG4="is_water")
-pset.addPrimitive(operator.add, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(operator.mul, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(protected_pow, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(operator.sub, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(operator.neg, [OtherArgs], OtherArgs)
-pset.addPrimitive(protected_log, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(protected_div, [OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(if_then_else, [WaterArg, OtherArgs, OtherArgs], OtherArgs)
-pset.addPrimitive(identity_water, [WaterArg], WaterArg)
-pset.addEphemeralConstant("constant", random_gen, ret_type=OtherArgs)
+# if then else
+# input is boolean condition and outputs are floats
+
+pset.addPrimitive(if_then_else, [bool, float, float], float)
+
+# comparison operators: <, >, <=, >=, and, or
+
+pset.addPrimitive(operator.lt, [float, float], bool)
+pset.addPrimitive(operator.le, [float, float], bool)
+pset.addPrimitive(operator.gt, [float, float], bool)
+pset.addPrimitive(operator.ge, [float, float], bool)
+pset.addPrimitive(operator.and_, [bool, bool], bool)
+pset.addPrimitive(operator.or_, [bool, bool], bool)
+
+# add constant 
+# # for now value is set between 0 and math.e
+pset.addEphemeralConstant("constant", random_gen, ret_type=float)
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin, pset=pset)
@@ -66,7 +71,7 @@ def create_valid_individual():
         expr = gp.genHalfAndHalf(pset=pset, min_=2, max_=5)
         ind = creator.Individual(expr)
         tree_str = str(ind)
-        required_inputs = ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]
+        required_inputs = ["distance", "steepness", "is_water"]
         missing = any(inp not in tree_str for inp in required_inputs)
         if not missing:
             return ind
@@ -85,7 +90,7 @@ toolbox.register("mutate_unif", gp.mutUniform, expr=toolbox.expr, pset=pset)
 toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
 
 
-# to include both type of mutation
+# to include both type of mutation # to be finetuned
 
 def mutate_combined(individual):
     if random.random() < 0.7:
@@ -150,7 +155,11 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
         if predecessors[curr] == -9999 and curr != start_node_idx:
             total_penalty += 1_000_000  # Unreachable
             continue
-
+        
+        path_distance = 0.0
+        path_steepness = 0.0
+        path_water = 0
+        tot_nodes = 0
         while curr != start_node_idx:
             prev = predecessors[curr]
             if prev == -9999: break
@@ -168,33 +177,20 @@ def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
 
             #Penalty calculations
             d = edge_data[edge_idx, 0]
-            incl = edge_data[edge_idx, 1]
-            e_u = edge_data[edge_idx, 2]
-            e_v = edge_data[edge_idx, 3]
-            water = edge_data[edge_idx, 4]
+            steepness = edge_data[edge_idx, 1]
+            water = edge_data[edge_idx, 2]
 
-            # Dynamic penalty
+            tot_nodes +=1
 
-            dp = STEEPNESS_COEFFICIENT*incl + STEEPNESS_PENALTY * max(0, incl-0.25)
+            path_distance += d
+            path_steepness += steepness
+            if water == True:
+                path_water += 1
 
-            elev_diff = abs(e_v - e_u)
-
-            e_v = ELEVATION_COEFFICIENT*e_v + ELEVATION_PENALTY * max(0, e_v - 0.70)
-            e_u = ELEVATION_COEFFICIENT*e_u + ELEVATION_PENALTY * max(0, e_u - 0.70)
-
-            penalty = np.array([d, dp * d, ELEVATION_COEFFICIENT * elev_diff, WATER_COEFFICIENT * water, e_v, e_u ])
-
-            # We estimate the average distance to be equal to the average Chebyshev distance and use this value to normalize
-            # the penalty, as a grid with more nodes will have an inherently higher distance
-            # as the cost for crossing water is vary high, we consider the number of nodes with water that are present in the
-            # grid over the total nodes in the grid (less total nodes, less water nodes)
-
-            chebyshev_matrix = np.array([chebyshev, chebyshev, chebyshev, water_count/res**2, chebyshev, chebyshev])
-            normalized_penalty = penalty/chebyshev_matrix
-            normalized_penalty = np.sum(normalized_penalty)
-            total_penalty += normalized_penalty
             curr = prev
 
+    total_penalty = path_distance/tot_nodes * ((path_water/tot_nodes)*(BASE-1) + 1 + BASE**(path_steepness/tot_nodes)) 
+    
     return total_penalty
 
 # Turns graph data into simple arrays for better performance and use with numba&numpy
@@ -210,10 +206,10 @@ def precompute_edge_lookup_simple(graph, edge_dict, node_to_idx):
         u_ord_idx, v_ord_idx = (u_idx, v_idx) if u_idx < v_idx else (v_idx, u_idx)
 
         edge_key = f"{u_ord}-{v_ord}"
-        d, incl, e_u, e_v, water = edge_dict[edge_key]
+        d, steepness, water = edge_dict[edge_key]
 
         edge_lookup_list.append([u_ord_idx, v_ord_idx, len(edge_data_list)])
-        edge_data_list.append([d, incl, e_u, e_v, water])
+        edge_data_list.append([d, steepness, water])
 
     edge_lookup_arr = np.array(edge_lookup_list, dtype=np.int64)
     edge_data = np.array(edge_data_list, dtype=np.float32)
@@ -263,14 +259,17 @@ def evaluate_fully_optimized(individual, scenarios, node_to_idx, edge_features_c
 
     #Penalties for missing values
     tree_str = str(individual)
-    for inp in ["distance", "steepness", "elevation_u", "elevation_v", "is_water"]:
+    for inp in ["distance", "steepness", "is_water"]:
         if inp not in tree_str: total_penalty += PENALTY_MISSING_VALUES
 
-    return (total_penalty,)
+    final_fitness = total_penalty / len(scenarios)
+
+    #NB: see if we can normalize wrt resolution (es. Chebyshev distance)
+
+    return (final_fitness,)
 
 # algorithm-running function
-def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder, chebyshev):
-    all_logs = []
+def run_EA(graph, scenarios, edge_dict, population, generations, base_folder, chebyshev):
     pop = toolbox.population(n=population)
     # for info about fitness of the evolved trees
     stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
@@ -301,7 +300,7 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
         edge_index_matrix.data
     )
     edge_features_columns = [np.array(c, dtype=np.float32) for c in zip(*edge_features)]
-    water_count = sum(1 for features in edge_dict.values() if features[4] > 0)
+    water_count = sum(1 for features in edge_dict.values() if features[2] > 0)
 
     # creates fixed CSR template
     n_nodes = len(node_to_idx)
@@ -316,85 +315,68 @@ def run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_fol
         initargs=(edge_lookup, edge_data, node_list, pset)
     )
     toolbox.register("map", pool.map)
-    for i in range(runs):
-        print(f"Starting run {i + 1}")
-        start = time.time()
-        current_scenario = [el[i] for el in scenarios]
-        toolbox.register("evaluate", evaluate_fully_optimized,
-                         scenarios=current_scenario,
-                         node_to_idx=node_to_idx,
-                         edge_features_columns=edge_features_columns, 
-                         csr_template=csr_template,  
-                         csr_components=csr_components, res = res,
-                         water_nodes = water_count, chebyshev = chebyshev)
-        for ind in pop:
-            del ind.fitness.values
-        pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
-                                       ngen=scenario_dur, stats=mstats, halloffame=hof, verbose=False)
-        # archives runtime info
-
-        flattened_log = []
-        gens = log.select("gen")
-        nevals = log.select("nevals")
-        fit_avg = log.chapters["fitness"].select("avg")
-        fit_max = log.chapters["fitness"].select("max")
-        fit_std = log.chapters["fitness"].select("std")
-        fit_min = log.chapters["fitness"].select("min")
-        
-        # size_avg = log.chapters["size"].select("avg")
-
-        # Reconstruct the list of dictionaries
-
-        for i_gen in range(len(gens)):
-            entry = {
-                'gen': str(i + 1) + "." + str(gens[i_gen]),
-                'nevals': nevals[i_gen],
-                'fit_avg': fit_avg[i_gen],
-                'fit_max': fit_max[i_gen],
-                'fit_min': fit_min[i_gen],
-                'fit_std': fit_std[i_gen]
-            }
-            flattened_log.append(entry)
-
-        all_logs.append(flattened_log)
-        print(log)
-        end = time.time()
-        diff = end - start
-        hours, tmp = divmod(diff, 3600)
-        minutes, seconds = divmod(tmp, 60)
-
-        print(f"{i + 1}° run completed in {hours} hours {minutes} minutes {seconds} seconds")
-        save_run(population, hof, diff, i+1, scenario_dur, res, pset=pset,path=base_folder, sub_run_idx=i)
-        print(f"{i + 1}° run saved")
-
-    return pop, hof, all_logs
-
-
-# main function to run, executes the code and saves logs
-
-def main(population, runs, graph, edge_dict, res, base_folder, scenario_dur=15):
-    scenarios = generate_scenarios(runs, graph, res)
-    print(
-        f"Evolving the cost function through {runs} runs of {scenario_dur} generations with a population of {population}.")
     start = time.time()
-    chebyshev = compute_chebyshev(res)
-    ret = run_EA(graph, scenarios, edge_dict, population, runs, scenario_dur, base_folder=base_folder, chebyshev=chebyshev)
+    toolbox.register("evaluate", evaluate_fully_optimized,
+                        scenarios=scenarios,
+                        node_to_idx=node_to_idx,
+                        edge_features_columns=edge_features_columns, 
+                        csr_template=csr_template,  
+                        csr_components=csr_components, res = res,
+                        water_nodes = water_count, chebyshev = chebyshev)
+    
+    pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2,
+                                       ngen=generations, stats=mstats, halloffame=hof, verbose=False)
+    
+    flattened_log = []
+    gens = log.select("gen")
+    nevals = log.select("nevals")
+    fit_avg = log.chapters["fitness"].select("avg")
+    fit_max = log.chapters["fitness"].select("max")
+    fit_std = log.chapters["fitness"].select("std")
+    fit_min = log.chapters["fitness"].select("min")
+    
+    # size_avg = log.chapters["size"].select("avg")
+
+    # Reconstruct the list of dictionaries
+
+    for i_gen in range(len(gens)):
+        entry = {
+            'gen': str(gens[i_gen]),
+            'nevals': nevals[i_gen],
+            'fit_avg': fit_avg[i_gen],
+            'fit_max': fit_max[i_gen],
+            'fit_min': fit_min[i_gen],
+            'fit_std': fit_std[i_gen]
+        }
+        flattened_log.append(entry)
+
+    print(log)
     end = time.time()
     diff = end - start
     hours, tmp = divmod(diff, 3600)
     minutes, seconds = divmod(tmp, 60)
-    print(f"EA runtime: {hours} hours {minutes} minutes {seconds} seconds")
-    pop = ret[0]
-    logs = ret[2]
-    hof = ret[1]
-    save_run(population, hof, diff, runs, scenario_dur, res, pset=pset, path=base_folder, logs=logs)
+    print(f"{generations} generations evolved in {hours} hours {minutes} minutes {seconds} seconds")
+    save_run(population, hof, diff, len(scenarios), generations, res, pset=pset,path=base_folder)
+    print(f"Generations log have been saved")
+
+
+# main function to run, executes the code and saves logs
+
+def main(population, scenarios_number, generations, graph, edge_dict, res, base_folder):
+    scenarios = generate_scenarios(scenarios_number, graph)
+    print(
+        f"Evolving the cost function through {generations} generations with a population of {population}.")
+    start = time.time()
+    chebyshev = compute_chebyshev(res)
+    run_EA(graph, scenarios, edge_dict, population, generations, base_folder=base_folder, chebyshev= chebyshev)
     print("The best individual has been saved")
 
 
 if __name__ == "__main__":
     experiments = [
-        [500,20,25],
-        [500,20,20]]
+        # population, scenarios, generations
+        [500,50,200],
+        [500,50, 500]]
     res = 200
     today = datetime.now().strftime("%d_%m_%Y")
     runs_today_folder = f"GP/res/runs_{today}"
@@ -405,16 +387,17 @@ if __name__ == "__main__":
                                   resolution=res)
     edge_dict = create_edge_dict(trentino_graph)
 
-    water_count = sum(1 for features in edge_dict.values() if features[4] > 0)
+    water_count = sum(1 for features in edge_dict.values() if features[2] > 0)
     if water_count == 0:
         print("No Water Node. Can't continue.")
         exit(-1)
+
     for experiment in experiments:
         population = experiment[0]
-        runs = experiment[1]
-        generations = experiment[2]
+        scen_number = experiment[1]
+        gens = experiment[2]
 
-        base_folder = f"{runs_today_folder}/{population}pop_{generations}gen_{runs}run_{res}res"
+        base_folder = f"{runs_today_folder}/{population}pop_{gens}gen_{scen_number}scenarios_{res}res"
         if not os.path.exists(base_folder):
             os.makedirs(base_folder)
         else:
@@ -424,6 +407,6 @@ if __name__ == "__main__":
                 base_folder = f"{base_folder}_{i}"
             os.makedirs(base_folder)
 
-        main(population=population, runs=runs, graph=trentino_graph, edge_dict=edge_dict, res=res, scenario_dur=generations, base_folder = base_folder)
+        main(population=population, scenarios_number=scen_number, generations=gens, graph=trentino_graph, edge_dict=edge_dict, res=res, base_folder = base_folder)
         print("Small pause for CPU cooling")
         sleep(1*60)
