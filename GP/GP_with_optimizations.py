@@ -15,7 +15,6 @@ from deap import base, creator, gp, tools, algorithms
 from numba import njit
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
-
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 os.chdir(project_root)
 if project_root not in sys.path:
@@ -221,12 +220,12 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios, e
             final_fit += 1000.0
     return (final_fit,)
 
-
-def run_EA(scenarios_number, population, generations, res, npz_path):
-    print(f"Evolving the cost function through {generations} generations with a population of {population}.")
+def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate= MUT_RATE, cx_rate= CROSS_RATE, log: bool = False):
+    if log:
+        print(f"Evolving the cost function through {generations} generations with a population of {population}.")
     start = time.time()
-
-    print("Loading from file")
+    if log:
+        print("Loading from file")
     data = np.load(npz_path)
     edge_features_columns = [data['dist'], data['steep'], data['water']]
     csr_indices, csr_indptr, csr_data = data['csr_indices'], data['csr_indptr'], data['csr_data']
@@ -265,7 +264,8 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
                      sources_list=sources_list, targets_list=targets_list, num_scenarios=scenarios_number,
                      edge_features_columns=edge_features_columns, csr_template=csr_template, csr_components=csr_components)
     #Header Tab
-    print_gen_log(0, 0, {}, 0, 0, is_header=True)
+    if log:
+        print_gen_log(0, 0, {}, 0, 0, is_header=True)
     try:
         #Inizial population
         gen_start = time.time()
@@ -278,8 +278,9 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
         record = mstats.compile(pop)['fitness']
         num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
 
-        print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
-        save_run(population, hof, 0, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
+        if log:
+            print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
+            save_run(population, hof, 0, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
         std = 0.0
         best = 0.0
         static = 0
@@ -289,7 +290,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
             gen_start = time.time()
 
             offspring = toolbox.select(pop, len(pop))
-            offspring = algorithms.varAnd(offspring, toolbox, cxpb=CROSS_RATE, mutpb=MUT_RATE)
+            offspring = algorithms.varAnd(offspring, toolbox, cxpb=cx_rate, mutpb=mut_rate)
 
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
             fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
@@ -302,8 +303,9 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
             record = mstats.compile(pop)['fitness']
             num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
             gen_end = time.time() - gen_start
-            print_gen_log(gen, len(invalid_ind), record, num_dead, gen_end)
-            save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation= gen)
+            if log:
+                print_gen_log(gen, len(invalid_ind), record, num_dead, gen_end)
+                save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation= gen)
             curr_std = record["std"]
             curr_best = record["min"]
             if abs(std - curr_std) < STD_THRESHOLD and best == curr_best:
@@ -319,13 +321,20 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
         diff = end - start
         hours, tmp = divmod(diff, 3600)
         minutes, seconds = divmod(tmp, 60)
-        print(f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
+        if log:
+            print(f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
 
         pool.close()
         pool.join()
+        if log:
+            print(f"Generations log saved in {BASE_FOLDER}")
+            save_run(population, hof, diff, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER,
+                     generation="_final")
 
-        save_run(population, hof, diff, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation= "_final")
-        print(f"Generations log saved in {BASE_FOLDER}")
+        best_ind = hof[0]
+        best_fitness = best_ind.fitness.values[0]
+
+        return best_ind, best_fitness
     finally:
         pool.close()
         pool.join()
@@ -374,7 +383,7 @@ if __name__ == "__main__":
             BASE_FOLDER = f"{BASE_FOLDER}_{i}"
         os.makedirs(BASE_FOLDER)
         try:
-            run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path)
+            run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path, log= True)
 
         except Exception as e:
             error_msg = traceback.format_exc()
