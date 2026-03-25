@@ -39,10 +39,18 @@ def get_edge_metadata(G, u, v):
 
 def create_edge_dict(graph):
     edge_dict = {}
+    d_max = 0
     for u,v in graph.edges():
         u_ordered, v_ordered = min(u, v), max(u, v)
         key = f"{u_ordered}-{v_ordered}"
         ret = get_edge_metadata(graph, u,v)
         edge_dict[key] = ret
+        dist = ret[0]
+        if dist > d_max:
+            d_max = dist
+    if d_max == 0:
+        return edge_dict
+    for ret in edge_dict.values():
+        ret[0] = ret[0]/d_max
     return edge_dict
 

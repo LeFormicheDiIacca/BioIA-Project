@@ -39,7 +39,7 @@ def if_then_else(condition, out_true, out_false):
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
 
-random_gen = partial(round_random, 0, BASE)
+random_gen = partial(round_random, 0, 1)
 
 # plots tree given the PrimitiveTree OR the string
 

@@ -24,6 +24,10 @@ from gp_logistics import protected_div, protected_log, protected_pow, if_then_el
 
 BASE = math.e
 BASE_FOLDER = ""
+STD_THRESHOLD = 0.001
+EARLY_STOPPING = 10
+MUT_RATE = 0.2
+CROSS_RATE = 0.7
 
 def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
     """
@@ -256,6 +260,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
     stats_fit.register("avg", np.mean)
     stats_fit.register("min", np.min)
     stats_fit.register("max", np.max)
+    stats_fit.register("std", np.std)
     mstats = tools.MultiStatistics(fitness=stats_fit)
     hof = tools.HallOfFame(5, similar=operator.eq)
 
@@ -280,15 +285,18 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
     hof.update(pop)
     record = mstats.compile(pop)['fitness']
     num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
-
+    
     print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
     save_run(population, hof, 0, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
+    std = 0.0
+    best = 0.0
+    static = 0
     # --- Ciclo Evolutivo ---
     for gen in range(1, generations + 1):
         gen_start = time.time()
 
         offspring = toolbox.select(pop, len(pop))
-        offspring = algorithms.varAnd(offspring, toolbox, cxpb=0.5, mutpb=0.2)
+        offspring = algorithms.varAnd(offspring, toolbox, cxpb=CROSS_RATE, mutpb=MUT_RATE)
 
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
@@ -303,6 +311,16 @@ def run_EA(scenarios_number, population, generations, res, npz_path):
         gen_end = time.time() - gen_start
         print_gen_log(gen, len(invalid_ind), record, num_dead, gen_end)
         save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation= gen)
+        curr_std = mstats.compile(pop)["fitness"]["std"]
+        curr_best = mstats.compile(pop)["fitness"]["min"]
+        if abs(std - curr_std) < STD_THRESHOLD and best == curr_best:
+            static +=1
+            if static >= EARLY_STOPPING:
+                break
+        else:
+            best = curr_best
+            std = curr_std
+
 
     end = time.time()
     diff = end - start
