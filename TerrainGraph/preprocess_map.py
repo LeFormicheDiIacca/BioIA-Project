@@ -27,6 +27,8 @@ def main():
     res = 200
     print("-Creating graph from TIF and PBF...")
     graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=res)
+    # 2 of 6 REPLACEME
+    # graph = create_graph("napoli.tif", "sud-260324.osm.pbf", resolution=res)
 
     print("-Creating edge dictionary")
     edge_dict = create_edge_dict(graph)
@@ -50,6 +52,8 @@ def main():
 
     #Saving on disk
     save_path = f"precomputed_map_trentino_{res}.npz"
+    # 3 of 6  REPLACEME
+    # save_path = f"precomputed_map_napoli_{res}.npz"
     np.savez_compressed(
         save_path,
         dist=edge_features_columns[0],

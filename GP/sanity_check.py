@@ -97,6 +97,8 @@ if __name__ == '__main__':
 
     print("Generating Graph...")
     G = create_graph("../TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", resolution=res)
+    # 6 of 6 REPLACEME
+    # G = create_graph("../TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", resolution=res)
 
     print("Finding best path...")
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)

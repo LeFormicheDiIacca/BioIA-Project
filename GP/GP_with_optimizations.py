@@ -345,6 +345,8 @@ if __name__ == "__main__":
 
     # Percorso del file NPZ
     npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
+    # 4 of 6 REPLACEME
+    # npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
 
     if not os.path.exists(npz_path):
         print(f"ERRORE: File {npz_path} non trovato!")

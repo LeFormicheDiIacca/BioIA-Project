@@ -72,6 +72,10 @@ if __name__ == "__main__":
     res = 100
     tif_path = "../TerrainGraph/trentino.tif"
     osm_path = "../TerrainGraph/trentino_alto_adige.pbf"
+    # 5 of 6 REPLACEME
+    # tif_path = "../TerrainGraph/napoli.tif"
+    # osm_path = "../TerrainGraph/sud-260324.osm.pbf"
+
     graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)
     runs = 5
     scenarios = generate_scenarios(runs,graph,res= res)

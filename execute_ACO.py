@@ -154,6 +154,8 @@ if __name__ == '__main__':
     for key_coords in key_coords_list:
         area = create_bbox_with_margin(key_coords)
         mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], area)
+        # 1 of 6 REPLACEME
+        # mesh_graph = create_graph("TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", mesh_graph_parameters["resolution"], area)
         edge_dict = create_edge_dict(mesh_graph)
 
         key_nodes = get_closest_indices(key_coords, area, mesh_graph_parameters["resolution"])
