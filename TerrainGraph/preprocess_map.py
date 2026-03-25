@@ -1,7 +1,6 @@
 import numpy as np
-import os
 
-from GP.edge_info import create_edge_dict
+from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from scipy.sparse import csr_matrix
 
@@ -38,14 +37,21 @@ def main():
     node_to_idx = {node: i for i, node in enumerate(node_list)}
 
     #Feature Extraction
-    edge_features = []
+    distances = []
+    steepness = []
+    waters = []
+
     for u, v in graph.edges():
         u_ordered, v_ordered = min(u, v), max(u, v)
-        features = edge_dict[f"{u_ordered}-{v_ordered}"]
-        edge_features.append(features)
+        d, s, w = edge_dict[f"{u_ordered}-{v_ordered}"]
+        distances.append(d)
+        steepness.append(s)
+        waters.append(w)
 
     #Slicing into 3 different arrays
-    edge_features_columns = [np.array(c, dtype=np.float32) for c in zip(*edge_features)]
+    dist_array = np.array(distances, dtype=np.float32)
+    steep_array = np.array(steepness, dtype=np.float32)
+    water_array = np.array(waters, dtype=np.bool_)
 
     #Turnign graph into Matrix CSR
     edge_index_matrix = create_edge_index_matrix(graph, node_to_idx)
@@ -56,9 +62,9 @@ def main():
     # save_path = f"precomputed_map_napoli_{res}.npz"
     np.savez_compressed(
         save_path,
-        dist=edge_features_columns[0],
-        steep=edge_features_columns[1],
-        water=edge_features_columns[2],
+        dist=dist_array,
+        steep=steep_array,
+        water=water_array,
         csr_indices=edge_index_matrix.indices,
         csr_indptr=edge_index_matrix.indptr,
         csr_data=edge_index_matrix.data,

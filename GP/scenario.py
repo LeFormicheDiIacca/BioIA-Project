@@ -5,21 +5,26 @@ import networkx as nx
 import matplotlib as mpl
 import numpy as np
 
+import random
+
 
 def generate_scenarios(scenarios_number, graph):
-    taken = set()
-    # take only nodes that are not water nodes
+    # Filter for ground nodes only
     ground_nodes = [node for node, data in graph.nodes(data=True) if not data.get("is_water")]
+
+    # Requirement: we need 2 * scenarios_number unique nodes
+    if len(ground_nodes) < scenarios_number * 2:
+        raise ValueError("Not enough ground nodes to create unique pairs.")
+
+    # Shuffle once to ensure randomness
     random.shuffle(ground_nodes)
+
     scenarios = []
-    # find scenarios_number randomly-picked start_node, end_node couples
-    # ensures no repetition
-    for _ in range(scenarios_number):
-        ground_nodes = list(set(ground_nodes)-taken)
-        start = ground_nodes.pop()
-        end = ground_nodes.pop()
-        taken.update(start,end)
-        scenarios.append((start,end))
+    for i in range(0, scenarios_number * 2, 2):
+        start = ground_nodes[i]
+        end = ground_nodes[i + 1]
+        scenarios.append((start, end))
+
     return scenarios
 
 def visualize_scenarios(graph,scenario, runs,

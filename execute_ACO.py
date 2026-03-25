@@ -7,8 +7,7 @@ import numpy as np
 from pathlib import Path
 from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
-from GP.edge_info import create_edge_dict
-from TerrainGraph.meshgraph import MeshGraph
+from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
 from cost_functions import best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF

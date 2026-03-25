@@ -1,13 +1,14 @@
-import rasterio
-from rasterio.warp import transform, transform_bounds
-import geopandas as gpd 
-from shapely.geometry import Point
-import numpy as np
-import fiona
 import warnings
 
-from TerrainGraph.meshgraph import MeshGraph
+import fiona
+import geopandas as gpd
+import numpy as np
+import rasterio
 from rasterio.coords import BoundingBox
+from rasterio.warp import transform, transform_bounds
+from shapely.geometry import Point
+
+from TerrainGraph.meshgraph import MeshGraph
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
@@ -86,4 +87,4 @@ def create_graph(tif_path, osm_pbf_path, resolution, area = BoundingBox( left=11
             for node_id in water_nodes['id']:
                 G.nodes[node_id]["is_water"] = True
 
-    return G   
+    return G

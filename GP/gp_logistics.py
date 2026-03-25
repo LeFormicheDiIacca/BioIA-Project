@@ -1,6 +1,5 @@
 import random
 import math
-import numpy as np
 from deap import gp
 import json
 from functools import partial 
@@ -15,12 +14,14 @@ BASE = math.e
 # for primitive set
 
 def protected_div(n1, n2):
+    import numpy as np
     with np.errstate(divide='ignore', invalid='ignore'):
         res = n1 / n2
         return np.where(np.isfinite(res), res, 1.0)
 
 
 def protected_log(x, base):
+    import numpy as np
     with np.errstate(divide='ignore', invalid='ignore'):
         safe_x = np.abs(x) + 1e-9
         safe_base = np.abs(base) + 1e-9
@@ -28,6 +29,7 @@ def protected_log(x, base):
         return np.where(np.isfinite(res), res, 1.0)
 
 def protected_pow(n1, n2):
+    import numpy as np
     with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
         base = np.abs(n1)
         base = np.clip(base, 0, 1e10)
@@ -35,6 +37,7 @@ def protected_pow(n1, n2):
         res = np.power(base, exponent)
         return np.where(np.isfinite(res), res, 1e10)
 def if_then_else(condition, out_true, out_false):
+    import numpy as np
     return np.where(condition, out_true, out_false)
 def round_random(a,b):
     return round(random.uniform(a,b), 3)

@@ -1,9 +1,5 @@
 import math
-import json
 import numpy as np
-
-# adjusted with Haversine formula
-
 
 def get_edge_metadata(G, u, v):
 
