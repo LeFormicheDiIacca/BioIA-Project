@@ -29,6 +29,7 @@ EARLY_STOPPING = 10
 MUT_RATE = 0.2
 CROSS_RATE = 0.7
 
+
 def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
 
     header = f"{'Gen':>4} | {'Nevals':>6} | {'Avg Fit':>12} | {'Std Fit':>12} | {'Min Fit':>12} | {'Max Fit':>12} | {'Dead':>5} | {'Time':>7}"
@@ -179,7 +180,7 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios, e
         func = gp.compile(expr=individual, pset=_GLOBAL_PSET)
         costs = func(*edge_features_columns)
 
-        if isinstance(costs, (int, float)):
+        if np.isscalar(costs) or getattr(costs, 'ndim', 0) == 0:
             costs = np.full(len(edge_features_columns[0]), costs)
 
         #Avoid negative costs
