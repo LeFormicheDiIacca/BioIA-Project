@@ -10,28 +10,34 @@ import traceback
 from collections import defaultdict
 from datetime import datetime
 from time import sleep
+import networkit as nk
+from gp_logistics import protected_div, protected_log, protected_pow, if_then_else, random_gen, save_run
 import numpy as np
 from deap import base, creator, gp, tools, algorithms
 from numba import njit
 from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import dijkstra
+
+#Ignore Scipy/Numpy math errors
+np.seterr(all='ignore')
+#Define project root for file management
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 os.chdir(project_root)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from gp_logistics import protected_div, protected_log, protected_pow, if_then_else, random_gen, save_run
-
+#Global variables for Hyperparameters
 BASE = math.e
 BASE_FOLDER = ""
 STD_THRESHOLD = 0.001
 EARLY_STOPPING = 10
 MUT_RATE = 0.2
 CROSS_RATE = 0.7
+MAX_CORE_VALUE = 11
+PENALTY_MISSING_VALUES = 1e3
+PENALTY_ERROR_IN_CALCULATIONS =  1e12
 
-
+#pretty logging for each generation
 def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
-
     header = f"{'Gen':>4} | {'Nevals':>6} | {'Avg Fit':>12} | {'Std Fit':>12} | {'Min Fit':>12} | {'Max Fit':>12} | {'Dead':>5} | {'Time':>7}"
     csv_path = os.path.join(BASE_FOLDER, "evolution_stats.csv")
     if is_header:
@@ -54,9 +60,8 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
         csv.writer(f).writerow([gen, nevals, avg_str, std_str, min_str, max_str, num_dead, duration])
 
 
-PENALTY_MISSING_VALUES = 1e8
-
 # --- DEAP SETUP ---
+#DEAP primitives setup
 pset = gp.PrimitiveSetTyped("MAIN", [float, float, bool], float)
 pset.renameArguments(ARG0="distance", ARG1="steepness", ARG2="is_water")
 pset.addPrimitive(operator.add, [float, float], float)
@@ -74,12 +79,11 @@ pset.addPrimitive(np.greater_equal, [float, float], bool, name="ge")
 pset.addPrimitive(np.logical_and, [bool, bool], bool, name="and_")
 pset.addPrimitive(np.logical_or, [bool, bool], bool, name="or_")
 pset.addEphemeralConstant("constant", random_gen, ret_type=float)
-
+#DEAP fitness and individuals
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin, pset=pset)
 
 toolbox = base.Toolbox()
-
 
 def create_valid_individual():
     while True:
@@ -90,13 +94,12 @@ def create_valid_individual():
         if not any(inp not in tree_str for inp in required_inputs):
             return ind
 
-
 toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=2, max_=5)
 toolbox.register("individual", tools.initIterate, creator.Individual, create_valid_individual)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 toolbox.register("mate", gp.cxOnePoint)
-toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("select", tools.selTournament, tournsize=5)
 toolbox.register("mutate_unif", gp.mutUniform, expr=toolbox.expr, pset=pset)
 toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
 
@@ -116,159 +119,192 @@ toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value=15))
 toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value=5))
 toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=15))
 
+#Variables for multiprocessing
 _GLOBAL_PSET = None
+_STATIC_DATA = {}
 
-
-def init_worker(pset):
-    global _GLOBAL_PSET
+def init_worker(pset, static_data):
+    global _GLOBAL_PSET, _STATIC_DATA
     _GLOBAL_PSET = pset
+    _STATIC_DATA = static_data
 
+#fast Numba compute path penalty
 @njit(fastmath=True, cache=True)
-def compute_total_penalty_numba(predecessors, end_nodes, start_node_idx,
-                                csr_indices, csr_indptr, csr_data,
-                                edge_dist, edge_steep, edge_water):
-    total_penalty = 0.0
+def compute_penalty_from_path(path_nodes,
+                              csr_indices, csr_indptr, csr_data,
+                              edge_dist, edge_steep, edge_water):
+    n = len(path_nodes)
+    if n < 2:
+        return PENALTY_ERROR_IN_CALCULATIONS
 
-    for end_idx in end_nodes:
-        curr = end_idx
-        if predecessors[curr] == -9999 and curr != start_node_idx:
-            total_penalty += 1_000_000  # Unreachable
-            continue
+    path_distance = 0.0
+    path_steepness = 0.0
+    path_water = 0
+    tot_nodes = n - 1
+    #Calculate path stats
+    for k in range(tot_nodes):
+        curr = path_nodes[k]
+        next_node = path_nodes[k + 1]
 
-        path_distance = 0.0
-        path_steepness = 0.0
-        path_water = 0
-        tot_nodes = 0
+        edge_idx = -1
+        for i in range(csr_indptr[curr], csr_indptr[curr + 1]):
+            if csr_indices[i] == next_node:
+                edge_idx = csr_data[i] - 1
+                break
 
-        while curr != start_node_idx:
-            prev = predecessors[curr]
-            if prev == -9999: break
+        if edge_idx == -1:
+            return PENALTY_ERROR_IN_CALCULATIONS
 
-            edge_idx = -1
-            for i in range(csr_indptr[curr], csr_indptr[curr + 1]):
-                if csr_indices[i] == prev:
-                    edge_idx = csr_data[i] - 1
-                    break
+        path_distance += edge_dist[edge_idx]
+        path_steepness += edge_steep[edge_idx]
+        if edge_water[edge_idx] > 0.5:
+            path_water += 1
 
-            if edge_idx == -1:
-                curr = prev
-                continue
+    #use fitness formula
+    tot_nodes+=1
+    return (path_distance / tot_nodes) * (
+            (path_water / tot_nodes) * (BASE - 1) + 1 + BASE ** (path_steepness / tot_nodes)
+    )
 
-            path_distance += edge_dist[edge_idx]
-            path_steepness += edge_steep[edge_idx]
-            if edge_water[edge_idx] > 0.5:
-                path_water += 1
-
-            tot_nodes += 1
-            curr = prev
-
-        if tot_nodes > 0:
-            total_penalty += (path_distance / tot_nodes) * (
-                        (path_water / tot_nodes) * (BASE - 1) + 1 + BASE ** (path_steepness / tot_nodes))
-        else:
-            total_penalty += 1_000_000.0
-
-    return total_penalty
-
-
-def evaluate_individual(individual, sources_list, targets_list, num_scenarios, edge_features_columns, csr_template,
-                        csr_components):
-    global _GLOBAL_PSET
-
-    #Calculate costs
+#Function for individual evaluation
+def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
+    global _GLOBAL_PSET, _STATIC_DATA
+    #Try to compile the individual and calculate costs
     try:
         func = gp.compile(expr=individual, pset=_GLOBAL_PSET)
-        costs = func(*edge_features_columns)
+        raw_costs = func(*_STATIC_DATA['edge_features'])
 
-        if np.isscalar(costs) or getattr(costs, 'ndim', 0) == 0:
-            costs = np.full(len(edge_features_columns[0]), costs)
+        if np.isscalar(raw_costs) or getattr(raw_costs, 'ndim', 0) == 0:
+            costs = np.full(len(_STATIC_DATA['edge_features'][0]), float(raw_costs), dtype=np.float64)
+        else:
+            costs = np.array(raw_costs, dtype=np.float64, copy=True)
 
-        #Avoid negative costs
-        costs = np.maximum(costs, 0.001)
+        np.nan_to_num(costs, copy=False, nan=1e9, posinf=1e9, neginf=0.001)
+        np.clip(costs, 0.001, 1e9, out=costs)
     except Exception as e:
-        #print(str(individual))
-        #traceback.print_exc()
-        return (1e12,)  #In case of error
+        err_msg = traceback.format_exc()
+        print(f"\n[Worker {os.getpid()}] Crashed during cost calculation!")
+        print(f"Individual: {str(individual)}")
+        print(f"Error: {e}\n{err_msg}")
+        return (PENALTY_MISSING_VALUES,)
+    #Update weights
+    weights_c = np.ascontiguousarray(costs[_STATIC_DATA['weight_mapping']], dtype=np.float64)
+    rows_c = _STATIC_DATA['rows']
+    cols_c = _STATIC_DATA['cols']
 
-    #Update CSR matrix
-    csr_indices, csr_indptr, csr_data_ids = csr_components
-    csr_template.data = costs[csr_data_ids - 1]
+    nk_graph = nk.Graph(_STATIC_DATA['num_nodes'], weighted=True, directed=False)
+    nk_graph.addEdges((weights_c, (rows_c, cols_c)))
 
-    #Dijkstra Batch
-    try:
-        dists, preds = dijkstra(csr_template, directed=False, indices=sources_list, return_predecessors=True)
-    except:
-        return (1e12,)
+    bd = nk.distance.BidirectionalDijkstra(nk_graph, 0, 1)
 
-    if len(sources_list) == 1:
-        preds = preds.reshape(1, -1)
-    #Canculate penalty
     total_penalty = 0.0
-    col_dist, col_steep, col_water = edge_features_columns
+    #use bidirectional dijkstra to calculate path
+    try:
+        for source, targets in zip(sources_list, targets_list):
+            s = int(source)
+            for target in targets:
+                t = int(target)
 
-    for i, start_idx in enumerate(sources_list):
-        total_penalty += compute_total_penalty_numba(
-            preds[i], targets_list[i], start_idx,
-            csr_indices, csr_indptr, csr_data_ids,
-            col_dist, col_steep, col_water
-        )
+                bd.setSource(s)
+                bd.setTarget(t)
+                bd.run()
+
+                dist = bd.getDistance()
+
+                if dist == float('inf') or dist >= 1e15:
+                    total_penalty += 1_000_000.0
+                    continue
+
+                path = np.array(bd.getPath(), dtype=np.int64)
+
+                total_penalty += compute_penalty_from_path(
+                    path,
+                    _STATIC_DATA['csr_indices'], _STATIC_DATA['csr_indptr'], _STATIC_DATA['csr_data_ids'],
+                    _STATIC_DATA['edge_features'][0],
+                    _STATIC_DATA['edge_features'][1],
+                    _STATIC_DATA['edge_features'][2]
+                )
+    except Exception as e:
+        err_msg = traceback.format_exc()
+        print(f"\n[Worker {os.getpid()}] Crashed during path calculation!")
+        print(f"Individual: {str(individual)}")
+        print(f"Error: {e}\n{err_msg}")
+        return (1e12,)
+    #Avg fitness on paths
     final_fit = total_penalty / num_scenarios
 
-    #Soft Penalty for missing parameters
     tree_str = str(individual)
-    for inp in ["distance", "steepness", "is_water"]:
-        if inp not in tree_str:
-            final_fit += 1000.0
+    if "distance" not in tree_str or "steepness" not in tree_str or "is_water" not in tree_str:
+        final_fit += PENALTY_MISSING_VALUES
+
+    if math.isinf(final_fit) or math.isnan(final_fit):
+        return (PENALTY_MISSING_VALUES,)
+
     return (final_fit,)
 
-def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate= MUT_RATE, cx_rate= CROSS_RATE, log: bool = False):
-    if log:
-        print(f"Evolving the cost function through {generations} generations with a population of {population}.")
+#Main loop
+def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MUT_RATE, cx_rate=CROSS_RATE,
+           log: bool = False):
     start = time.time()
     if log:
+        print(f"Evolving the cost function through {generations} generations with a population of {population}.")
         print("Loading from file")
+    #Load precomputed data from file npz
     data = np.load(npz_path)
     edge_features_columns = [data['dist'], data['steep'], data['water']]
     csr_indices, csr_indptr, csr_data = data['csr_indices'], data['csr_indptr'], data['csr_data']
-    csr_components = (csr_indices, csr_indptr, csr_data)
     num_nodes = int(data['num_nodes'])
-
-    #Generate random scenarios
+    #create scenarios
     scenarios_indices = np.array([random.sample(range(num_nodes), 2) for _ in range(scenarios_number)], dtype=np.int64)
     grouped = defaultdict(list)
     for s, e in scenarios_indices: grouped[s].append(e)
     sources_list = list(grouped.keys())
     targets_list = [np.array(grouped[src], dtype=np.int64) for src in sources_list]
-
-    # CSR Template
+    #Convert data
     dummy_data = np.zeros(len(csr_data), dtype=np.float64)
     csr_template = csr_matrix((dummy_data, csr_indices, csr_indptr), shape=(num_nodes, num_nodes))
+    coo = csr_template.tocoo()
+    mask = coo.row <= coo.col
 
+    #Load data for multiprocessing
+    static_data = {
+        'num_nodes': num_nodes,
+        'edge_features': edge_features_columns,
+        'csr_indices': csr_indices,
+        'csr_indptr': csr_indptr,
+        'csr_data_ids': csr_data,
+        'rows': np.ascontiguousarray(coo.row[mask], dtype=np.uint64),
+        'cols': np.ascontiguousarray(coo.col[mask], dtype=np.uint64),
+        'weight_mapping': np.ascontiguousarray(csr_data[mask] - 1, dtype=np.int64)
+    }
 
-
+    #Initialize population
     pop = toolbox.population(n=population)
-
-    # Statistiche setup
+    hof = tools.HallOfFame(5, similar=operator.eq)
+    #Initialize the stats
     stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats_fit.register("avg", np.mean)
     stats_fit.register("min", np.min)
     stats_fit.register("max", np.max)
     stats_fit.register("std", np.std)
     mstats = tools.MultiStatistics(fitness=stats_fit)
-    hof = tools.HallOfFame(5, similar=operator.eq)
 
-    # Multiprocessing
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count() - 1, initializer=init_worker, initargs=(pset,), maxtasksperchild=100)
+    #Start the pool
+    pool = multiprocessing.Pool(
+        processes=min(MAX_CORE_VALUE, max(1, multiprocessing.cpu_count() - 1)),
+        initializer=init_worker,
+        initargs=(pset, static_data),
+        maxtasksperchild=100
+    )
     toolbox.register("map", pool.map)
-
+    #Initialize the evaluation function
     toolbox.register("evaluate", evaluate_individual,
-                     sources_list=sources_list, targets_list=targets_list, num_scenarios=scenarios_number,
-                     edge_features_columns=edge_features_columns, csr_template=csr_template, csr_components=csr_components)
-    #Header Tab
+                     sources_list=sources_list, targets_list=targets_list, num_scenarios=scenarios_number)
+
     if log:
         print_gen_log(0, 0, {}, 0, 0, is_header=True)
+    #Evaluate starting pop
     try:
-        #Inizial population
         gen_start = time.time()
         invalid_ind = [ind for ind in pop if not ind.fitness.valid]
         fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
@@ -282,11 +318,11 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate= M
         if log:
             print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
             save_run(population, hof, 0, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
+
         std = 0.0
         best = 0.0
         static = 0
-
-        #Evolution loop
+        #Evaluate each generation
         for gen in range(1, generations + 1):
             gen_start = time.time()
 
@@ -299,34 +335,42 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate= M
                 ind.fitness.values = fit
 
             pop[:] = offspring
+            pop[0] = toolbox.clone(hof[0])
             hof.update(pop)
 
             record = mstats.compile(pop)['fitness']
             num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
             gen_end = time.time() - gen_start
+
             if log:
                 print_gen_log(gen, len(invalid_ind), record, num_dead, gen_end)
-                save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation= gen)
+                save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER,
+                         generation=gen)
+
             curr_std = record["std"]
             curr_best = record["min"]
+
             if abs(std - curr_std) < STD_THRESHOLD and best == curr_best:
-                static +=1
+                static += 1
                 if static >= EARLY_STOPPING:
                     break
             else:
                 best = curr_best
                 std = curr_std
-
+                static = 0  # Reset counter
 
         end = time.time()
         diff = end - start
         hours, tmp = divmod(diff, 3600)
         minutes, seconds = divmod(tmp, 60)
+
         if log:
-            print(f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
+            print(
+                f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
 
         pool.close()
         pool.join()
+
         if log:
             print(f"Generations log saved in {BASE_FOLDER}")
             save_run(population, hof, diff, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER,
@@ -343,22 +387,20 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate= M
 
 # --- MAIN ---
 if __name__ == "__main__":
-    #Pop Size, Scenarios Number, Generations
     experiments = [
-        [500, 10, 200],
-        [750, 10, 200],
-        [1000, 10, 200],
-        [500, 10, 200],
-        [750, 10, 200],
-        [1000, 10, 200],
-        [500, 10, 200],
-        [750, 10, 200],
-        [1000, 10, 200]
+        [500, 50, 200],
+        [750, 50, 200],
+        [1000, 50, 200],
+        [500, 50, 200],
+        [750, 50, 200],
+        [1000, 50, 200],
+        [500, 50, 200],
+        [750, 50, 200],
+        [1000, 50, 200]
     ]
     res = 200
 
     npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
-    # 4 of 6 REPLACEME
     # npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
 
     if not os.path.exists(npz_path):
@@ -384,7 +426,8 @@ if __name__ == "__main__":
             BASE_FOLDER = f"{BASE_FOLDER}_{i}"
         os.makedirs(BASE_FOLDER)
         try:
-            run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path, log= True)
+            run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path,
+                   log=True)
 
         except Exception as e:
             error_msg = traceback.format_exc()
@@ -392,11 +435,11 @@ if __name__ == "__main__":
             print(f"Error: {e}")
             print("Saving log and going to next\n")
 
-            #Save crash log in folder
             crash_log_path = os.path.join(BASE_FOLDER, "CRASH_LOG.txt")
             with open(crash_log_path, "w") as f:
                 f.write(f"Failed at IL {datetime.now()}\n")
-                f.write(f"Paramters: Population Size={population}, Generations Number={gens}, Scenarios={scen_number}\n")
+                f.write(
+                    f"Parameters: Population Size={population}, Generations Number={gens}, Scenarios={scen_number}\n")
                 f.write("-" * 50 + "\n")
                 f.write(error_msg)
 
