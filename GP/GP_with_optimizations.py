@@ -161,8 +161,7 @@ def compute_penalty_from_path(path_nodes,
             path_water += 1
 
     #use fitness formula
-    tot_nodes+=1
-    return (path_distance / tot_nodes) * (
+    return (path_distance) * (
             (path_water / tot_nodes) * (BASE - 1) + 1 + BASE ** (path_steepness / tot_nodes)
     )
 
