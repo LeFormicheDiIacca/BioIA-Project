@@ -16,14 +16,13 @@ BASE = math.e
 
 def protected_div(n1, n2):
     with np.errstate(divide='ignore', invalid='ignore'):
-        res = n1 / n2
-        return np.where(np.isfinite(res), res, 1.0)
+        return np.where(np.abs(n2) > 1e-9, n1 / n2, 1.0)
 
 
 def protected_log(x, base):
     with np.errstate(divide='ignore', invalid='ignore'):
-        safe_x = np.abs(x) + 1e-9
-        safe_base = np.abs(base) + 1e-9
+        safe_x = np.where(np.abs(x) > 1e-9, np.abs(x), 1e-9)
+        safe_base = np.where(np.abs(base) > 1e-9, np.abs(base), 1e-9)
         res = np.log(safe_x) / np.log(safe_base)
         return np.where(np.isfinite(res), res, 1.0)
 
@@ -31,7 +30,7 @@ def protected_pow(n1, n2):
     with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
         base = np.abs(n1)
         base = np.clip(base, 0, 1e10)
-        exponent = np.clip(n2, -5, 5)
+        exponent = np.clip(n2, -10, 10)
         res = np.power(base, exponent)
         return np.where(np.isfinite(res), res, 1e10)
 def if_then_else(condition, out_true, out_false):
