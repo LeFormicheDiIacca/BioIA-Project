@@ -46,7 +46,7 @@ PENALTY_MISSING_VALUES = 1e3
 PENALTY_ERROR_IN_CALCULATIONS =  1e6
 
 #pretty logging for each generation
-def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scenarios=None):
+def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scenarios=None, seed=None):
     header = f"{'Gen':>4} | {'Nevals':>6} | {'Avg Fit':>12} | {'Std Fit':>12} | {'Min Fit':>12} | {'Max Fit':>12} | {'Dead':>5} | {'Time':>7}"
     csv_path = os.path.join(BASE_FOLDER, "evolution_stats.csv")
     json_path = os.path.join(BASE_FOLDER, "experiment_config.json")
@@ -61,7 +61,6 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scen
             writer = csv.writer(f)
             writer.writerow(csv_headers)
 
-        # --- LOGICA JSON (Metadati Esperimento) ---
         config_data = {
             "hyperparameters": {
                 "BASE": BASE,
@@ -76,7 +75,8 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scen
                 "MAX_NODES": MAX_NODES,
                 "MAX_CORE_VALUE": MAX_CORE_VALUE,
                 "PENALTY_MISSING_VALUES": PENALTY_MISSING_VALUES,
-                "PENALTY_ERROR_IN_CALCULATIONS": PENALTY_ERROR_IN_CALCULATIONS
+                "PENALTY_ERROR_IN_CALCULATIONS": PENALTY_ERROR_IN_CALCULATIONS,
+                "seed": seed
             },
             "scenarios_info": {
                 "num_scenarios": len(scenarios) if scenarios is not None else 0,
@@ -87,7 +87,6 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scen
             json.dump(config_data, f, indent=4)
         return
 
-    # Logica di stampa riga (invariata)
     avg_str = f"{record['avg']:>12.2e}" if record['avg'] > 1e6 else f"{record['avg']:>12.2f}"
     min_str = f"{record['min']:>12.2f}"
     max_str = f"{record['max']:>12.2e}"
@@ -298,10 +297,17 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
 
 #Main loop
 def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_RATE, cx_rate=CROSS_RATE,
-           log: bool = False):
+           log: bool = False, seed=None):
+    if seed is None:
+        seed = random.getrandbits(32)
+
+    random.seed(seed)
+    np.random.seed(seed)
+
     start = time.time()
     if log:
         print(f"Evolving the cost function through {generations} generations with a population of {population}.")
+        print(f"Evolving with SEED: {seed}")
         print("Loading from file")
     #Load precomputed data from file npz
     data = np.load(npz_path)
@@ -364,7 +370,7 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
                      sources_list=sources_list, targets_list=targets_list, num_scenarios=actual_num_scenarios)
 
     if log:
-        print_gen_log(0, 0, {}, 0, 0, is_header=True, scenarios=scenarios_indices)
+        print_gen_log(0, 0, {}, 0, 0, is_header=True, scenarios=scenarios_indices, seed=seed)
     #Evaluate starting pop
     try:
         gen_start = time.time()
@@ -455,7 +461,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
 
     experiments = [
-        [300, 200],
+        [3500, 200],
         [3500, 200],
         [3500, 200],
         [3500, 200],
