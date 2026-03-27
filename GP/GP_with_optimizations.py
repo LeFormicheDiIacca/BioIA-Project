@@ -30,9 +30,11 @@ BASE = math.e
 BASE_FOLDER = ""
 STD_THRESHOLD = 0.001
 EARLY_STOPPING = 10
-MUT_RATE = 0.15
-CROSS_RATE = 0.8
-HOF_SIZE = 20
+MUT_RATE = 0.25
+CROSS_RATE = 0.7
+HOF_SIZE = 5
+TOURNAMENT_SIZE = 3
+PARSIMONY_VALUE = 1.2
 MAX_CORE_VALUE = 11
 PENALTY_MISSING_VALUES = 1e3
 PENALTY_ERROR_IN_CALCULATIONS =  1e6
@@ -100,7 +102,7 @@ toolbox.register("individual", tools.initIterate, creator.Individual, create_val
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 toolbox.register("mate", gp.cxOnePoint)
-toolbox.register("select", tools.selTournament, tournsize=5)
+toolbox.register("select", tools.selDoubleTournament, fitness_size=TOURNAMENT_SIZE, parsimony_size=PARSIMONY_VALUE, fitness_first=True)
 toolbox.register("mutate_unif", gp.mutUniform, expr=toolbox.expr, pset=pset)
 toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
 
