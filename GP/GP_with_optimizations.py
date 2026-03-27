@@ -1,4 +1,5 @@
 import csv
+import json
 import math
 import multiprocessing
 import operator
@@ -45,10 +46,13 @@ PENALTY_MISSING_VALUES = 1e3
 PENALTY_ERROR_IN_CALCULATIONS =  1e6
 
 #pretty logging for each generation
-def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
+def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scenarios=None):
     header = f"{'Gen':>4} | {'Nevals':>6} | {'Avg Fit':>12} | {'Std Fit':>12} | {'Min Fit':>12} | {'Max Fit':>12} | {'Dead':>5} | {'Time':>7}"
     csv_path = os.path.join(BASE_FOLDER, "evolution_stats.csv")
+    json_path = os.path.join(BASE_FOLDER, "experiment_config.json")
+
     if is_header:
+        # --- LOGICA CSV ---
         print("-" * len(header))
         print(header)
         print("-" * len(header))
@@ -56,8 +60,34 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
         with open(csv_path, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(csv_headers)
+
+        # --- LOGICA JSON (Metadati Esperimento) ---
+        config_data = {
+            "hyperparameters": {
+                "BASE": BASE,
+                "STD_THRESHOLD": STD_THRESHOLD,
+                "EARLY_STOPPING": EARLY_STOPPING,
+                "MUT_RATE": MUT_RATE,
+                "CROSS_RATE": CROSS_RATE,
+                "HOF_SIZE": HOF_SIZE,
+                "TOURNAMENT_SIZE": TOURNAMENT_SIZE,
+                "PARSIMONY_VALUE": PARSIMONY_VALUE,
+                "MAX_HEIGHT": MAX_HEIGHT,
+                "MAX_NODES": MAX_NODES,
+                "MAX_CORE_VALUE": MAX_CORE_VALUE,
+                "PENALTY_MISSING_VALUES": PENALTY_MISSING_VALUES,
+                "PENALTY_ERROR_IN_CALCULATIONS": PENALTY_ERROR_IN_CALCULATIONS
+            },
+            "scenarios_info": {
+                "num_scenarios": len(scenarios) if scenarios is not None else 0,
+                "scenarios": scenarios.tolist() if isinstance(scenarios, np.ndarray) else scenarios
+            }
+        }
+        with open(json_path, 'w') as f:
+            json.dump(config_data, f, indent=4)
         return
 
+    # Logica di stampa riga (invariata)
     avg_str = f"{record['avg']:>12.2e}" if record['avg'] > 1e6 else f"{record['avg']:>12.2f}"
     min_str = f"{record['min']:>12.2f}"
     max_str = f"{record['max']:>12.2e}"
@@ -65,8 +95,7 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
 
     print(f"{gen:>4} | {nevals:>6} | {avg_str} | {std_str} | {min_str} | {max_str} | {num_dead:>5} | {duration:>6.2f}s")
     with open(csv_path, 'a', newline='') as f:
-        csv.writer(f).writerow([gen, nevals, avg_str, std_str, min_str, max_str, num_dead, duration])
-
+        csv.writer(f).writerow([gen, nevals, record['avg'], record['std'], record['min'], record['max'], num_dead, duration])
 # --- DEAP SETUP ---
 #DEAP primitives setup
 pset = gp.PrimitiveSetTyped("MAIN", [float, float, bool], float)
@@ -268,7 +297,7 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
     return (final_fit,)
 
 #Main loop
-def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MUT_RATE, cx_rate=CROSS_RATE,
+def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_RATE, cx_rate=CROSS_RATE,
            log: bool = False):
     start = time.time()
     if log:
@@ -279,13 +308,21 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
     edge_features_columns = [data['dist'], data['steep'], data['water']]
     csr_indices, csr_indptr, csr_data = data['csr_indices'], data['csr_indptr'], data['csr_data']
     num_nodes = int(data['num_nodes'])
-    #create scenarios
-    scenarios_indices = np.array([random.sample(range(num_nodes), 2) for _ in range(scenarios_number)], dtype=np.int64)
+    #load scenarios
+    with open(scenario_path, 'r') as f:
+        data = json.load(f)
+        scenarios_indices = np.array(data['scenarios'], dtype=np.int64)
+    actual_num_scenarios = len(scenarios_indices)
+
+    if log:
+        print(f"Loaded {actual_num_scenarios} scenarios from {scenario_path}")
     grouped = defaultdict(list)
-    for s, e in scenarios_indices: grouped[s].append(e)
+    for s, e in scenarios_indices:
+        grouped[s].append(e)
+
     sources_list = list(grouped.keys())
     targets_list = [np.array(grouped[src], dtype=np.int64) for src in sources_list]
-    #Convert data
+
     dummy_data = np.zeros(len(csr_data), dtype=np.float64)
     csr_template = csr_matrix((dummy_data, csr_indices, csr_indptr), shape=(num_nodes, num_nodes))
     coo = csr_template.tocoo()
@@ -324,10 +361,10 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
     toolbox.register("map", pool.map)
     #Initialize the evaluation function
     toolbox.register("evaluate", evaluate_individual,
-                     sources_list=sources_list, targets_list=targets_list, num_scenarios=scenarios_number)
+                     sources_list=sources_list, targets_list=targets_list, num_scenarios=actual_num_scenarios)
 
     if log:
-        print_gen_log(0, 0, {}, 0, 0, is_header=True)
+        print_gen_log(0, 0, {}, 0, 0, is_header=True, scenarios=scenarios_indices)
     #Evaluate starting pop
     try:
         gen_start = time.time()
@@ -342,7 +379,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
         if log:
             print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
-            save_run(population, hof, 0, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
+            save_run(population, hof, 0, 0, generations, res, pset=pset, path=BASE_FOLDER, generation=0)
 
         std = 0.0
         best = 0.0
@@ -371,7 +408,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
             if log:
                 print_gen_log(gen, len(invalid_ind), record, num_dead, gen_end)
-                save_run(population, hof, gen_end, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER,
+                save_run(population, hof, gen_end, 0, generations, res, pset=pset, path=BASE_FOLDER,
                          generation=gen)
 
             curr_std = record["std"]
@@ -400,7 +437,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
         if log:
             print(f"Generations log saved in {BASE_FOLDER}")
-            save_run(population, hof, diff, scenarios_number, generations, res, pset=pset, path=BASE_FOLDER,
+            save_run(population, hof, diff, 0, generations, res, pset=pset, path=BASE_FOLDER,
                      generation="_final")
 
         best_ind = hof[0]
@@ -414,19 +451,20 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
 # --- MAIN ---
 if __name__ == "__main__":
+    #POP, Generations
     experiments = [
-        [500, 50, 200],
-        [750, 50, 200],
-        [1000, 50, 200],
-        [500, 50, 200],
-        [750, 50, 200],
-        [1000, 50, 200],
-        [500, 50, 200],
-        [750, 50, 200],
-        [1000, 50, 200]
+        [100, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200],
+        [3500, 200]
     ]
     res = 200
-
+    scenario_path = "GP/scenarios_trentino200.json"
     npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
     # npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
 
@@ -441,10 +479,9 @@ if __name__ == "__main__":
 
     for experiment in experiments:
         population = experiment[0]
-        scen_number = experiment[1]
-        gens = experiment[2]
+        gens = experiment[1]
 
-        BASE_FOLDER = f"{runs_today_folder}/{population}pop_{gens}gen_{scen_number}scenarios_{res}res"
+        BASE_FOLDER = f"{runs_today_folder}/{population}pop_{gens}gen_{res}res"
 
         if os.path.exists(BASE_FOLDER):
             i = 1
@@ -453,8 +490,8 @@ if __name__ == "__main__":
             BASE_FOLDER = f"{BASE_FOLDER}_{i}"
         os.makedirs(BASE_FOLDER)
         try:
-            run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path,
-                   log=True)
+            run_EA(population=population, generations=gens, res=res, npz_path=npz_path,
+                   log=True, scenario_path = scenario_path)
 
         except Exception as e:
             error_msg = traceback.format_exc()
@@ -466,7 +503,7 @@ if __name__ == "__main__":
             with open(crash_log_path, "w") as f:
                 f.write(f"Failed at IL {datetime.now()}\n")
                 f.write(
-                    f"Parameters: Population Size={population}, Generations Number={gens}, Scenarios={scen_number}\n")
+                    f"Parameters: Population Size={population}, Generations Number={gens}\n")
                 f.write("-" * 50 + "\n")
                 f.write(error_msg)
 

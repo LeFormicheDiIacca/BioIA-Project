@@ -1,31 +1,90 @@
-from TerrainGraph.terraingraph import create_graph
+import json
 import random
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
-import matplotlib as mpl
 import numpy as np
 
-import random
+from TerrainGraph.terraingraph import create_graph
 
 
-def generate_scenarios(scenarios_number, graph):
-    # Filter for ground nodes only
-    ground_nodes = [node for node, data in graph.nodes(data=True) if not data.get("is_water")]
+def generate_and_save_scenarios(num_scenarios, res, npz_path, output_json="scenarios.json"):
+    """
+    Genera x scenari basandosi sui dati NumPy dell'NPZ.
+    Gestisce numeri non divisibili per 3 e mancanze di dati.
+    """
+    data = np.load(npz_path)
 
-    # Requirement: we need 2 * scenarios_number unique nodes
-    if len(ground_nodes) < scenarios_number * 2:
-        raise ValueError("Not enough ground nodes to create unique pairs.")
+    is_water = data.get('water', np.zeros(res * res))
+    elevations = data.get('elevation', data.get('steep', np.zeros(res * res)))
 
-    # Shuffle once to ensure randomness
-    random.shuffle(ground_nodes)
+    num_nodes = res * res
+    indices = np.arange(num_nodes)
+    rows = indices // res
+    cols = indices % res
+    half = res // 2
 
-    scenarios = []
-    for i in range(0, scenarios_number * 2, 2):
-        start = ground_nodes[i]
-        end = ground_nodes[i + 1]
-        scenarios.append((start, end))
+    #Define quadrants
+    q1 = indices[(rows < half) & (cols < half)]
+    q2 = indices[(rows < half) & (cols >= half)]
+    q3 = indices[(rows >= half) & (cols >= half)]
+    q4 = indices[(rows >= half) & (cols < half)]
 
-    return scenarios
+    #Categorize
+    water_nodes = np.where(is_water > 0.5)[0]
+    low_nodes = np.where(elevations < np.percentile(elevations, 30))[0]
+    high_nodes = np.where(elevations > np.percentile(elevations, 70))[0]
+
+    if len(water_nodes) == 0: water_nodes = indices
+    if len(low_nodes) == 0: low_nodes = indices
+    if len(high_nodes) == 0: high_nodes = indices
+
+    final_scenarios = []
+
+    #Divide by 3
+    base_count = num_scenarios // 3
+    remainder = num_scenarios % 3
+    counts = [base_count + (1 if i < remainder else 0) for i in range(3)]
+
+    #Water
+    for _ in range(counts[0]):
+        w_node = random.choice(water_nodes)
+        r_w, c_w = w_node // res, w_node % res
+        start = random.choice(q1 if r_w >= half else q3)
+        finish = random.choice(q2 if c_w < half else q4)
+        final_scenarios.append([int(start), int(finish)])
+
+    #Elevation
+    for _ in range(counts[1]):
+        start = random.choice(low_nodes)
+        finish = random.choice(high_nodes)
+        if random.random() > 0.5: start, finish = finish, start
+        final_scenarios.append([int(start), int(finish)])
+
+    #Distant
+    for _ in range(counts[2]):
+        if random.random() > 0.5:
+            start, finish = random.choice(q1), random.choice(q3)
+        else:
+            start, finish = random.choice(q2), random.choice(q4)
+        final_scenarios.append([int(start), int(finish)])
+
+    random.shuffle(final_scenarios)
+
+    #Save
+    output_data = {
+        "metadata": {
+            "num_scenarios": num_scenarios,
+            "distribution": {"water": counts[0], "elevation": counts[1], "distant": counts[2]}
+        },
+        "scenarios": final_scenarios
+    }
+
+    with open(output_json, 'w') as f:
+        json.dump(output_data, f, indent=4)
+
+    return final_scenarios
 
 def visualize_scenarios(graph,scenario, runs,
             draw_labels = False,
@@ -74,17 +133,17 @@ def visualize_scenarios(graph,scenario, runs,
         plt.show()
 
 if __name__ == "__main__":
-    res = 100
-    tif_path = "../TerrainGraph/trentino.tif"
-    osm_path = "../TerrainGraph/trentino_alto_adige.pbf"
+    res = 200
+    #tif_path = "../TerrainGraph/trentino.tif"
+    #osm_path = "../TerrainGraph/trentino_alto_adige.pbf"
     # 5 of 6 REPLACEME
     # tif_path = "../TerrainGraph/napoli.tif"
     # osm_path = "../TerrainGraph/sud-260324.osm.pbf"
 
-    graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)
-    runs = 5
-    scenarios = generate_scenarios(runs,graph,res= res)
-    visualize_scenarios(graph, scenarios, dpi = 200, runs = runs)
+    #graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)
+    #runs = 5
+    scenarios = generate_and_save_scenarios(50,res,f"../TerrainGraph/precomputed_map_trentino_{res}.npz", output_json=f"scenarios_trentino{res}.json")
+    #visualize_scenarios(graph, scenarios, dpi = 200, runs = runs)
 
      
         

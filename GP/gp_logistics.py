@@ -55,8 +55,10 @@ def protected_pow(n1, n2):
 
     base = np.abs(n1)
     exponent = np.clip(n2, -10, 10)
+    safe_base = np.where((base < 1e-9) & (exponent < 0), 1e-9, base)
+
     with np.errstate(over='ignore', invalid='ignore'):
-        res = np.power(base, exponent)
+        res = np.power(safe_base, exponent)
     return np.where(np.isfinite(res), res, 1e10)
 
 
