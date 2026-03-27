@@ -13,6 +13,10 @@ import numpy as np
 BASE = math.e
 
 # for primitive set
+def step_penalty_multiplier(value, threshold, multiplier):
+    return np.where(value > threshold, multiplier, 1.0)
+def step_penalty_adder(value, threshold, penalty):
+    return np.where(value > threshold, penalty, 0.0)
 
 def protected_div(n1, n2):
     with np.errstate(divide='ignore', invalid='ignore'):

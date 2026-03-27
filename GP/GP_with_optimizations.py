@@ -4,6 +4,7 @@ import multiprocessing
 import operator
 import os
 import random
+import re
 import sys
 import time
 import traceback
@@ -11,7 +12,10 @@ from collections import defaultdict
 from datetime import datetime
 from time import sleep
 import networkit as nk
-from gp_logistics import protected_div, protected_log, protected_pow, if_then_else, random_gen, save_run
+
+from GP.gp_logistics import step_penalty_multiplier
+from gp_logistics import protected_div, protected_log, protected_pow, if_then_else, random_gen, save_run, \
+    step_penalty_adder
 import numpy as np
 from deap import base, creator, gp, tools, algorithms
 from numba import njit
@@ -83,6 +87,8 @@ pset.addPrimitive(np.greater, [float, float], bool, name="gt")
 pset.addPrimitive(np.greater_equal, [float, float], bool, name="ge")
 pset.addPrimitive(np.logical_and, [bool, bool], bool, name="and_")
 pset.addPrimitive(np.logical_or, [bool, bool], bool, name="or_")
+pset.addPrimitive(step_penalty_adder, [float, float, float], float)
+pset.addPrimitive(step_penalty_multiplier, [float, float, float], float)
 pset.addEphemeralConstant("constant", random_gen, ret_type=float)
 #DEAP fitness and individuals
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -130,6 +136,12 @@ toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), ma
 toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value=MAX_NODES))
 toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
 toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=MAX_NODES))
+
+def similar_by_structure(ind1, ind2):
+    str1 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind1))
+    str2 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind2))
+    return str1 == str2
+
 
 #Variables for multiprocessing
 _GLOBAL_PSET = None
@@ -291,7 +303,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
     #Initialize population
     pop = toolbox.population(n=population)
-    hof = tools.HallOfFame(HOF_SIZE, similar=operator.eq)
+    hof = tools.HallOfFame(HOF_SIZE, similar=similar_by_structure)
     #Initialize the stats
     stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats_fit.register("avg", np.mean)
