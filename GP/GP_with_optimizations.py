@@ -67,15 +67,9 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
     with open(csv_path, 'a', newline='') as f:
         csv.writer(f).writerow([gen, nevals, avg_str, std_str, min_str, max_str, num_dead, duration])
 
-# Classes for ad hoc use of functions
-class Distance(float): pass
-class Steepness(float): pass
-def id_dist(x): return x
-def id_steep(x): return x
-
 # --- DEAP SETUP ---
 #DEAP primitives setup
-pset = gp.PrimitiveSetTyped("MAIN", [Distance, Steepness, bool], float)
+pset = gp.PrimitiveSetTyped("MAIN", [float, float, bool], float)
 pset.renameArguments(ARG0="distance", ARG1="steepness", ARG2="is_water")
 pset.addPrimitive(operator.add, [float, float], float)
 pset.addPrimitive(operator.mul, [float, float], float)
@@ -85,20 +79,14 @@ pset.addPrimitive(operator.neg, [float], float)
 pset.addPrimitive(protected_log, [float, float], float)
 pset.addPrimitive(protected_div, [float, float], float)
 pset.addPrimitive(if_then_else, [bool, float, float], float)
-pset.addPrimitive(np.less, [Steepness, float], bool, name="lt")
-pset.addPrimitive(np.less_equal, [Steepness, float], bool, name="le")
-pset.addPrimitive(np.greater, [Steepness, float], bool, name="gt")
-pset.addPrimitive(np.greater_equal, [Steepness, float], bool, name="ge")
+pset.addPrimitive(np.less, [float, float], bool, name="lt")
+pset.addPrimitive(np.less_equal, [float, float], bool, name="le")
+pset.addPrimitive(np.greater, [float, float], bool, name="gt")
+pset.addPrimitive(np.greater_equal, [float, float], bool, name="ge")
 pset.addPrimitive(np.logical_and, [bool, bool], bool, name="and_")
 pset.addPrimitive(np.logical_or, [bool, bool], bool, name="or_")
 pset.addPrimitive(step_penalty_adder, [float, float, float], float)
 pset.addPrimitive(step_penalty_multiplier, [float, float, float], float)
-
-pset.addPrimitive(id_dist, [Distance], Distance, name="IdDist")
-pset.addPrimitive(id_steep, [Steepness], Steepness, name="IdSteep")
-
-pset.addPrimitive(id_dist, [Distance], float, name="DistToFloat")
-pset.addPrimitive(id_steep, [Steepness], float, name="SteepToFloat")
 
 pset.addEphemeralConstant("constant", random_gen, ret_type=float)
 #DEAP fitness and individuals
@@ -153,9 +141,7 @@ def similar_by_structure(ind1, ind2):
     str2 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind2))
     str1 = re.sub(r'distance|steepness|is_water', 'V', str1)
     str2 = re.sub(r'distance|steepness|is_water', 'V', str2)
-    if str1 == str2:
-        return True
-    return abs(ind1.fitness.values[0] - ind2.fitness.values[0]) < 1
+    return str1 == str2
 
 #Variables for multiprocessing
 _GLOBAL_PSET = None
