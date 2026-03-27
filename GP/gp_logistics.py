@@ -18,30 +18,46 @@ def step_penalty_multiplier(value, threshold, multiplier):
 def step_penalty_adder(value, threshold, penalty):
     return np.where(value > threshold, penalty, 0.0)
 
+
 def protected_div(n1, n2):
-    with np.errstate(divide='ignore', invalid='ignore'):
-        result = np.where(np.abs(n2) > 1e-9, n1 / n2, 1.0)
-        return np.clip(np.where(np.isfinite(result), result, 1.0), -1e6, 1e6)
+    if np.isscalar(n2):
+        if abs(n2) < 1e-9:
+            return 1.0
+        return n1 / n2
+
+    safe_n2 = np.where(np.abs(n2) > 1e-9, n2, 1.0)
+    return np.where(np.abs(n2) > 1e-9, n1 / safe_n2, 1.0)
 
 
 def protected_log(x, base):
+    if np.isscalar(x) and np.isscalar(base):
+        safe_x = abs(x) if abs(x) > 1e-9 else 1e-9
+        safe_base = abs(base) if abs(base) > 1e-9 else 1e-9
+        res = math.log(safe_x) / math.log(safe_base)
+        return res if math.isfinite(res) else 1.0
+
+    safe_x = np.where(np.abs(x) > 1e-9, np.abs(x), 1e-9)
+    safe_base = np.where(np.abs(base) > 1e-9, np.abs(base), 1e-9)
     with np.errstate(divide='ignore', invalid='ignore'):
-        safe_x = np.where(np.abs(x) > 1e-9, np.abs(x), 1e-9)
-        safe_base = np.abs(base)
-        safe_base = np.where(safe_base < 1e-9, 1e-9, safe_base)
-        safe_base = np.where(np.abs(safe_base - 1.0) < 1e-4, safe_base + 1e-4, safe_base)
-        result = np.log(safe_x) / np.log(safe_base)
-        return np.clip(np.where(np.isfinite(result), result, 1.0), -1e6, 1e6)
+        res = np.log(safe_x) / np.log(safe_base)
+    return np.where(np.isfinite(res), res, 1.0)
 
 
 def protected_pow(n1, n2):
-    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
-        base = np.clip(np.abs(n1), 1e-9, 1e6)
-        exp  = np.clip(n2, -10, 10)
-        log_result = exp * np.log(base)
-        safe = np.abs(log_result) < 50
-        result = np.where(safe, np.power(base, exp), np.sign(log_result) * 1e6)
-        return np.clip(np.where(np.isfinite(result), result, 1e6), -1e6, 1e6)
+    if np.isscalar(n1) and np.isscalar(n2):
+        base = abs(n1)
+        exp = max(min(n2, 10), -10)
+        try:
+            res = math.pow(base, exp)
+            return res if math.isfinite(res) else 1e10
+        except:
+            return 1e10
+
+    base = np.abs(n1)
+    exponent = np.clip(n2, -10, 10)
+    with np.errstate(over='ignore', invalid='ignore'):
+        res = np.power(base, exponent)
+    return np.where(np.isfinite(res), res, 1e10)
 
 
 def if_then_else(condition, out_true, out_false):
