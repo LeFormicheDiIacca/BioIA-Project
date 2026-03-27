@@ -8,81 +8,126 @@ import numpy as np
 
 from TerrainGraph.terraingraph import create_graph
 
+import numpy as np
+import random
+import json
 
-def generate_and_save_scenarios(num_scenarios, res, npz_path, output_json="scenarios.json"):
+
+def generate_scenarios_from_npz(runs, npz_path, output_json=None):
     """
-    Genera x scenari basandosi sui dati NumPy dell'NPZ.
-    Gestisce numeri non divisibili per 3 e mancanze di dati.
+    Genera scenari caricando i dati direttamente dal file .npz precomputato.
     """
+    # 1. Caricamento dati
     data = np.load(npz_path)
 
-    is_water = data.get('water', np.zeros(res * res))
-    elevations = data.get('elevation', data.get('steep', np.zeros(res * res)))
+    # Recuperiamo le feature. Nota: 'steep' qui rappresenta l'elevazione/pendenza per arco.
+    # Per categorizzare i nodi come "high/low" in assenza di un array 'nodes_elevation',
+    # usiamo una media della pendenza degli archi collegati o i dati disponibili.
+    dist = data['dist']
+    steep = data['steep']
+    water_edges = data['water']
+    num_nodes = int(data['num_nodes'])
+    res = int(np.sqrt(num_nodes))
+    half = res // 2
 
-    num_nodes = res * res
+    # 2. Definizione Quadranti (Logica basata sugli indici della griglia)
     indices = np.arange(num_nodes)
     rows = indices // res
     cols = indices % res
-    half = res // 2
 
-    #Define quadrants
-    q1 = indices[(rows < half) & (cols < half)]
-    q2 = indices[(rows < half) & (cols >= half)]
-    q3 = indices[(rows >= half) & (cols >= half)]
-    q4 = indices[(rows >= half) & (cols < half)]
+    quad1 = indices[(rows < half) & (cols < half)]
+    quad2 = indices[(rows < half) & (cols >= half)]
+    quad3 = indices[(rows >= half) & (cols >= half)]
+    quad4 = indices[(rows >= half) & (cols < half)]
 
-    #Categorize
-    water_nodes = np.where(is_water > 0.5)[0]
-    low_nodes = np.where(elevations < np.percentile(elevations, 30))[0]
-    high_nodes = np.where(elevations > np.percentile(elevations, 70))[0]
+    # 3. Categorizzazione Nodi
+    # Troviamo i nodi che toccano l'acqua (almeno un arco incidente è acqua)
+    # Usiamo csr_indices e csr_indptr per navigare il grafo senza NetworkX
+    csr_indices = data['csr_indices']
+    csr_indptr = data['csr_indptr']
+    csr_data = data['csr_data']  # Contiene l'indice dell'arco + 1
 
-    if len(water_nodes) == 0: water_nodes = indices
-    if len(low_nodes) == 0: low_nodes = indices
-    if len(high_nodes) == 0: high_nodes = indices
+    water_nodes = set()
+    high_nodes = set()
+    low_nodes = set()
+
+    # Percentili per elevazione (usiamo la pendenza degli archi come proxy se non hai l'elevazione nodo)
+    # Nota: Se hai l'elevazione specifica dei nodi nell'NPZ, usa quella.
+    threshold_low = np.percentile(steep, 30)
+    threshold_high = np.percentile(steep, 70)
+
+    for i in range(num_nodes):
+        # Esaminiamo gli archi del nodo i
+        start_ptr = csr_indptr[i]
+        end_ptr = csr_indptr[i + 1]
+
+        node_steepness = []
+        is_near_water = False
+
+        for ptr in range(start_ptr, end_ptr):
+            edge_idx = csr_data[ptr] - 1
+            if water_edges[edge_idx]:
+                is_near_water = True
+            node_steepness.append(steep[edge_idx])
+
+        if is_near_water:
+            water_nodes.add(i)
+
+        avg_steep = np.mean(node_steepness) if node_steepness else 0
+        if avg_steep > threshold_high:
+            high_nodes.add(i)
+        elif avg_steep < threshold_low:
+            low_nodes.add(i)
+
+    # Convertiamo in liste per il campionamento
+    water_list = list(water_nodes)
+    high_list = list(high_nodes)
+    low_list = list(low_nodes)
+
+    # Fallback se le liste sono vuote
+    if not water_list: water_list = indices.tolist()
+    if not high_list: high_list = indices.tolist()
+    if not low_list: low_list = indices.tolist()
 
     final_scenarios = []
+    taken = set()
 
-    #Divide by 3
-    base_count = num_scenarios // 3
-    remainder = num_scenarios % 3
-    counts = [base_count + (1 if i < remainder else 0) for i in range(3)]
-
-    #Water
-    for _ in range(counts[0]):
-        w_node = random.choice(water_nodes)
+    # 4. Generazione Coppie
+    for _ in range(runs):
+        # Categoria 1: WATER (Attraversamento acqua)
+        w_node = random.choice(water_list)
+        # Cerchiamo un punto lontano dal nodo acqua per forzare il percorso
         r_w, c_w = w_node // res, w_node % res
-        start = random.choice(q1 if r_w >= half else q3)
-        finish = random.choice(q2 if c_w < half else q4)
-        final_scenarios.append([int(start), int(finish)])
+        start_w = random.choice(quad1 if r_w >= half else quad3)
+        finish_w = random.choice(quad2 if c_w < half else quad4)
+        final_scenarios.append([int(start_w), int(finish_w)])
 
-    #Elevation
-    for _ in range(counts[1]):
-        start = random.choice(low_nodes)
-        finish = random.choice(high_nodes)
-        if random.random() > 0.5: start, finish = finish, start
-        final_scenarios.append([int(start), int(finish)])
+        # Categoria 2: ELEVATION (Low to High)
+        s_e = random.choice(low_list)
+        f_e = random.choice(high_list)
+        final_scenarios.append([int(s_e), int(f_e)])
 
-    #Distant
-    for _ in range(counts[2]):
-        if random.random() > 0.5:
-            start, finish = random.choice(q1), random.choice(q3)
+        # Categoria 3: DISTANT (Estremi opposti)
+        r = random.random()
+        if r < 0.5:
+            s_d, f_d = random.choice(quad1), random.choice(quad3)
         else:
-            start, finish = random.choice(q2), random.choice(q4)
-        final_scenarios.append([int(start), int(finish)])
+            s_d, f_d = random.choice(quad2), random.choice(quad4)
+        final_scenarios.append([int(s_d), int(f_d)])
 
-    random.shuffle(final_scenarios)
-
-    #Save
+    # 5. Salvataggio (Opzionale)
     output_data = {
         "metadata": {
-            "num_scenarios": num_scenarios,
-            "distribution": {"water": counts[0], "elevation": counts[1], "distant": counts[2]}
+            "num_scenarios": len(final_scenarios),
+            "npz_source": npz_path
         },
         "scenarios": final_scenarios
     }
 
-    with open(output_json, 'w') as f:
-        json.dump(output_data, f, indent=4)
+    if output_json:
+        with open(output_json, 'w') as f:
+            json.dump(output_data, f, indent=4)
+        print(f"Scenari salvati in {output_json}")
 
     return final_scenarios
 
@@ -142,7 +187,7 @@ if __name__ == "__main__":
 
     #graph = create_graph(tif_path=tif_path, osm_pbf_path=osm_path, resolution=res)
     #runs = 5
-    scenarios = generate_and_save_scenarios(50,res,f"../TerrainGraph/precomputed_map_trentino_{res}.npz", output_json=f"scenarios_trentino{res}.json")
+    scenarios = generate_scenarios_from_npz(20,f"../TerrainGraph/precomputed_map_trentino_{res}.npz", output_json=f"scenarios_trentino{res}.json")
     #visualize_scenarios(graph, scenarios, dpi = 200, runs = runs)
 
      

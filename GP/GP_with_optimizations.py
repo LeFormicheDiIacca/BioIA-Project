@@ -452,8 +452,10 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
 # --- MAIN ---
 if __name__ == "__main__":
     #POP, Generations
+    multiprocessing.set_start_method('spawn', force=True)
+
     experiments = [
-        [100, 200],
+        [300, 200],
         [3500, 200],
         [3500, 200],
         [3500, 200],
