@@ -13,9 +13,8 @@ from datetime import datetime
 from time import sleep
 import networkit as nk
 
-from GP.gp_logistics import step_penalty_multiplier
 from gp_logistics import protected_div, protected_log, protected_pow, if_then_else, random_gen, save_run, \
-    step_penalty_adder
+    step_penalty_adder, step_penalty_multiplier
 import numpy as np
 from deap import base, creator, gp, tools, algorithms
 from numba import njit
