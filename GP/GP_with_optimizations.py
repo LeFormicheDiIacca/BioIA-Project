@@ -70,6 +70,8 @@ def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
 # Classes for ad hoc use of functions
 class Distance(float): pass
 class Steepness(float): pass
+def id_dist(x): return x
+def id_steep(x): return x
 
 # --- DEAP SETUP ---
 #DEAP primitives setup
@@ -91,6 +93,13 @@ pset.addPrimitive(np.logical_and, [bool, bool], bool, name="and_")
 pset.addPrimitive(np.logical_or, [bool, bool], bool, name="or_")
 pset.addPrimitive(step_penalty_adder, [float, float, float], float)
 pset.addPrimitive(step_penalty_multiplier, [float, float, float], float)
+
+pset.addPrimitive(id_dist, [Distance], Distance, name="IdDist")
+pset.addPrimitive(id_steep, [Steepness], Steepness, name="IdSteep")
+
+pset.addPrimitive(id_dist, [Distance], float, name="DistToFloat")
+pset.addPrimitive(id_steep, [Steepness], float, name="SteepToFloat")
+
 pset.addEphemeralConstant("constant", random_gen, ret_type=float)
 #DEAP fitness and individuals
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
