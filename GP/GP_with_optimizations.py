@@ -30,11 +30,12 @@ BASE = math.e
 BASE_FOLDER = ""
 STD_THRESHOLD = 0.001
 EARLY_STOPPING = 10
-MUT_RATE = 0.2
-CROSS_RATE = 0.7
+MUT_RATE = 0.15
+CROSS_RATE = 0.8
+HOF_SIZE = 20
 MAX_CORE_VALUE = 11
 PENALTY_MISSING_VALUES = 1e3
-PENALTY_ERROR_IN_CALCULATIONS =  1e12
+PENALTY_ERROR_IN_CALCULATIONS =  1e6
 
 #pretty logging for each generation
 def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False):
@@ -211,7 +212,7 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
                 dist = bd.getDistance()
 
                 if dist == float('inf') or dist >= 1e15:
-                    total_penalty += 1_000_000.0
+                    total_penalty += PENALTY_ERROR_IN_CALCULATIONS
                     continue
 
                 path = np.array(bd.getPath(), dtype=np.int64)
@@ -228,7 +229,7 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
         print(f"\n[Worker {os.getpid()}] Crashed during path calculation!")
         print(f"Individual: {str(individual)}")
         print(f"Error: {e}\n{err_msg}")
-        return (1e12,)
+        return (PENALTY_ERROR_IN_CALCULATIONS,)
     #Avg fitness on paths
     final_fit = total_penalty / num_scenarios
 
@@ -279,7 +280,7 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
 
     #Initialize population
     pop = toolbox.population(n=population)
-    hof = tools.HallOfFame(5, similar=operator.eq)
+    hof = tools.HallOfFame(HOF_SIZE, similar=operator.eq)
     #Initialize the stats
     stats_fit = tools.Statistics(key=lambda ind: ind.fitness.values)
     stats_fit.register("avg", np.mean)
@@ -334,7 +335,9 @@ def run_EA(scenarios_number, population, generations, res, npz_path, mut_rate=MU
                 ind.fitness.values = fit
 
             pop[:] = offspring
-            pop[0] = toolbox.clone(hof[0])
+            pop.sort(key=lambda ind: ind.fitness.values[0], reverse=True)
+            for i in range(HOF_SIZE):
+                pop[i] = toolbox.clone(hof[i])
             hof.update(pop)
 
             record = mstats.compile(pop)['fitness']

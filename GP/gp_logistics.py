@@ -16,25 +16,34 @@ BASE = math.e
 
 def protected_div(n1, n2):
     with np.errstate(divide='ignore', invalid='ignore'):
-        return np.where(np.abs(n2) > 1e-9, n1 / n2, 1.0)
+        result = np.where(np.abs(n2) > 1e-9, n1 / n2, 1.0)
+        return np.clip(np.where(np.isfinite(result), result, 1.0), -1e6, 1e6)
 
 
 def protected_log(x, base):
     with np.errstate(divide='ignore', invalid='ignore'):
         safe_x = np.where(np.abs(x) > 1e-9, np.abs(x), 1e-9)
-        safe_base = np.where(np.abs(base) > 1e-9, np.abs(base), 1e-9)
-        res = np.log(safe_x) / np.log(safe_base)
-        return np.where(np.isfinite(res), res, 1.0)
+        safe_base = np.abs(base)
+        safe_base = np.where(safe_base < 1e-9, 1e-9, safe_base)
+        safe_base = np.where(np.abs(safe_base - 1.0) < 1e-4, safe_base + 1e-4, safe_base)
+        result = np.log(safe_x) / np.log(safe_base)
+        return np.clip(np.where(np.isfinite(result), result, 1.0), -1e6, 1e6)
+
 
 def protected_pow(n1, n2):
     with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
-        base = np.abs(n1)
-        base = np.clip(base, 0, 1e10)
-        exponent = np.clip(n2, -10, 10)
-        res = np.power(base, exponent)
-        return np.where(np.isfinite(res), res, 1e10)
+        base = np.clip(np.abs(n1), 1e-9, 1e6)
+        exp  = np.clip(n2, -10, 10)
+        log_result = exp * np.log(base)
+        safe = np.abs(log_result) < 50
+        result = np.where(safe, np.power(base, exp), np.sign(log_result) * 1e6)
+        return np.clip(np.where(np.isfinite(result), result, 1e6), -1e6, 1e6)
+
+
 def if_then_else(condition, out_true, out_false):
-    return np.where(condition, out_true, out_false)
+    cond = np.isfinite(condition) & (condition > 0)
+    return np.where(cond, out_true, out_false)
+
 def round_random(a,b):
     return round(random.uniform(a,b), 3)
 
