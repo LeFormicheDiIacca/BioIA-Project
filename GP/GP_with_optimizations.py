@@ -35,6 +35,8 @@ CROSS_RATE = 0.7
 HOF_SIZE = 5
 TOURNAMENT_SIZE = 3
 PARSIMONY_VALUE = 1.2
+MAX_HEIGHT = 10
+MAX_NODES = 30
 MAX_CORE_VALUE = 11
 PENALTY_MISSING_VALUES = 1e3
 PENALTY_ERROR_IN_CALCULATIONS =  1e6
@@ -105,22 +107,29 @@ toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("select", tools.selDoubleTournament, fitness_size=TOURNAMENT_SIZE, parsimony_size=PARSIMONY_VALUE, fitness_first=True)
 toolbox.register("mutate_unif", gp.mutUniform, expr=toolbox.expr, pset=pset)
 toolbox.register("mutate_eph", gp.mutEphemeral, mode="all")
+toolbox.register("mutNode", gp.mutNodeReplacement, pset=pset)
+toolbox.register("mutShrink", gp.mutShrink)
 
 
 def mutate_combined(individual):
-    if random.random() < 0.7:
+    r = random.random()
+    if r < 0.25:
         return toolbox.mutate_unif(individual)
+    elif r < 0.5:
+        return toolbox.mutNode(individual)
+    elif r < 0.75:
+        return toolbox.mutShrink(individual)
     else:
         return toolbox.mutate_eph(individual)
 
 
 toolbox.register("mutate", mutate_combined)
-toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value=5))
-toolbox.decorate("mate", gp.staticLimit(len, max_value=15))
-toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value=5))
-toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value=15))
-toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value=5))
-toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=15))
+toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
+toolbox.decorate("mate", gp.staticLimit(len, max_value=MAX_NODES))
+toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
+toolbox.decorate("mutate_unif", gp.staticLimit(len, max_value=MAX_NODES))
+toolbox.decorate("mutate_eph", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
+toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=MAX_NODES))
 
 #Variables for multiprocessing
 _GLOBAL_PSET = None
