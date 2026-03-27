@@ -139,8 +139,11 @@ toolbox.decorate("mutate_eph", gp.staticLimit(len, max_value=MAX_NODES))
 def similar_by_structure(ind1, ind2):
     str1 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind1))
     str2 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind2))
-    return str1 == str2
-
+    str1 = re.sub(r'distance|steepness|is_water', 'V', str1)
+    str2 = re.sub(r'distance|steepness|is_water', 'V', str2)
+    if str1 == str2:
+        return True
+    return abs(ind1.fitness.values[0] - ind2.fitness.values[0]) < 1
 
 #Variables for multiprocessing
 _GLOBAL_PSET = None
