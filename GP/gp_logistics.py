@@ -32,13 +32,20 @@ def protected_div(n1, n2):
 def protected_log(x, base):
     if np.isscalar(x) and np.isscalar(base):
         safe_x = abs(x) if abs(x) > 1e-9 else 1e-9
-        safe_base = abs(base) if abs(base) > 1e-9 else 1e-9
+        safe_base = abs(base)
+        # vs base being 1.0
+        if abs(safe_base - 1.0) < 1e-9:
+            safe_base = 1.0 + 1e-9 
+        elif safe_base < 1e-9:
+            safe_base = 1e-9
         res = math.log(safe_x) / math.log(safe_base)
         return res if math.isfinite(res) else 1.0
-
     safe_x = np.where(np.abs(x) > 1e-9, np.abs(x), 1e-9)
-    safe_base = np.where(np.abs(base) > 1e-9, np.abs(base), 1e-9)
-    with np.errstate(divide='ignore', invalid='ignore'):
+    safe_base = np.abs(base)
+    is_near_one = np.abs(safe_base - 1.0) < 1e-9
+    safe_base = np.where(is_near_one, 1.0 + 1e-9, safe_base)
+    safe_base = np.where(safe_base > 1e-9, safe_base, 1e-9)
+    with np.errstate(divide="ignore", invalid='ignore'):
         res = np.log(safe_x) / np.log(safe_base)
     return np.where(np.isfinite(res), res, 1.0)
 
