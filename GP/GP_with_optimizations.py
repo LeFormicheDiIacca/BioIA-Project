@@ -468,7 +468,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
 
     experiments = [
-        [1000, 100],
+        [3500, 200],
         [3500, 200],
         [3500, 200],
         [3500, 200],
