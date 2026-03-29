@@ -31,6 +31,7 @@ if project_root not in sys.path:
 
 #Global variables for Hyperparameters
 BASE = math.e
+BASE = BASE**15
 BASE_FOLDER = ""
 STD_THRESHOLD = 0.001
 EARLY_STOPPING = 10
@@ -42,8 +43,8 @@ PARSIMONY_VALUE = 1.3
 MAX_HEIGHT = 7
 MAX_NODES = 10
 MAX_CORE_VALUE = 11
-PENALTY_MISSING_VALUES = 200
-PENALTY_ERROR_IN_CALCULATIONS =  1e6
+PENALTY_MISSING_VALUES = 1e3
+PENALTY_ERROR_IN_CALCULATIONS =  1e9
 
 #pretty logging for each generation
 def print_gen_log(gen, nevals, record, num_dead, duration, is_header=False, scenarios=None, seed=None):
@@ -213,13 +214,14 @@ def compute_penalty_from_path(path_nodes,
         path_steepness += edge_steep[edge_idx]
         if edge_water[edge_idx] > 0.5:
             path_water += 1
+
     path_steepness = path_steepness/tot_nodes
     path_water = path_water/tot_nodes
-    steepness_factor = ((BASE**(18*path_steepness))-1)/((BASE**4.5)-1)
+
+    path_steepness = ((BASE**path_steepness)-1)/100
+    path_water = ((BASE**path_water)-1)/100
     #use fitness formula
-    return path_distance * (
-            (path_water * (BASE - 1)) + 1 + steepness_factor
-    )
+    return path_distance * ( path_water + path_steepness)
 
 #Function for individual evaluation
 def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
@@ -235,7 +237,10 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
             costs = np.array(raw_costs, dtype=np.float64, copy=True)
 
         np.nan_to_num(costs, copy=False, nan=1e9, posinf=1e9, neginf=0.001)
-        np.clip(costs, 0.001, 1e9, out=costs)
+        if np.any(costs <= 0):
+            return (PENALTY_ERROR_IN_CALCULATIONS,)
+        if np.any(np.isnan(costs)) or np.any(np.isinf(costs)):
+            return (PENALTY_ERROR_IN_CALCULATIONS,)
     except Exception as e:
         err_msg = traceback.format_exc()
         print(f"\n[Worker {os.getpid()}] Crashed during cost calculation!")
@@ -463,7 +468,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
 
     experiments = [
-        [3500, 200],
+        [1000, 100],
         [3500, 200],
         [3500, 200],
         [3500, 200],

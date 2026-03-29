@@ -101,7 +101,7 @@ class MeshGraph(nx.Graph):
             paths=None,
             paths_colors = None,
             draw_labels = False,
-            figsize= (100,100),
+            figsize= (50,50),
             dpi=100
     ):
         plt.figure(figsize=figsize, dpi=dpi)
@@ -117,7 +117,7 @@ class MeshGraph(nx.Graph):
             self, pos,
             node_color=node_costs,
             cmap='magma', 
-            node_size=10,
+            node_size=200,
         )
 
         if self.key_nodes is not None:
@@ -125,7 +125,7 @@ class MeshGraph(nx.Graph):
                 self, pos,
                 nodelist=self.key_nodes,
                 node_color="green",
-                node_size=300,
+                node_size=200,
             )
         if paths is not None:
             for i in range(len(paths)):
@@ -140,11 +140,11 @@ class MeshGraph(nx.Graph):
             self, pos,
             nodelist=water_nodes,
             node_color='lightblue',
-            node_size=10,
+            node_size=200,
         )
 
         plt.axis('off')
-        plt.show()
+        plt.savefig("map.svg")
 
     def plot_graph_debug(
             self,
@@ -252,3 +252,38 @@ class MeshGraph(nx.Graph):
 
         for (u, v, data), norm_cost in zip(self.edges(data=True), normalized_costs):
             data['cost'] = norm_cost
+
+    def plot_edge_heatmap(
+            self,
+            figsize=(12, 10),
+            dpi=100,
+            cmap_name='viridis',
+            edge_width=2
+    ):
+        """
+        """
+        plt.figure(figsize=figsize, dpi=dpi)
+        pos = self.node_to_pos
+
+        try:
+            edge_costs = [self[u][v].get('cost', 1.0) for u, v in self.edges()]
+        except KeyError:
+            print("Attenzione: Alcuni archi non hanno l'attributo 'cost'.")
+            return
+
+        nx.draw_networkx_nodes(self, pos, node_size=5, node_color='black', alpha=0.3)
+
+        edges = nx.draw_networkx_edges(
+            self,
+            pos,
+            width=edge_width,
+            edge_color=edge_costs,
+            edge_cmap=plt.get_cmap(cmap_name),
+            arrows=False
+        )
+
+        plt.colorbar(edges, label='Edge Cost')
+
+        plt.title("Heatmap dei costi degli archi")
+        plt.axis('off')
+        plt.savefig("output.svg")
