@@ -1,25 +1,27 @@
+import numpy as np
+
 from GP.gp_logistics import protected_log, protected_pow
 
 #Trentino
 def first_cost_function(distance, steepness, is_water):
-    term1 = distance**0.592
-    term_2 = distance**(steepness-0.827) if is_water else steepness
+    term1 = protected_pow(distance,0.592)
+    term_2 = np.where(is_water,protected_pow(distance,steepness-0.827), steepness)
     term_2 += 1.378+distance
     return term1 + term_2
 
 def second_cost_function(distance, steepness, is_water):
-    tmp_1= protected_log(distance, 0.628) if is_water else steepness
-    temp2 = 1.837 + distance + distance**0.628
+    tmp_1= np.where(is_water, protected_log(distance, 0.628), steepness)
+    temp2 = 1.837 + distance + protected_pow(distance,0.628)
     return tmp_1 + temp2
 
 def third_cost_function(distance, steepness, is_water):
-    tmp_1 = 1/distance if is_water else steepness
-    tmp_2 = 0.647+0.792+distance+(distance**0.647)
+    tmp_1 = np.where(is_water, 1/distance, steepness)
+    tmp_2 = 1.439++distance+protected_pow(distance,0.647)
     return tmp_1 + tmp_2
 
 def fourth_cost_function(distance, steepness, is_water):
-    tmp_1 = 0.884 if is_water else steepness
-    tmp_2 = (distance**0.586)+1.380+distance
+    tmp_1 = np.where(is_water,0.884, steepness)
+    tmp_2 = protected_pow(distance,0.586)+1.380+distance
     return tmp_1 + tmp_2
 
 def second_best_CF(distance, steepness, elev_u, elev_v, is_water):

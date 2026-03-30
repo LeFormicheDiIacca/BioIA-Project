@@ -4,15 +4,14 @@ from datetime import datetime
 import json
 import time
 import numpy as np
-import sys
 from pathlib import Path
 from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
+from GP.evolved_cost_functions import first_cost_function
+from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
 from cost_functions import best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF
-from scipy.spatial.distance import cdist
-import os
 
 today = datetime.now().strftime("%d_%m_%Y")
 OUTPUT_FOLDER = f"Results/day_{today}"
@@ -62,51 +61,11 @@ def create_bbox_with_margin(points, margin_ratio=0.2):
         top    = max_lat + lat_margin
     )
 
-
-def assign_key_nodes_csr(key_nodes: list, resolution: int):
-    """
-    Replaces mesh_graph.assign_key_nodes().
-    Returns (key_nodes_set, dist_matrix, key_node_to_idx).
-    Node index i maps to grid position (row=i//resolution, col=i%resolution).
-    """
-    key_nodes_sorted = sorted(key_nodes)
-    all_node_count = resolution * resolution
-
-    all_pos = np.array([[i // resolution, i % resolution]
-                        for i in range(all_node_count)], dtype=np.float32)
-    key_pos = np.array([[n // resolution, n % resolution]
-                        for n in key_nodes_sorted], dtype=np.float32)
-
-    dist_matrix = cdist(all_pos, key_pos, metric='euclidean')
-    key_node_to_idx = {node: idx for idx, node in enumerate(key_nodes_sorted)}
-
-    return set(key_nodes_sorted), dist_matrix, key_node_to_idx
-
-
-def compute_costs_csr(edge_features_columns, current_cf):
-    """
-    Replaces the per-edge cost update loop + mesh_graph.cost_normalization().
-    Returns a normalized float64 cost array indexed by edge ID (0-based).
-    """
-    dist, steep, water = edge_features_columns
-
-    # Vectorised cost computation (current_cf must accept numpy arrays)
-    raw_costs = current_cf(dist, steep, water)  # adjust args to match your CF signature
-
-    # Normalize to [1, 10] — mirrors the original cost_normalization()
-    min_c = raw_costs.min()
-    max_c = raw_costs.max()
-    normalized = 1.0 + 9.0 * (raw_costs - min_c) / (max_c - min_c + 1e-6)
-
-    return normalized.astype(np.float64)
-
 if __name__ == '__main__':
     mesh_graph_parameters = {
         "n_neighbours": 8,
         "resolution": 200,
     }
-
-    resolution = mesh_graph_parameters["resolution"]
 
     key_coords_list = [
         [
@@ -181,7 +140,7 @@ if __name__ == '__main__':
     save_rendered_paths = True
     synthetic_data = False
 
-    cost_functions_list = [best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF]
+    cost_functions_list = [first_cost_function]
     fields_csv = ["iteration_time", "path_cost", "path", "cost_function"]
 
     print("Running ACO simulation...")
@@ -189,30 +148,18 @@ if __name__ == '__main__':
     res_paths_alls = []
     color =["green", "cyan", "blue", "yellow", "red", "magenta"]
 
-    npz_path = f"TerrainGraph/precomputed_map_trentino_{resolution}.npz"
-    if not os.path.exists(npz_path):
-        print(f"Error: File {npz_path} not found!")
-        sys.exit(-1)
-    # Before the key_coords loop
-    data = np.load(npz_path)
-    edge_features_columns = [data['dist'], data['steep'], data['water']]
-    csr_indices = data['csr_indices']
-    csr_indptr  = data['csr_indptr']
-    csr_data    = data['csr_data']
-    num_nodes   = int(data['num_nodes'])
+    # try:
 
+    # iterate first through key coords to avoid rebuilding graph more than needed
     for key_coords in key_coords_list:
         area = create_bbox_with_margin(key_coords)
-        key_nodes = get_closest_indices(key_coords, area, resolution)
+        mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], area)
+        # 1 of 6 REPLACEME
+        # mesh_graph = create_graph("TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", mesh_graph_parameters["resolution"], area)
+        edge_dict = create_edge_dict(mesh_graph)
 
-        key_nodes_set, dist_matrix, key_node_to_idx = assign_key_nodes_csr(key_nodes, resolution)
-        mesh_graph = None
-        if save_rendered_paths or print_graph:
-            mesh_graph = create_graph(
-                "TerrainGraph/trentino.tif",
-                "TerrainGraph/trentino_alto_adige.pbf",
-                resolution, area
-            )
+        key_nodes = get_closest_indices(key_coords, area, mesh_graph_parameters["resolution"])
+        mesh_graph.assign_key_nodes(key_nodes)
 
         # then iterate through the cost functions
         for f, current_cf in enumerate(cost_functions_list):
@@ -222,19 +169,19 @@ if __name__ == '__main__':
             cf_folder.mkdir(parents=True, exist_ok=True)
 
             # Update Graph Costs
-            cost_array = compute_costs_csr(edge_features_columns, current_cf)
+            for v in mesh_graph.nodes():
+                for u in mesh_graph[v]:
+                    u_ordered, v_ordered = min(u, v), max(u, v)
+                    key = f"{u_ordered}-{v_ordered}"
+                    metadata = edge_dict[key]
+                    cost = current_cf(metadata[0], metadata[1], metadata[2])
+                    mesh_graph[v][u]['cost'] = cost
+            mesh_graph.cost_normalization()
 
-            aco = ACO_simulator(
-                csr_indices=csr_indices,
-                csr_indptr=csr_indptr,
-                csr_data=csr_data,
-                cost_array=cost_array,
-                num_nodes=num_nodes,
-                dist_matrix=dist_matrix,
-                key_node_to_idx=key_node_to_idx,
-                **ant_colony_parameters
-            )
-            aco.construct_key_nodes_data(list(key_nodes_set))
+
+
+            aco = ACO_simulator(mesh_graph, **ant_colony_parameters)
+            aco.construct_key_nodes_data(key_nodes)
 
             for i in range(n_iterations):
                 # Config data needs to include current CF context, saving it per iteration
@@ -250,7 +197,7 @@ if __name__ == '__main__':
                     with open(file_path_json, 'w') as file:
                         json.dump(config_data, file, indent=4)
                 start_time = time.perf_counter()
-                paths = aco.simulation(retrieve_n_best_paths = 1, log_print = False, TSP = False, resilience_factor = resilience_factor)
+                paths = aco.simulation(retrieve_n_best_paths = 1, log_print = True, TSP = False, resilience_factor = resilience_factor)
                 end_time = time.perf_counter() - start_time
 
                 for (path, path_cost) in paths:
@@ -268,7 +215,7 @@ if __name__ == '__main__':
                                 "iteration_time": end_time,
                                 "path_cost": path_cost,
                                 "path": ", ".join(map(str, path)),
-                                "cost_function": str(f)
+                                "cost_function": str(i)
                             }
                             writer.writerow(csv_row)
 
@@ -281,7 +228,7 @@ if __name__ == '__main__':
                     print("Plotting mesh graph...")
                     mesh_graph.plot_graph(figsize=(35, 35), paths=res_paths, paths_colors=color)
 
-                if save_rendered_paths and mesh_graph is not None:
+                if save_rendered_paths:
                     file_path_html = create_file_path(cf_folder, "html")
                     print("Generating road visualization...")
                     visualize_paths(
