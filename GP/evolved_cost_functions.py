@@ -1,20 +1,11 @@
 import math
 
 
-def best_CF(distance, steepness, elev_u, elev_v, is_water):
-    if is_water == 1.0:
-        ret = math.log(3.148, 9.535)
-    else:
-        ret = distance + distance
-    tmp = ((distance+3.685) + (elev_u*elev_u/4.164)) - elev_v
-    if is_water == 1.0:
-        tmp -= steepness
-    else:
-        tmp -= elev_v
-    ret -= tmp
-    ret -= (2.41**3.978)
-    ret = (-1)*ret
-    return ret
+def first_cost_function(distance, steepness, is_water):
+    term1 = distance**0.592
+    term_2 = distance**(steepness-0.827) if is_water else steepness
+    term_2 += 1.378+distance
+    return term1 + term_2
 
 
 def second_best_CF(distance, steepness, elev_u, elev_v, is_water):
