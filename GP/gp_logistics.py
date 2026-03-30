@@ -172,7 +172,8 @@ def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "G
         ind_diz["fitness"] = ind.fitness.values[0]
         hof_list.append(ind_diz)
     tree_diz = dict()
-    tree_diz["generations"] = gens
+    tree_diz["current_generation"] = generation
+    tree_diz["total_generations"] = gens
     tree_diz["resolution"] = res
     tree_diz["population"] = population
     tree_diz["scenarios"] = scen_number
