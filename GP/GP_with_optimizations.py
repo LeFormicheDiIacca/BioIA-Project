@@ -40,8 +40,8 @@ CROSS_RATE = 0.7
 HOF_SIZE = 5
 TOURNAMENT_SIZE = 3
 PARSIMONY_VALUE = 1.3
-MAX_HEIGHT = 7
-MAX_NODES = 10
+MAX_HEIGHT = 5
+MAX_NODES = 20
 MAX_CORE_VALUE = 11
 PENALTY_MISSING_VALUES = 1e3
 PENALTY_ERROR_IN_CALCULATIONS =  1e9
@@ -128,10 +128,11 @@ def create_valid_individual():
     while True:
         expr = gp.genHalfAndHalf(pset=pset, min_=2, max_=5)
         ind = creator.Individual(expr)
-        tree_str = str(ind)
-        required_inputs = ["distance", "steepness", "is_water"]
-        if not any(inp not in tree_str for inp in required_inputs):
-            return ind
+        if len(ind) <= MAX_NODES:
+            tree_str = str(ind)
+            required_inputs = ["distance", "steepness", "is_water"]
+            if all(inp in tree_str for inp in required_inputs):
+                return ind
 
 toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=2, max_=5)
 toolbox.register("individual", tools.initIterate, creator.Individual, create_valid_individual)
@@ -156,8 +157,10 @@ def mutate_combined(individual):
     else:
         return toolbox.mutate_eph(individual)
 
-
 toolbox.register("mutate", mutate_combined)
+
+toolbox.decorate("mutate", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
+toolbox.decorate("mutate", gp.staticLimit(len, max_value=MAX_NODES))
 toolbox.decorate("mate", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
 toolbox.decorate("mate", gp.staticLimit(len, max_value=MAX_NODES))
 toolbox.decorate("mutate_unif", gp.staticLimit(operator.attrgetter("height"), max_value=MAX_HEIGHT))
@@ -170,9 +173,7 @@ def similar_by_structure(ind1, ind2):
     str2 = re.sub(r'[-+]?\d*\.\d+|\d+', 'X', str(ind2))
     str1 = re.sub(r'distance|steepness|is_water', 'V', str1)
     str2 = re.sub(r'distance|steepness|is_water', 'V', str2)
-    if str1 == str2:
-        return True
-    return abs(ind1.fitness.values[0] - ind2.fitness.values[0]) < 0.5
+    return str1 == str2
 
 #Variables for multiprocessing
 _GLOBAL_PSET = None
@@ -221,7 +222,7 @@ def compute_penalty_from_path(path_nodes,
     path_steepness = ((BASE**path_steepness)-1)/100
     path_water = ((BASE**path_water)-1)/100
     #use fitness formula
-    return path_distance * ( path_water + path_steepness)
+    return path_distance * (1 + path_water + path_steepness)
 
 #Function for individual evaluation
 def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
@@ -237,10 +238,9 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
             costs = np.array(raw_costs, dtype=np.float64, copy=True)
 
         np.nan_to_num(costs, copy=False, nan=1e9, posinf=1e9, neginf=0.001)
-        if np.any(costs <= 0):
-            return (PENALTY_ERROR_IN_CALCULATIONS,)
-        if np.any(np.isnan(costs)) or np.any(np.isinf(costs)):
-            return (PENALTY_ERROR_IN_CALCULATIONS,)
+        costs = np.logaddexp(0, costs)
+        costs = costs + 0.001
+
     except Exception as e:
         err_msg = traceback.format_exc()
         print(f"\n[Worker {os.getpid()}] Crashed during cost calculation!")
@@ -298,7 +298,7 @@ def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
         final_fit += PENALTY_MISSING_VALUES
 
     if math.isinf(final_fit) or math.isnan(final_fit):
-        return (PENALTY_MISSING_VALUES,)
+        return (PENALTY_ERROR_IN_CALCULATIONS,)
 
     return (final_fit,)
 
@@ -388,7 +388,7 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
 
         hof.update(pop)
         record = mstats.compile(pop)['fitness']
-        num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
+        num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= (PENALTY_ERROR_IN_CALCULATIONS * 0.9))
 
         if log:
             print_gen_log(0, len(invalid_ind), record, num_dead, time.time() - gen_start)
@@ -410,13 +410,14 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
                 ind.fitness.values = fit
 
             pop[:] = offspring
+            hof.update(pop)
+
             pop.sort(key=lambda ind: ind.fitness.values[0], reverse=True)
             for i in range(HOF_SIZE):
                 pop[i] = toolbox.clone(hof[i])
-            hof.update(pop)
 
             record = mstats.compile(pop)['fitness']
-            num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= 1e11)
+            num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= (PENALTY_ERROR_IN_CALCULATIONS * 0.9))
             gen_end = time.time() - gen_start
 
             if log:
@@ -442,13 +443,7 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
         minutes, seconds = divmod(tmp, 60)
 
         if log:
-            print(
-                f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
-
-        pool.close()
-        pool.join()
-
-        if log:
+            print(f"{generations} generations evolved in {int(hours)} hours {int(minutes)} minutes {seconds:.2f} seconds")
             print(f"Generations log saved in {BASE_FOLDER}")
             save_run(population, hof, diff, 0, generations, res, pset=pset, path=BASE_FOLDER,
                      generation="_final")
@@ -465,8 +460,6 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
 # --- MAIN ---
 if __name__ == "__main__":
     #POP, Generations
-    multiprocessing.set_start_method('spawn', force=True)
-
     experiments = [
         [3500, 200],
         [3500, 200],
