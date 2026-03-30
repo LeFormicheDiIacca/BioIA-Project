@@ -4,11 +4,7 @@ import multiprocessing
 import random
 import ctypes
 import numpy as np
-import networkx as nx
-from scipy.sparse import lil_matrix
-
 from ACO.Ant import Ant
-from TerrainGraph.meshgraph import MeshGraph
 
 #Global variables for the workers
 global_shared_data = {}
@@ -95,7 +91,13 @@ def run_synchronized_ant(args):
 
 class ACO_simulator:
     def __init__(self,
-                 graph: MeshGraph,
+                 csr_indices,
+                 csr_indptr,
+                 csr_data,
+                 cost_array,
+                 num_nodes,
+                 dist_matrix,
+                 key_node_to_idx,
                  alpha: float = 1.0,
                  beta: float = 2.0,
                  rho: float = 0.1,
@@ -109,7 +111,7 @@ class ACO_simulator:
                  elitism_weight: float = 2.0,
                  early_stopping_threshold: float = 0.001,
                  ):
-        self.graph = graph
+        self.num_nodes = num_nodes
         self.rho = rho
         self.q0 = q0
         self.alpha = alpha
@@ -126,17 +128,16 @@ class ACO_simulator:
         self.tau_max = {0: 1.0}
 
         #Create CSR matrices
-        costs_csr = self._build_sparse_costs_matrix()
-        self.key_nodes_list = list(self.graph.key_nodes)
-        self.key_nodes_mask = self._build_key_nodes_array()
-        self.dist_matrix = self._build_dist_to_key_nodes()
+        self.key_nodes_list = []
+        self.key_nodes_mask = np.zeros(num_nodes, dtype=np.int32)
+        self.dist_matrix = dist_matrix.astype(np.float32)
+        self.key_node_to_idx = key_node_to_idx
 
-        self.indptr = costs_csr.indptr.astype(np.int32)
-        self.indices = costs_csr.indices.astype(np.int32)
-        self.data_costs = costs_csr.data.astype(np.float32)
 
-        self.data_edge_ids = self._build_aligned_edge_ids(costs_csr)
-
+        self.indptr = csr_indptr.astype(np.int32)
+        self.indices = csr_indices.astype(np.int32)
+        self.data_edge_ids = csr_data.astype(np.int32)  # edge IDs from npz
+        self.data_costs = cost_array.astype(np.float32)
         #Initialize shared memory
         self.shared_map = {
             'indptr': create_shared_array(self.indptr),
@@ -149,70 +150,35 @@ class ACO_simulator:
 
         #Configuration for workers
         self.worker_config = {
-            'n_nodes': graph.number_of_nodes(),
-            'n_keys': len(self.key_nodes_list),
-            'key_nodes_list': self.key_nodes_list,
+            'n_nodes': num_nodes,
+            'n_keys': 0,
+            'key_nodes_list': [],
             'n_colonies': 0
         }
 
-    def construct_key_nodes_data(self, key_nodes):
-        self.graph.assign_key_nodes(key_nodes)
-        self.key_nodes_list = list(self.graph.key_nodes)
+    def construct_key_nodes_data(self, key_nodes: list):
+        self.key_nodes_list = sorted(key_nodes)
         self.key_nodes_mask = self._build_key_nodes_array()
-        self.dist_matrix = self._build_dist_to_key_nodes()
+        # dist_matrix already computed externally and passed in constructor
 
         self.shared_map['key_nodes_mask'] = create_shared_array(self.key_nodes_mask)
-        self.shared_map['dist_matrix'] = create_shared_array(self.dist_matrix)
+        self.shared_map['dist_matrix']    = create_shared_array(self.dist_matrix)
 
         self.worker_config['key_nodes_list'] = self.key_nodes_list
-        self.worker_config['n_keys'] = len(self.key_nodes_list)
+        self.worker_config['n_keys']         = len(self.key_nodes_list)
 
-
-    def _build_sparse_costs_matrix(self):
-        n = self.graph.number_of_nodes()
-        costs = lil_matrix((n, n), dtype=np.float32)
-        for u, v, data in self.graph.edges(data=True):
-            cost = data.get('cost', 1.0)
-            costs[u, v] = cost
-            costs[v, u] = cost
-        return costs.tocsr()
-
-    def _build_aligned_edge_ids(self, ref_csr):
-        """Align Edge Ids with CSR matrices"""
-        n_edges = len(ref_csr.data)
-        edge_ids = np.zeros(n_edges, dtype=np.int32)
-
-        rows, cols = ref_csr.nonzero()
-        for i, (u, v) in enumerate(zip(rows, cols)):
-            eid = self.graph[u][v]['edge_id'] + 1
-            edge_ids[i] = eid
-
-        return edge_ids
 
     def _build_key_nodes_array(self):
-        arr = np.zeros(self.graph.number_of_nodes(), dtype=np.int32)
-        for node in self.graph.key_nodes:
+        arr = np.zeros(self.num_nodes, dtype=np.int32)
+        for node in self.key_nodes_list:
             arr[node] = 1
         return arr
 
-    def _build_dist_to_key_nodes(self):
-        n_nodes = self.graph.number_of_nodes()
-        key_list = self.key_nodes_list
-        n_keys = len(key_list)
-        dist_matrix = np.full((n_nodes, n_keys), np.inf, dtype=np.float32)
-        for i, key_node in enumerate(key_list):
-            lengths = nx.single_source_dijkstra_path_length(
-                self.graph, key_node, weight='cost'
-            )
-            for node, dist in lengths.items():
-                dist_matrix[node, i] = dist
-        return dist_matrix
 
     def _calculate_min_max_pheromones(self, best_path_cost, colony_id):
         self.tau_max[colony_id] = 1.0 / ((1 - self.rho) * best_path_cost)
-        tau_min = self.tau_max[colony_id] / (2 * self.graph.number_of_nodes())
+        tau_min = self.tau_max[colony_id] / (2 * self.num_nodes)
         self.tau_min[colony_id] = max(tau_min, 1e-10)
-
 
     def _calc_path_cost_fast(self, path):
         cost = 0.0
@@ -260,7 +226,7 @@ class ACO_simulator:
 
     def simulation(self, retrieve_n_best_paths=1, log_print=False, TSP=False, resilience_factor=2):
         #Create shared pheromones
-        n_edges = self.graph.number_of_edges()
+        n_edges = len(self.data_costs)
         self.worker_config['n_colonies'] = resilience_factor
         for i in range(resilience_factor):
             arr = multiprocessing.RawArray(ctypes.c_double, n_edges)
@@ -300,7 +266,7 @@ class ACO_simulator:
                     if spawn_key:
                         starts = [random.choice(self.key_nodes_list) for _ in range(self.ant_number)]
                     else:
-                        starts = [random.randint(0, self.graph.number_of_nodes() - 1) for _ in range(self.ant_number)]
+                        starts = [random.randint(0, self.num_nodes - 1) for _ in range(self.ant_number)]
 
                     task_args = [
                         (self.alpha, self.beta, self.q0, spawn_key, colony_id, resilience_factor,

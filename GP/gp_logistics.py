@@ -153,7 +153,7 @@ def from_tree_to_string(string, pset):
 
 # adds new data to a json file for finetuning
 
-def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "GP/res", logs = None, plot_tree = False, generation = 1):
+def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "GP/res", logs = None, plot_tree = False, generation = 1, area = "Trentino"):
     title = f"{population}pop_{gens}gen_{scen_number}scenarios_res{res}_gen{generation}"
     if population >=500 and plot_tree:
         path_hof = f"{path}/hof/{title}"
@@ -172,6 +172,7 @@ def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "G
         ind_diz["fitness"] = ind.fitness.values[0]
         hof_list.append(ind_diz)
     tree_diz = dict()
+    tree_diz["area"] = area
     tree_diz["current_generation"] = generation
     tree_diz["total_generations"] = gens
     tree_diz["resolution"] = res
