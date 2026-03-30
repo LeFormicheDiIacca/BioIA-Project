@@ -195,7 +195,7 @@ def compute_penalty_from_path(path_nodes,
 
     path_distance = 0.0
     path_steepness = 0.0
-    path_water = 0
+    path_water = 0.0
     tot_nodes = n - 1
     #Calculate path stats
     for k in range(tot_nodes):
@@ -222,7 +222,7 @@ def compute_penalty_from_path(path_nodes,
     path_steepness = ((BASE**path_steepness)-1)/100
     path_water = ((BASE**path_water)-1)/100
     #use fitness formula
-    return path_distance * (1 + path_water + path_steepness)
+    return path_distance * (1.0 + path_water + path_steepness)
 
 #Function for individual evaluation
 def evaluate_individual(individual, sources_list, targets_list, num_scenarios):
@@ -386,7 +386,9 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
+        pop.sort(key=lambda ind: ind.fitness.values[0])
         hof.update(pop)
+
         record = mstats.compile(pop)['fitness']
         num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= (PENALTY_ERROR_IN_CALCULATIONS * 0.9))
 
@@ -410,11 +412,11 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
                 ind.fitness.values = fit
 
             pop[:] = offspring
+            pop.sort(key=lambda ind: ind.fitness.values[0])
             hof.update(pop)
 
-            pop.sort(key=lambda ind: ind.fitness.values[0], reverse=True)
             for i in range(HOF_SIZE):
-                pop[i] = toolbox.clone(hof[i])
+                pop[-(i + 1)] = toolbox.clone(hof[i])
 
             record = mstats.compile(pop)['fitness']
             num_dead = sum(1 for ind in pop if ind.fitness.values[0] >= (PENALTY_ERROR_IN_CALCULATIONS * 0.9))
