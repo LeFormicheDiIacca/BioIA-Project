@@ -11,7 +11,7 @@ from GP.evolved_cost_functions import first_cost_function
 from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
-from cost_functions import trentino_first_cost_function trentino_second_cost_function trentino_third_cost_function trentino_fourth_cost_function napoli_first_cost_function napoli_second_cost_function napoli_third_cost_function napoli_fourth_cost_function 
+from cost_functions import trentino_first_cost_function,trentino_second_cost_function,trentino_third_cost_function,trentino_fourth_cost_function,napoli_first_cost_function,napoli_second_cost_function,napoli_third_cost_function,napoli_fourth_cost_function
 
 REGION = "trentino"
 # REGION = "napoli"  
