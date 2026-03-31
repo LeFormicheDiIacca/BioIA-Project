@@ -11,7 +11,7 @@ from GP.evolved_cost_functions import first_cost_function
 from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
-from cost_functions import best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF
+from cost_functions import trentino_first_cost_function trentino_second_cost_function trentino_third_cost_function trentino_fourth_cost_function napoli_first_cost_function napoli_second_cost_function napoli_third_cost_function napoli_fourth_cost_function 
 
 REGION = "trentino"
 # REGION = "napoli"  
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     save_rendered_paths = True
     synthetic_data = False
 
-    cost_functions_list = [first_cost_function]
+    cost_functions_list = [trentino_first_cost_function, trentino_second_cost_function, napoli_first_cost_function, napoli_second_cost_function]
     fields_csv = ["iteration_time", "path_cost", "path", "cost_function"]
 
     print("Running ACO simulation...")
