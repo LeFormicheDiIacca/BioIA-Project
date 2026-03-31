@@ -463,20 +463,20 @@ def run_EA(population, generations, res, npz_path, scenario_path, mut_rate=MUT_R
 if __name__ == "__main__":
     #POP, Generations
     experiments = [
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200],
-        [3500, 200]
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50],
+        [3500, 50]
     ]
     res = 200
-    scenario_path = "GP/scenarios_trentino200.json"
-    npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
-    # npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
+    scenario_path = "GP/scenarios_napoli_200.json"
+    #npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
+    npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
 
     if not os.path.exists(npz_path):
         print(f"Error: File {npz_path} not found!")
