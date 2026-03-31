@@ -96,7 +96,7 @@ if __name__ == '__main__':
     res = 1000
 
     print("Generating Graph...")
-    G = create_graph("../TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", resolution=res)
+    G = create_graph("../TerrainGraph/trentino.tif", "TerrainGraph/trentino.pbf", resolution=res)
     # 6 of 6 REPLACEME
     # G = create_graph("../TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", resolution=res)
 

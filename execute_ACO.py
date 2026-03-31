@@ -13,9 +13,15 @@ from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
 from cost_functions import best_CF, second_best_CF, third_best_CF, fourth_best_CF, fifth_best_CF
 
+REGION = "trentino"
+# REGION = "napoli"  
+
+FILENAME = f"PathOutputs_{REGION}"
+TIF_PATH = f"TerrainGraph/{REGION}.tif"
+PBS_PATH = f"TerrainGraph/{REGION}.pbf"
 today = datetime.now().strftime("%d_%m_%Y")
-OUTPUT_FOLDER = f"Results/day_{today}"
-FILENAME = "PathOutputs"
+OUTPUT_FOLDER = f"Results/{today}_{REGION}"
+
 def get_closest_indices(key_coords, bounds, resolution):
     pts = np.array(key_coords)
     lats, lons = pts[:, 0], pts[:, 1]
@@ -149,9 +155,7 @@ if __name__ == '__main__':
     # iterate first through key coords to avoid rebuilding graph more than needed
     for key_coords in key_coords_list:
         area = create_bbox_with_margin(key_coords)
-        mesh_graph = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino_alto_adige.pbf", mesh_graph_parameters["resolution"], area)
-        # 1 of 6 REPLACEME
-        # mesh_graph = create_graph("TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", mesh_graph_parameters["resolution"], area)
+        mesh_graph = create_graph(TIF_PATH, PBS_PATH, mesh_graph_parameters["resolution"], area)
         edge_dict = create_edge_dict(mesh_graph)
 
         key_nodes = get_closest_indices(key_coords, area, mesh_graph_parameters["resolution"])

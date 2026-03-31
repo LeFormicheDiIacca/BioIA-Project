@@ -4,6 +4,7 @@ from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from scipy.sparse import csr_matrix
 
+REGION = "trentino"
 
 def create_edge_index_matrix(graph, node_to_idx):
     rows = []
@@ -25,9 +26,7 @@ def create_edge_index_matrix(graph, node_to_idx):
 def main():
     res = 200
     print("-Creating graph from TIF and PBF...")
-    graph = create_graph("trentino.tif", "trentino_alto_adige.pbf", resolution=res)
-    # 2 of 6 REPLACEME
-    # graph = create_graph("napoli.tif", "sud-260324.osm.pbf", resolution=res)
+    graph = create_graph(f"{REGION}.tif", f"{REGION}.pbf", resolution=res)
 
     print("-Creating edge dictionary")
     edge_dict = create_edge_dict(graph)
@@ -57,9 +56,7 @@ def main():
     edge_index_matrix = create_edge_index_matrix(graph, node_to_idx)
 
     #Saving on disk
-    save_path = f"precomputed_map_trentino_{res}.npz"
-    # 3 of 6  REPLACEME
-    # save_path = f"precomputed_map_napoli_{res}.npz"
+    save_path = f"precomputed_map_{REGION}_{res}.npz"
     np.savez_compressed(
         save_path,
         dist=dist_array,

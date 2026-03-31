@@ -4,7 +4,7 @@ from TerrainGraph.terraingraph import create_graph
 
 res = 200
 
-mesh_graph = create_graph("../TerrainGraph/trentino.tif", "../TerrainGraph/trentino_alto_adige.pbf", resolution=res)
+mesh_graph = create_graph("../TerrainGraph/trentino.tif", "../TerrainGraph/trentino.pbf", resolution=res)
 edge_dict = create_edge_dict(mesh_graph)
 current_cf = fourth_cost_function
 for v in mesh_graph.nodes():
