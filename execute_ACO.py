@@ -142,7 +142,7 @@ if __name__ == '__main__':
     save_rendered_paths = True
     synthetic_data = False
 
-    cost_functions_list = [trentino_first_cost_function, trentino_second_cost_function, napoli_first_cost_function, napoli_second_cost_function]
+    cost_functions_list = [trentino_first_cost_function, trentino_second_cost_function, naples_first_cost_function, naples_second_cost_function]
     fields_csv = ["iteration_time", "path_cost", "path", "cost_function"]
 
     print("Running ACO simulation...")
