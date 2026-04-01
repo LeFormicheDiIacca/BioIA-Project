@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import math
+from rasterio.coords import BoundingBox
 
 
 def draw_graph_with_path(graph, path, title="Graph Visualization with Shortest Path"):
@@ -93,12 +94,13 @@ def weight_func(graph, u, v, edge_attr):
     return dist + (elev_diff * 5.0)
 
 if __name__ == '__main__':
-    res = 1000
+    res = 100
 
     print("Generating Graph...")
-    G = create_graph("../TerrainGraph/trentino.tif", "TerrainGraph/trentino.pbf", resolution=res)
-    # 6 of 6 REPLACEME
-    # G = create_graph("../TerrainGraph/napoli.tif", "TerrainGraph/sud-260324.osm.pbf", resolution=res)
+    # G = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino.pbf", resolution=res, area=BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939))
+    G = create_graph("TerrainGraph/napoli.tif", "TerrainGraph/napoli.pbf", resolution=res, area=BoundingBox( left=13.83059, bottom=41.03715, right=14.32309, top=41.40308))
+ 
+
 
     print("Finding best path...")
     # aco = ACO(G, ant_max_steps=1000, num_iterations=100, ant_random_spawn=True)

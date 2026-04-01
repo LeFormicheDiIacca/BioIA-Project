@@ -12,7 +12,7 @@ from TerrainGraph.meshgraph import MeshGraph
 
 fiona.drvsupport.supported_drivers['OSM'] = 'r'
 
-def create_graph(tif_path, osm_pbf_path, resolution, area = BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939) ):
+def create_graph(tif_path, osm_pbf_path, resolution, area): 
     print(f"Creating graph with resolution {resolution}:")
     print("- Running MeshGraph empty constructor...")
     G = MeshGraph(n_neighbours=8, resolution=resolution)
@@ -52,7 +52,7 @@ def create_graph(tif_path, osm_pbf_path, resolution, area = BoundingBox( left=11
             "x": lon,
             "y": lat,
             "elevation": elev,
-            "is_water": False
+            "is_water": elev <= 0
         })
         
         node_ids.append(node_key)
@@ -71,10 +71,13 @@ def create_graph(tif_path, osm_pbf_path, resolution, area = BoundingBox( left=11
         for col, kw in [('natural', 'water'), ('landuse', 'reservoir'), ('landuse', 'basin')]:
             if col in osm_gdf.columns:
                 mask |= (osm_gdf[col] == kw)
-        
+
         if 'water' in osm_gdf.columns:
             mask |= osm_gdf['water'].notna()
-            
+
+        if 'waterway' in osm_gdf.columns:
+            mask |= osm_gdf['waterway'].notna()       
+
         water_gdf = osm_gdf[mask]
 
         if not water_gdf.empty:
