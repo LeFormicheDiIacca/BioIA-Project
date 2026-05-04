@@ -15,7 +15,7 @@ This work introduces an evolutionary framework that utilizes **Genetic Programmi
 Key Contributions:
 * **Hybrid Evolutionary Approach**: Combining GP for high-level function synthesis with ACO for low-level path optimization.
 * **Morphology-Aware Planning**: Integration of topographic data (slope, terrain type, obstacles) directly into the cost calculation.
-* **Performance Optimization**: Automatic discovery of fitness functions that outperform standard heuristics in rugged or constrained environments.
+* **Performance Optimization**: Automatic discovery of cost functions that outperform standard heuristics in rugged or constrained environments.
 
 <table style="border: none; border-collapse: collapse; width: 100%;">
   <tr style="border: none;">
