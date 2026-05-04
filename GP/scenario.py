@@ -13,7 +13,7 @@ def generate_scenarios_from_npz(runs, npz_path, output_json=None, seed=None):
     np.random.seed(seed)
 
     if not os.path.exists(npz_path):
-        print(f"Errore: File {npz_path} non trovato!")
+        print(f"Error: File {npz_path} not found!")
         return []
 
     data = np.load(npz_path)
@@ -106,7 +106,7 @@ def generate_scenarios_from_npz(runs, npz_path, output_json=None, seed=None):
     if output_json:
         with open(output_json, 'w') as f:
             json.dump(output_data, f, indent=4)
-        print(f"Scenari salvati in {output_json} (Seed: {seed})")
+        print(f"Scenarios saved in {output_json} (Seed: {seed})")
 
     return final_scenarios
 
