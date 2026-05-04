@@ -8,12 +8,12 @@
         "HOF_SIZE": 5,
         "TOURNAMENT_SIZE": 3,
         "PARSIMONY_VALUE": 1.3,
-        "MAX_HEIGHT": 7,
-        "MAX_NODES": 10,
-        "MAX_CORE_VALUE": 11,
+        "MAX_HEIGHT": 5,
+        "MAX_NODES": 20,
+        "MAX_CORE_VALUE": 50,
         "PENALTY_MISSING_VALUES": 1000.0,
         "PENALTY_ERROR_IN_CALCULATIONS": 1000000000.0,
-        "seed": 2365402638
+        "seed": 3761588603
     },
     "scenarios_info": {
         "num_scenarios": 60,

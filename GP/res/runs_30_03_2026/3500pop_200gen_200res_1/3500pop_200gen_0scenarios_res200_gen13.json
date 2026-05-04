@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 13,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "sub(protected_div(protected_div(distance, steepness), mul(0.745, 0.145)), step_penalty_multiplier(distance, if_then_else(is_water, add(steepness, steepness), 0.971), steepness))",
+        "best_individual_fitness": [
+            87.64479143420856
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "sub(protected_div(protected_div(distance, steepness), mul(0.745, 0.145)), step_penalty_multiplier(distance, if_then_else(is_water, add(steepness, steepness), 0.971), steepness))",
+                "fitness": 87.64479143420856
+            },
+            {
+                "individual": "sub(protected_div(protected_div(0.309, steepness), mul(0.745, 0.145)), step_penalty_multiplier(distance, if_then_else(is_water, add(steepness, steepness), 0.971), steepness))",
+                "fitness": 87.64479143420856
+            },
+            {
+                "individual": "sub(protected_div(protected_div(0.029, steepness), mul(0.488, 0.381)), step_penalty_multiplier(distance, if_then_else(is_water, add(steepness, steepness), 0.952), mul(steepness, distance)))",
+                "fitness": 87.70733417918285
+            },
+            {
+                "individual": "sub(protected_div(protected_div(0.202, steepness), mul(0.944, 0.75)), step_penalty_multiplier(if_then_else(is_water, steepness, distance), if_then_else(is_water, 0.131, 0.918), mul(steepness, distance)))",
+                "fitness": 87.71431500415007
+            },
+            {
+                "individual": "sub(protected_div(protected_div(0.202, if_then_else(is_water, steepness, 0.918)), mul(0.944, 0.443)), step_penalty_multiplier(distance, if_then_else(is_water, steepness, 0.918), 0.202))",
+                "fitness": 87.73173632969458
+            }
+        ],
+        "runtime_in_seconds": 17.942641973495483
+    }
+]

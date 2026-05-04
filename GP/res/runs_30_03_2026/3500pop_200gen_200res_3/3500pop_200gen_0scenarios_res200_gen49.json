@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 49,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "protected_pow(if_then_else(or_(is_water, le(distance, add(steepness, 0.877))), 0.117, step_penalty_multiplier(0.995, distance, step_penalty_multiplier(0.995, distance, distance))), protected_div(0.995, steepness))",
+        "best_individual_fitness": [
+            87.76564079125723
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, le(distance, add(steepness, 0.877))), 0.117, step_penalty_multiplier(0.995, distance, step_penalty_multiplier(0.995, distance, distance))), protected_div(0.995, steepness))",
+                "fitness": 87.76564079125723
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, le(step_penalty_multiplier(0.995, distance, distance), add(steepness, 0.877))), 0.117, step_penalty_multiplier(0.995, distance, distance)), protected_div(steepness, steepness))",
+                "fitness": 87.76564079125723
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, le(distance, 0.877)), 0.117, step_penalty_multiplier(0.995, distance, distance)), protected_div(steepness, steepness))",
+                "fitness": 87.76564079125723
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, le(distance, add(steepness, 0.877))), 0.117, step_penalty_multiplier(0.995, distance, distance)), protected_div(0.995, steepness))",
+                "fitness": 87.76564079125723
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, le(distance, add(steepness, 0.877))), 0.117, step_penalty_multiplier(0.995, distance, distance)), protected_div(steepness, steepness))",
+                "fitness": 87.76564079125723
+            }
+        ],
+        "runtime_in_seconds": 17.531079053878784
+    }
+]

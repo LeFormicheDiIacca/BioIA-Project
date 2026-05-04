@@ -12,7 +12,7 @@ def trentino_first_cost_function(distance, steepness, is_water):
     return term1 + term_2
 
 def trentino_second_cost_function(distance, steepness, is_water):
-    #Run on Trento-Laives of 30/03/2026 3500pop_50gen_200res_"
+    #Run on Trento-Laives of 30/03/2026 3500pop_50gen_200res_2
     #Final HoF, fourth individual. Fitness:86.9742280926197
     tmp_1= np.where(is_water, protected_log(distance, 0.628), steepness)
     temp2 = 1.837 + distance + protected_pow(distance,0.628)

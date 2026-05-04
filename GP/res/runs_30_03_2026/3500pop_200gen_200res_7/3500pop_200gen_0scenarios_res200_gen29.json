@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 29,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "if_then_else(ge(distance, 0.973), if_then_else(is_water, distance, if_then_else(is_water, 0.087, if_then_else(is_water, if_then_else(is_water, 0.94, 0.818), 0.802))), steepness)",
+        "best_individual_fitness": [
+            87.63307891339063
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "if_then_else(ge(distance, 0.973), if_then_else(is_water, distance, if_then_else(is_water, 0.087, if_then_else(is_water, if_then_else(is_water, 0.94, 0.818), 0.802))), steepness)",
+                "fitness": 87.63307891339063
+            },
+            {
+                "individual": "if_then_else(ge(distance, 0.973), if_then_else(is_water, 0.087, if_then_else(is_water, if_then_else(is_water, 0.94, 0.818), 0.802)), steepness)",
+                "fitness": 87.63307891339063
+            },
+            {
+                "individual": "if_then_else(ge(distance, 0.973), if_then_else(is_water, 0.087, if_then_else(is_water, if_then_else(is_water, protected_pow(0.124, 0.698), protected_pow(distance, 0.341)), 0.802)), steepness)",
+                "fitness": 87.63307891339063
+            },
+            {
+                "individual": "if_then_else(ge(if_then_else(is_water, 0.94, if_then_else(is_water, distance, protected_pow(distance, 0.818))), 0.973), if_then_else(is_water, 0.087, if_then_else(is_water, 0.553, 0.802)), steepness)",
+                "fitness": 87.63307891339063
+            },
+            {
+                "individual": "if_then_else(ge(distance, 0.973), if_then_else(is_water, 0.087, if_then_else(is_water, 0.553, 0.802)), steepness)",
+                "fitness": 87.63307891339063
+            }
+        ],
+        "runtime_in_seconds": 16.2805278301239
+    }
+]

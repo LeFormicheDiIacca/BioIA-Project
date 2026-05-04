@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 8,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "protected_log(protected_div(step_penalty_multiplier(distance, if_then_else(is_water, steepness, 0.327), distance), sub(0.473, distance)), neg(if_then_else(is_water, 0.642, steepness)))",
+        "best_individual_fitness": [
+            87.77013387481371
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "protected_log(protected_div(step_penalty_multiplier(distance, if_then_else(is_water, steepness, 0.327), distance), sub(0.473, distance)), neg(if_then_else(is_water, 0.642, steepness)))",
+                "fitness": 87.77013387481371
+            },
+            {
+                "individual": "protected_log(protected_div(step_penalty_multiplier(distance, if_then_else(is_water, add(steepness, distance), 0.327), distance), sub(0.473, distance)), neg(if_then_else(is_water, steepness, steepness)))",
+                "fitness": 87.77013387481371
+            },
+            {
+                "individual": "protected_log(protected_div(step_penalty_multiplier(distance, distance, distance), sub(0.473, distance)), neg(if_then_else(is_water, add(neg(distance), protected_log(distance, 0.628)), steepness)))",
+                "fitness": 87.77013387481371
+            },
+            {
+                "individual": "protected_log(protected_div(step_penalty_multiplier(distance, distance, distance), sub(0.473, distance)), neg(if_then_else(is_water, steepness, steepness)))",
+                "fitness": 87.77013387481371
+            },
+            {
+                "individual": "protected_log(protected_div(step_penalty_multiplier(distance, if_then_else(is_water, steepness, 0.327), distance), sub(0.473, distance)), neg(if_then_else(is_water, steepness, steepness)))",
+                "fitness": 87.77013387481371
+            }
+        ],
+        "runtime_in_seconds": 17.643333911895752
+    }
+]

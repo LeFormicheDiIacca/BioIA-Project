@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 186,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, step_penalty_multiplier(distance, 0.906, steepness))), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, 0.871)))",
+        "best_individual_fitness": [
+            87.63798219611247
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, step_penalty_multiplier(distance, 0.906, steepness))), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, 0.871)))",
+                "fitness": 87.63798219611247
+            },
+            {
+                "individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, steepness)), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, if_then_else(is_water, distance, 0.871))))",
+                "fitness": 87.63798219611247
+            },
+            {
+                "individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, if_then_else(is_water, 0.88, steepness))), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, 0.871)))",
+                "fitness": 87.63798219611247
+            },
+            {
+                "individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, steepness)), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, 0.871)))",
+                "fitness": 87.63798219611247
+            },
+            {
+                "individual": "add(step_penalty_adder(distance, 0.88, step_penalty_multiplier(distance, 0.906, if_then_else(is_water, distance, steepness))), step_penalty_adder(distance, 0.88, if_then_else(is_water, distance, 0.871)))",
+                "fitness": 87.63798219611247
+            }
+        ],
+        "runtime_in_seconds": 17.29555892944336
+    }
+]

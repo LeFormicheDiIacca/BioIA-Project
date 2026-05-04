@@ -1,0 +1,36 @@
+[
+    {
+        "current_generation": 6,
+        "total_generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "protected_pow(if_then_else(or_(is_water, is_water), mul(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(sub(distance, distance), mul(steepness, 0.519)))",
+        "best_individual_fitness": [
+            87.84124407966932
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, is_water), mul(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(sub(distance, distance), mul(steepness, 0.519)))",
+                "fitness": 87.84124407966932
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, is_water), sub(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(mul(distance, 0.987), mul(steepness, 0.519)))",
+                "fitness": 87.84124407966932
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, is_water), mul(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(mul(0.638, distance), mul(steepness, 0.519)))",
+                "fitness": 87.84124407966932
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, is_water), mul(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(mul(distance, distance), mul(steepness, 0.519)))",
+                "fitness": 87.84124407966932
+            },
+            {
+                "individual": "protected_pow(if_then_else(or_(is_water, is_water), mul(0.394, distance), step_penalty_multiplier(0.994, distance, distance)), protected_div(mul(distance, 0.987), mul(steepness, 0.519)))",
+                "fitness": 87.84124407966932
+            }
+        ],
+        "runtime_in_seconds": 17.442552089691162
+    }
+]
