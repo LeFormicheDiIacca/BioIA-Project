@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Trentino",
+        "current_generation": 2,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "add(protected_div(protected_log(distance, steepness), step_penalty_adder(steepness, steepness, 0.221)), mul(if_then_else(is_water, 0.946, 0.626), add(steepness, distance)))",
+        "best_individual_fitness": [
+            97.75091054352514
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "add(protected_div(protected_log(distance, steepness), step_penalty_adder(steepness, steepness, 0.221)), mul(if_then_else(is_water, 0.946, 0.626), add(steepness, distance)))",
+                "fitness": 97.75091054352514
+            },
+            {
+                "individual": "mul(add(add(distance, steepness), mul(0.99, 0.945)), protected_div(if_then_else(gt(distance, distance), distance, distance), if_then_else(is_water, steepness, distance)))",
+                "fitness": 97.75162497029669
+            },
+            {
+                "individual": "mul(add(add(distance, steepness), mul(0.99, 0.945)), protected_div(if_then_else(is_water, distance, distance), if_then_else(is_water, steepness, distance)))",
+                "fitness": 97.75162497029669
+            },
+            {
+                "individual": "add(step_penalty_multiplier(distance, protected_pow(0.251, 0.453), add(distance, steepness)), sub(if_then_else(is_water, 0.629, 0.343), step_penalty_adder(steepness, 0.635, steepness)))",
+                "fitness": 97.75493231773021
+            },
+            {
+                "individual": "add(step_penalty_adder(step_penalty_multiplier(steepness, 0.974, 0.453), mul(distance, steepness), if_then_else(is_water, 0.564, steepness)), step_penalty_multiplier(protected_pow(distance, steepness), steepness, distance))",
+                "fitness": 97.7561539077123
+            }
+        ],
+        "runtime_in_seconds": 19.252744913101196
+    }
+]

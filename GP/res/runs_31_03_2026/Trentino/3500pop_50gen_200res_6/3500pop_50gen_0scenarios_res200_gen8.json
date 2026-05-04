@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Trentino",
+        "current_generation": 8,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "mul(if_then_else(is_water, add(distance, steepness), 0.009), add(distance, steepness))",
+        "best_individual_fitness": [
+            97.73946588269173
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "mul(if_then_else(is_water, add(distance, steepness), 0.009), add(distance, steepness))",
+                "fitness": 97.73946588269173
+            },
+            {
+                "individual": "mul(if_then_else(is_water, distance, 0.014), add(distance, steepness))",
+                "fitness": 97.73947430215664
+            },
+            {
+                "individual": "protected_pow(add(distance, if_then_else(is_water, distance, steepness)), protected_pow(if_then_else(is_water, distance, 0.884), add(distance, steepness)))",
+                "fitness": 97.73971183207662
+            },
+            {
+                "individual": "mul(0.144, add(distance, if_then_else(is_water, 0.072, steepness)))",
+                "fitness": 97.74397569095117
+            },
+            {
+                "individual": "mul(if_then_else(is_water, 0.147, 0.103), add(distance, steepness))",
+                "fitness": 97.74501923070751
+            }
+        ],
+        "runtime_in_seconds": 21.372653245925903
+    }
+]

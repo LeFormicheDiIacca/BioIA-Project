@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Trentino",
+        "current_generation": 13,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "sub(protected_div(protected_div(distance, 0.629), 0.173), sub(neg(distance), if_then_else(is_water, 0.075, steepness)))",
+        "best_individual_fitness": [
+            96.93463644339333
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "sub(protected_div(protected_div(distance, 0.629), 0.173), sub(neg(distance), if_then_else(is_water, 0.075, steepness)))",
+                "fitness": 96.93463644339333
+            },
+            {
+                "individual": "sub(protected_div(distance, 0.062), sub(neg(distance), if_then_else(is_water, 0.68, steepness)))",
+                "fitness": 96.93767080208893
+            },
+            {
+                "individual": "add(mul(add(steepness, distance), if_then_else(is_water, distance, 0.377)), step_penalty_adder(protected_div(distance, 0.629), distance, protected_div(distance, 0.151)))",
+                "fitness": 96.93802074873389
+            },
+            {
+                "individual": "add(mul(add(steepness, distance), if_then_else(is_water, 0.85, 0.377)), step_penalty_adder(protected_div(distance, distance), distance, protected_div(distance, 0.151)))",
+                "fitness": 96.93802074873389
+            },
+            {
+                "individual": "add(mul(add(steepness, distance), if_then_else(is_water, 0.85, 0.377)), step_penalty_adder(protected_div(distance, 0.629), distance, protected_div(distance, 0.151)))",
+                "fitness": 96.93802074873389
+            }
+        ],
+        "runtime_in_seconds": 22.24363374710083
+    }
+]
