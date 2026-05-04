@@ -7,20 +7,22 @@ import numpy as np
 from pathlib import Path
 from rasterio.coords import BoundingBox
 from ACO.ACO_simulator import ACO_simulator
-from GP.evolved_cost_functions import first_cost_function
 from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from TerrainGraph.path_render import visualize_paths
-from cost_functions import trentino_first_cost_function,trentino_second_cost_function,trentino_third_cost_function,trentino_fourth_cost_function,naples_first_cost_function,naples_second_cost_function,naples_third_cost_function,naples_fourth_cost_function
+from cost_functions import trentino_first_cost_function,trentino_second_cost_function,naples_first_cost_function,naples_second_cost_function
 
 REGION = "trentino"
-# REGION = "napoli"  
+TIF_PATH = f"Dataset/Trentino/{REGION}.tif"
+PBS_PATH = f"Dataset/Trentino/{REGION}.pbf"
 
-FILENAME = f"PathOutputs_{REGION}"
-TIF_PATH = f"TerrainGraph/{REGION}.tif"
-PBS_PATH = f"TerrainGraph/{REGION}.pbf"
+# REGION = "napoli"  
+#TIF_PATH = f"Dataset/Naples/{REGION}.tif"
+#PBS_PATH = f"Dataset/Naples/{REGION}.pbf"
+
 today = datetime.now().strftime("%d_%m_%Y")
 OUTPUT_FOLDER = f"Results/{today}_{REGION}"
+FILENAME = f"PathOutputs_{REGION}"
 
 def get_closest_indices(key_coords, bounds, resolution):
     pts = np.array(key_coords)

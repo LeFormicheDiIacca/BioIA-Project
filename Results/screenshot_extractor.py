@@ -5,7 +5,7 @@ import contextily as cx
 
 #AI Generated Function for fast relative high screenshots of the paths
 
-with open('day_17_01_2026/3/PathOutputs_9.html', 'r', encoding='utf-8') as f:
+with open('31_03_2026_trentino/3/PathOutputs_trentino_10.html', 'r', encoding='utf-8') as f:
     html_content = f.read()
 
 # Extract Polyline
@@ -31,4 +31,4 @@ ax.set_ylim(min(lats) - 0.01, max(lats) + 0.01)
 
 ax.set_axis_off()
 
-plt.savefig('road_output.png', bbox_inches='tight', dpi=600)
+plt.savefig('road_output_trentino_1.png', bbox_inches='tight', dpi=100)

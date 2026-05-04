@@ -1,10 +1,23 @@
 import numpy as np
+from rasterio.coords import BoundingBox
 
 from TerrainGraph.edge_info import create_edge_dict
 from TerrainGraph.terraingraph import create_graph
 from scipy.sparse import csr_matrix
 
-REGION = "trentino"
+#Naples
+#REGION = "Naples"
+#area = BoundingBox(left=13.83059, bottom=41.03715, right=14.32309, top=41.40308)
+#tif_path = "../Dataset/Naples/napoli.tif"
+#pbf_path = "../Dataset/Naples/napoli.pbf"
+#Trentino
+REGION = "Trentino"
+area = BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)
+tif_path = "../Dataset/Trentino/trentino.tif"
+pbf_path = "../Dataset/Trentino/trentino.pbf"
+area = BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939)
+
+res = 200
 
 def create_edge_index_matrix(graph, node_to_idx):
     rows = []
@@ -24,9 +37,8 @@ def create_edge_index_matrix(graph, node_to_idx):
 
 
 def main():
-    res = 200
     print("-Creating graph from TIF and PBF...")
-    graph = create_graph(f"{REGION}.tif", f"{REGION}.pbf", resolution=res)
+    graph = create_graph(tif_path, pbf_path, resolution=res, area=area )
 
     print("-Creating edge dictionary")
     edge_dict = create_edge_dict(graph)
@@ -54,9 +66,8 @@ def main():
 
     #Turnign graph into Matrix CSR
     edge_index_matrix = create_edge_index_matrix(graph, node_to_idx)
-
     #Saving on disk
-    save_path = f"precomputed_map_{REGION}_{res}.npz"
+    save_path = f"../Dataset/{REGION}/precomputed_map_{REGION}_{res}.npz"
     np.savez_compressed(
         save_path,
         dist=dist_array,
@@ -67,7 +78,7 @@ def main():
         csr_data=edge_index_matrix.data,
         num_nodes=len(node_list)
     )
-    print(f"-Finished. Operation saved in {save_path}")
+
 
 if __name__ == "__main__":
     main()

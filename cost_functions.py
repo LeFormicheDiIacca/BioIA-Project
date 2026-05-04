@@ -1,17 +1,5 @@
-import math
-
 import numpy as np
-
 from GP.gp_logistics import protected_pow, protected_log, protected_div
-
-
-# NB. all the parameters I used to evaluate the function can be found in the edge_info.py file,
-# please choose whether YOU 
-
-#   prefer to pass the entire edge_dict at the beginning of the run (to get immediately information 
-#   about all the edges in the graph
-
-#   OR if you want to implement get_edge_metadata edge by edge
 
 #Trentino
 def trentino_first_cost_function(distance, steepness, is_water):

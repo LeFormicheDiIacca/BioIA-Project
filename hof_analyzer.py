@@ -1,102 +1,72 @@
-import os
 import json
 import re
 from pathlib import Path
 
 
-def analizza_stagnazione_hof(cartella_input, soglia_stagnazione=3):
+def analyze_hof_stagnation(input_folder, stagnation_threshold=3):
     """
-    Analizza i file JSON per rilevare quando la Hall of Fame ristagna.
-
-    :param cartella_input: Percorso della cartella contenente i file JSON.
-    :param soglia_stagnazione: Numero minimo di generazioni consecutive con la stessa HoF
-                               per considerare la situazione un "ristagno".
+    Analyzes JSON files to detect when the Hall of Fame stops evolving.
     """
-    percorso_cartella = Path(cartella_input)
+    folder_path = Path(input_folder)
+    json_files = list(folder_path.glob("*.json"))
 
-    # 1. Trova tutti i file JSON
-    file_json = list(percorso_cartella.glob("*.json"))
-
-    if not file_json:
-        print(f"Nessun file JSON trovato nella cartella: {cartella_input}")
+    if not json_files:
+        print(f"No JSON files found in: {input_folder}")
         return
 
-    # 2. Funzione per estrarre la generazione dal nome del file (es: ..._gen191.json -> 191)
-    def estrai_generazione(filepath):
+    def extract_generation(filepath):
         match = re.search(r"_gen(\d+)\.json$", filepath.name)
-        if match:
-            return int(match.group(1))
-        return -1  # Se non trova il pattern, lo mette all'inizio
+        return int(match.group(1)) if match else -1
 
-    # Ordina i file per generazione
-    file_json.sort(key=estrai_generazione)
+    # Sort files chronologically by generation
+    json_files.sort(key=extract_generation)
 
-    hof_precedente = set()
-    contatore_stagnazione = 0
-    inizio_stagnazione = None
+    prev_hof = set()
+    stag_counter = 0
+    stagnation_start = None
+    prev_gen = None
 
-    print(f"Inizio analisi su {len(file_json)} file...\n")
+    print(f"Analyzing {len(json_files)} files...\n")
 
-    # 3. Itera sui file ordinati
-    for percorso_file in file_json:
-        gen_corrente = estrai_generazione(percorso_file)
-
-        # Ignora i file di cui non capiamo la generazione
-        if gen_corrente == -1:
+    for file_path in json_files:
+        current_gen = extract_generation(file_path)
+        if current_gen == -1:
             continue
 
-        # Leggi il JSON
         try:
-            with open(percorso_file, 'r', encoding='utf-8') as f:
-                dati = json.load(f)
-                # Gestisce sia il caso in cui il JSON sia una lista [ {..} ] che un dict {..}
-                sezione_dati = dati[0] if isinstance(dati, list) else dati
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                content = data[0] if isinstance(data, list) else data
 
-                # Estrai la Hall of Fame (creiamo un SET con le stringhe degli individui)
-                hof_lista = sezione_dati.get("hall_of_fame", [])
-                hof_corrente = frozenset([individuo["individual"] for individuo in hof_lista])
-
+                hof_list = content.get("hall_of_fame", [])
+                current_hof = frozenset([ind["individual"] for ind in hof_list])
         except Exception as e:
-            print(f"Errore nella lettura del file {percorso_file.name}: {e}")
+            print(f"Error reading {file_path.name}: {e}")
             continue
 
-        # 4. Controllo Stagnazione
-        if hof_corrente == hof_precedente and len(hof_corrente) > 0:
-            contatore_stagnazione += 1
+        if current_hof == prev_hof and len(current_hof) > 0:
+            stag_counter += 1
         else:
-            # Se la HoF è cambiata, controlliamo se eravamo in una fase di stagnazione lunga
-            if contatore_stagnazione >= soglia_stagnazione:
-                print(f"⚠️ RISTAGNO RILEVATO!")
-                print(f"   Dalla generazione: {inizio_stagnazione}")
-                print(f"   Alla generazione:  {gen_precedente}")
-                print(f"   Durata: {contatore_stagnazione} generazioni consecutive con gli stessi individui.")
+            if stag_counter >= stagnation_threshold:
+                print(f"Stagnation detected:")
+                print(f"   From gen {stagnation_start} to gen {prev_gen} ({stag_counter} generations)")
                 print("-" * 50)
 
-            # Resetta il contatore per la nuova HoF
-            contatore_stagnazione = 1
-            inizio_stagnazione = gen_corrente
-            hof_precedente = hof_corrente
+            stag_counter = 1
+            stagnation_start = current_gen
+            prev_hof = current_hof
 
-        gen_precedente = gen_corrente
+        prev_gen = current_gen
 
-    # Controllo finale (se l'esecuzione finisce mentre c'è un ristagno in corso)
-    if contatore_stagnazione >= soglia_stagnazione:
-        print(f"⚠️ RISTAGNO FINALE IN CORSO!")
-        print(f"   Dalla generazione {inizio_stagnazione} fino alla fine (gen {gen_precedente}).")
-        print(f"   Durata: {contatore_stagnazione} generazioni.")
+    if stag_counter >= stagnation_threshold:
+        print(f"Final stagnation detected:")
+        print(f"   From gen {stagnation_start} to gen {prev_gen} ({stag_counter} generations)")
         print("-" * 50)
 
-    print("\nAnalisi completata.")
+    print("\nAnalysis complete.")
 
 
-# ==========================================
-# ESECUZIONE DELLO SCRIPT
-# ==========================================
 if __name__ == "__main__":
-    # Inserisci qui il percorso della cartella dove tieni i JSON
-    CARTELLA = "Downloads/Downloads/3500pop_200gen_200res"  # Usa "./" se lo script è nella stessa cartella dei json
-
-    # Quante generazioni consecutive identiche servono per far scattare l'allarme?
-    SOGLIA = 5
-
-    analizza_stagnazione_hof(CARTELLA, SOGLIA)
+    PATH = "/home/davide/Downloads/Napoli/Downloads/runs_31_03_2026/3500pop_50gen_200res/"
+    THRESHOLD = 5
+    analyze_hof_stagnation(PATH, THRESHOLD)

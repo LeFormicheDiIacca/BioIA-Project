@@ -97,8 +97,8 @@ if __name__ == '__main__':
     res = 100
 
     print("Generating Graph...")
-    # G = create_graph("TerrainGraph/trentino.tif", "TerrainGraph/trentino.pbf", resolution=res, area=BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939))
-    G = create_graph("TerrainGraph/napoli.tif", "TerrainGraph/napoli.pbf", resolution=res, area=BoundingBox( left=13.83059, bottom=41.03715, right=14.32309, top=41.40308))
+    # G = create_graph("Dataset/Trentino/trentino.tif", "Dataset/Trentino/trentino.pbf", resolution=res, area=BoundingBox( left=11.014309, bottom=45.990134, right=11.348362, top=46.118939))
+    G = create_graph("Dataset/Naples/napoli.tif", "Dataset/Naples/napoli.pbf", resolution=res, area=BoundingBox(left=13.83059, bottom=41.03715, right=14.32309, top=41.40308))
  
 
 

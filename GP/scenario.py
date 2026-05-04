@@ -110,15 +110,15 @@ def generate_scenarios_from_npz(runs, npz_path, output_json=None, seed=None):
 
     return final_scenarios
 
-
 if __name__ == "__main__":
     res = 200
-    npz_path = f"../TerrainGraph/precomputed_map_trentino_{res}.npz"
+    npz_path = f"../Dataset/Naples/precomputed_map_napoli_{res}.npz"
+    #npz_path = f"../Dataset/Trentino/precomputed_map_trentino_{res}.npz"
 
     scenarios = generate_scenarios_from_npz(
         runs=20,
         npz_path=npz_path,
-        output_json=f"scenarios_trentino{res}.json",
+        output_json=f"../Dataset/Naples/scenarios_napoli_{res}.json",
         seed=None
     )
 

@@ -474,9 +474,12 @@ if __name__ == "__main__":
         [3500, 50]
     ]
     res = 200
-    scenario_path = "GP/scenarios_napoli_200.json"
-    #npz_path = f"TerrainGraph/precomputed_map_trentino_{res}.npz"
-    npz_path = f"TerrainGraph/precomputed_map_napoli_{res}.npz"
+    #Trentino
+    #npz_path = f"Dataset/Trentino/precomputed_map_trentino_{res}.npz"
+    #scenario_path = f"Dataset/Trentino/scenarios_trentino_{res}.json"
+    #Naples
+    npz_path = f"Dataset/Naples/precomputed_map_napoli_{res}.npz"
+    scenario_path = f"Dataset/Naples/scenarios_napoli_{res}.json"
 
     if not os.path.exists(npz_path):
         print(f"Error: File {npz_path} not found!")

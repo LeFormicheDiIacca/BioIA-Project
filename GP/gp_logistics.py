@@ -1,3 +1,4 @@
+import operator
 import random
 import math
 from deap import gp
@@ -246,4 +247,4 @@ if __name__ == "__main__":
 
 
 
-        
+

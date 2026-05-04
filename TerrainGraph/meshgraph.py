@@ -1,5 +1,5 @@
 import math
-from scipy.spatial.distance import pdist, squareform, cdist
+from scipy.spatial.distance import cdist
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,20 +49,6 @@ class MeshGraph(nx.Graph):
         key_nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in key_nodes_list])
         self.dist_matrix = cdist(all_nodes_pos, key_nodes_pos, metric='euclidean')
         self.key_node_to_idx = {node: idx for idx, node in enumerate(sorted(self.key_nodes))}
-
-    def add_temporary_target_to_dist_matrix(self, target_node: int):
-
-        target_pos = np.array([[self.node_to_pos[target_node][0], self.node_to_pos[target_node][1]]])
-
-        all_nodes = list(self.nodes())
-        all_nodes_pos = np.array([[self.node_to_pos[node][0], self.node_to_pos[node][1]] for node in all_nodes])
-
-        new_column = cdist(all_nodes_pos, target_pos, metric='euclidean')
-        self.dist_matrix = np.hstack([self.dist_matrix, new_column])
-
-        new_idx = len(self.key_nodes)
-        self.key_nodes.add(target_node)
-        self.key_node_to_idx[target_node] = new_idx
 
 
     def _construct_graph(self, resolution, n_neighbours):
@@ -181,67 +167,6 @@ class MeshGraph(nx.Graph):
         plt.axis('off')
         plt.show()
 
-    def cost_assignment(
-            self,
-            edges_metadata,
-            assignment_function,
-            default_cost: int = 100,
-            print_assignment=False
-    ):
-        """
-        Used to assign a weight/cost to each edge
-        :param edges_metadata: edges informations such as elevation difference, terrain type and so on
-        :param assignment_function: Evolved combinatorial function
-        :param default_cost: default cost for edges. Should be bigger than the biggest cost in the edges
-        :param print_assignment: Debug value used to show the assigned value
-        """
-        for edge in self.edges():
-            # If no metadata is available, a big value is assigned as cost
-            try:
-                metadata = edges_metadata[edge]
-                cost = assignment_function(metadata)
-            except KeyError:
-                cost = default_cost
-                metadata = None
-                if print_assignment:
-                    print(f"Error: edge {edge} has no metadata. Cost set to {cost}.")
-            self[edge[0]][edge[1]]['cost'] = cost
-            if print_assignment:
-                print(f"Assignment for edge {edge[0]}->{edge[1]} cost: {cost}")
-                print(f"Metadata of edge {edge[0]}->{edge[1]}:\n{metadata}")
-
-    def calc_path_cost(
-            self,
-            path,
-            degree_45_penalty_factor = 100
-    ):
-        """
-        Used to calculate path cost
-        :param path: Path to evaluate
-        :param degree_45_penalty_factor: Tmp factor that will be removed when the evolved GP function will take care of costs
-        :return:
-        """
-        path_cost = 0
-        for i in range(len(path)-1):
-            source, destination = path[i], path[i+1]
-            try:
-                path_cost += self[source][destination]["cost"]
-            except KeyError:
-                path_cost = math.inf
-
-        return path_cost
-
-    def is_valid_path(self, path):
-        """
-        Verify if the path is a valid TSP circuit
-        :param path: path to evaluate
-        """
-        if not self.key_nodes.issubset(set(path)):
-            return False
-        if path[0] != path[-1]:
-            return False
-        return True
-
     def cost_normalization(self):
         all_costs = np.array([data["cost"] for u, v, data in self.edges(data=True)])
 
@@ -255,10 +180,11 @@ class MeshGraph(nx.Graph):
 
     def plot_edge_heatmap(
             self,
-            figsize=(12, 10),
-            dpi=100,
+            figsize=(7, 7),
+            dpi=50,
             cmap_name='viridis',
-            edge_width=2
+            edge_width=2,
+            output_name: str = "output.pdf"
     ):
         """
         """
@@ -268,10 +194,10 @@ class MeshGraph(nx.Graph):
         try:
             edge_costs = [self[u][v].get('cost', 1.0) for u, v in self.edges()]
         except KeyError:
-            print("Attenzione: Alcuni archi non hanno l'attributo 'cost'.")
+            print(f"Error: There are edges with no cost! Edge: {u}-{v}")
             return
 
-        nx.draw_networkx_nodes(self, pos, node_size=5, node_color='black', alpha=0.3)
+        nx.draw_networkx_nodes(self, pos, node_size=1, node_color='black', alpha=0.0)
 
         edges = nx.draw_networkx_edges(
             self,
@@ -281,9 +207,7 @@ class MeshGraph(nx.Graph):
             edge_cmap=plt.get_cmap(cmap_name),
             arrows=False
         )
-
-        plt.colorbar(edges, label='Edge Cost')
-
-        plt.title("Heatmap dei costi degli archi")
+        edges.set_rasterized(True)
         plt.axis('off')
-        plt.savefig("output.svg")
+        plt.tight_layout()
+        plt.savefig(output_name,bbox_inches='tight', pad_inches=0)
