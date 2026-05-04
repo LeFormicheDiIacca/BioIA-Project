@@ -188,26 +188,6 @@ def save_run(population, hof, diff, scen_number, gens, res, pset, path: str = "G
     with open(path, 'w') as f:
         json.dump([tree_diz], f, indent=4)
 
-# computes average chebyshev distance for penalty normalization
-
-def compute_chebyshev(res):
-
-    total_sum = 0
-    total_nodes = res * res
-    totale_couples = total_nodes* total_nodes
-
-    counts = [0] * res
-    counts[0] = res  
-    for k in range(1, res):
-        counts[k] = 2 * (res - k)
-
-    for dx in range(res):
-        for dy in range(res):
-            weight = counts[dx] * counts[dy]
-            distance = max(dx, dy)
-            total_sum += weight * distance
-
-    return total_sum / totale_couples
 
 if __name__ == "__main__":
     
