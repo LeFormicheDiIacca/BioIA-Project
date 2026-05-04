@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Mondragone-Capua",
+        "current_generation": 40,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "add(protected_div(if_then_else(is_water, protected_div(0.222, 0.101), if_then_else(is_water, protected_div(0.999, 0.101), 0.169)), protected_div(distance, steepness)), protected_div(distance, 0.222))",
+        "best_individual_fitness": [
+            96.90845267841502
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "add(protected_div(if_then_else(is_water, protected_div(0.222, 0.101), if_then_else(is_water, protected_div(0.999, 0.101), 0.169)), protected_div(distance, steepness)), protected_div(distance, 0.222))",
+                "fitness": 96.90845267841502
+            },
+            {
+                "individual": "add(protected_div(if_then_else(is_water, if_then_else(is_water, protected_div(0.999, 0.101), 0.169), 0.169), protected_div(distance, steepness)), protected_div(distance, 0.222))",
+                "fitness": 96.90845267841502
+            },
+            {
+                "individual": "add(protected_div(if_then_else(is_water, protected_div(0.999, 0.101), 0.169), protected_div(distance, steepness)), protected_div(distance, 0.222))",
+                "fitness": 96.90845267841502
+            },
+            {
+                "individual": "add(protected_div(if_then_else(is_water, protected_div(0.999, 0.101), if_then_else(is_water, 0.096, 0.169)), protected_div(distance, steepness)), protected_div(distance, 0.222))",
+                "fitness": 96.90845267841502
+            },
+            {
+                "individual": "add(if_then_else(is_water, protected_log(sub(distance, steepness), protected_pow(0.153, 0.052)), protected_div(0.153, protected_div(distance, steepness))), protected_div(distance, 0.222))",
+                "fitness": 96.90898007534088
+            }
+        ],
+        "runtime_in_seconds": 22.9204421043396
+    }
+]

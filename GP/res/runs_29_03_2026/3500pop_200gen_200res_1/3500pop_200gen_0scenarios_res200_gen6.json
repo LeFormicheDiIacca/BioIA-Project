@@ -1,0 +1,35 @@
+[
+    {
+        "generations": 200,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "neg(sub(mul(0.543, 0.047), if_then_else(is_water, distance, steepness)))",
+        "best_individual_fitness": [
+            0.7821390624974579
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "neg(sub(mul(0.543, 0.047), if_then_else(is_water, distance, steepness)))",
+                "fitness": 0.7821390624974579
+            },
+            {
+                "individual": "protected_pow(step_penalty_adder(step_penalty_adder(sub(step_penalty_multiplier(steepness, 0.431, steepness), protected_pow(0.528, steepness)), protected_pow(protected_pow(steepness, steepness), step_penalty_multiplier(0.717, 0.95, 0.937)), sub(step_penalty_adder(steepness, 0.247, distance), if_then_else(is_water, 0.008, 0.6))), neg(step_penalty_adder(add(distance, 0.497), protected_div(steepness, steepness), if_then_else(is_water, steepness, steepness))), if_then_else(and_(ge(distance, distance), lt(steepness, distance)), neg(step_penalty_adder(0.114, steepness, steepness)), protected_log(protected_pow(distance, distance), sub(distance, distance)))), sub(mul(add(if_then_else(is_water, steepness, 0.356), mul(0.032, distance)), sub(step_penalty_multiplier(steepness, steepness, 0.292), protected_pow(distance, 0.59))), sub(if_then_else(or_(is_water, is_water), protected_log(0.677, 0.677), protected_div(steepness, 0.266)), protected_div(neg(steepness), protected_div(0.11, 0.028)))))",
+                "fitness": 1.4287813916894476
+            },
+            {
+                "individual": "step_penalty_multiplier(protected_div(step_penalty_adder(add(steepness, steepness), mul(steepness, 0.465), if_then_else(is_water, 0.567, 0.292)), protected_log(sub(steepness, distance), neg(0.372))), step_penalty_multiplier(neg(distance), 0.113, mul(neg(distance), step_penalty_adder(steepness, steepness, distance))), add(step_penalty_adder(protected_log(0.66, steepness), protected_div(0.147, steepness), 0.662), if_then_else(is_water, protected_div(steepness, 0.244), protected_pow(steepness, distance))))",
+                "fitness": 2.0863548351493235
+            },
+            {
+                "individual": "protected_pow(protected_pow(if_then_else(and_(is_water, is_water), protected_pow(steepness, distance), distance), mul(protected_pow(distance, steepness), neg(distance))), protected_log(protected_pow(if_then_else(is_water, distance, 0.043), distance), mul(step_penalty_multiplier(distance, distance, steepness), protected_pow(steepness, distance))))",
+                "fitness": 2.699002404381759
+            },
+            {
+                "individual": "if_then_else(and_(lt(protected_pow(step_penalty_adder(0.205, 0.011, distance), mul(0.474, 0.421)), protected_log(protected_log(steepness, 0.77), step_penalty_adder(distance, distance, distance))), and_(lt(sub(steepness, distance), neg(distance)), or_(ge(0.301, steepness), or_(is_water, is_water)))), protected_log(sub(protected_log(sub(distance, steepness), step_penalty_adder(0.178, steepness, steepness)), step_penalty_adder(step_penalty_adder(steepness, distance, steepness), protected_log(0.757, 0.715), if_then_else(is_water, distance, steepness))), step_penalty_adder(sub(step_penalty_multiplier(distance, steepness, 0.406), neg(0.568)), if_then_else(ge(steepness, 0.025), protected_log(distance, distance), sub(0.221, 0.24)), sub(protected_log(distance, distance), protected_pow(distance, steepness)))), if_then_else(lt(add(protected_div(distance, 0.941), mul(distance, 0.173)), protected_log(step_penalty_multiplier(0.291, steepness, distance), protected_div(distance, distance))), add(step_penalty_adder(sub(distance, steepness), protected_log(steepness, distance), protected_log(distance, distance)), add(mul(0.036, distance), protected_pow(0.813, distance))), add(protected_log(protected_pow(distance, distance), protected_log(distance, distance)), if_then_else(le(distance, 0.493), if_then_else(is_water, 0.755, 0.377), add(distance, steepness)))))",
+                "fitness": 3.55891191167323
+            }
+        ],
+        "runtime_in_seconds": 124.68771123886108
+    }
+]

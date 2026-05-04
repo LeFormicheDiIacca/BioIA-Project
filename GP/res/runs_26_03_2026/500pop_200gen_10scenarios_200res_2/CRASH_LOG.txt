@@ -1,0 +1,32 @@
+Failed at IL 2026-03-26 14:20:38.950771
+Paramters: Population Size=500, Generations Number=200, Scenarios=10
+--------------------------------------------------
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ~~~~^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 221, in evaluate_individual
+    nk_graph.addEdges((weights, (_STATIC_DATA['rows'], _STATIC_DATA['cols'])))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "networkit/graph.pyx", line 512, in networkit.graph.Graph.addEdges
+IndexError: Out of bounds on buffer access (axis 0)
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 439, in <module>
+    run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path, log= True)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 326, in run_EA
+    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 774, in get
+    raise self._value
+IndexError: Out of bounds on buffer access (axis 0)

@@ -1,0 +1,35 @@
+[
+    {
+        "generations": 200,
+        "resolution": 200,
+        "population": 500,
+        "scenarios": 10,
+        "best_individual": "add(protected_log(if_then_else(ge(add(0.587, 0.71), protected_log(0.791, steepness)), protected_pow(add(mul(distance, distance), mul(distance, distance)), add(distance, steepness)), add(mul(0.413, steepness), neg(steepness))), protected_div(protected_log(if_then_else(is_water, distance, distance), add(distance, steepness)), add(if_then_else(is_water, 0.856, 0.796), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.058, distance), sub(protected_div(if_then_else(le(0.208, distance), protected_log(distance, steepness), mul(0.959, 0.289)), 0.074), sub(steepness, protected_log(mul(distance, 0.827), add(steepness, distance))))), protected_div(if_then_else(is_water, 0.719, 0.157), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.043, distance), if_then_else(is_water, steepness, 0.948)), protected_log(protected_div(steepness, distance), mul(0.191, steepness)))))",
+        "best_individual_fitness": [
+            193.3275631166382
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "add(protected_log(if_then_else(ge(add(0.587, 0.71), protected_log(0.791, steepness)), protected_pow(add(mul(distance, distance), mul(distance, distance)), add(distance, steepness)), add(mul(0.413, steepness), neg(steepness))), protected_div(protected_log(if_then_else(is_water, distance, distance), add(distance, steepness)), add(if_then_else(is_water, 0.856, 0.796), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.058, distance), sub(protected_div(if_then_else(le(0.208, distance), protected_log(distance, steepness), mul(0.959, 0.289)), 0.074), sub(steepness, protected_log(mul(distance, 0.827), add(steepness, distance))))), protected_div(if_then_else(is_water, 0.719, 0.157), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.043, distance), if_then_else(is_water, steepness, 0.948)), protected_log(protected_div(steepness, distance), mul(0.191, steepness)))))",
+                "fitness": 193.3275631166382
+            },
+            {
+                "individual": "add(protected_log(if_then_else(ge(add(0.587, 0.71), protected_log(0.791, steepness)), protected_pow(add(mul(distance, distance), mul(distance, distance)), add(distance, steepness)), add(mul(protected_pow(add(sub(distance, distance), steepness), mul(protected_div(steepness, steepness), 0.29)), steepness), neg(steepness))), protected_div(protected_log(if_then_else(is_water, distance, distance), add(distance, steepness)), add(if_then_else(is_water, 0.856, 0.796), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.058, distance), add(steepness, 0.376)), protected_div(if_then_else(is_water, 0.719, 0.157), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.043, distance), if_then_else(is_water, steepness, 0.948)), protected_log(protected_div(steepness, distance), mul(0.191, steepness)))))",
+                "fitness": 195.4651265170998
+            },
+            {
+                "individual": "add(protected_log(if_then_else(ge(add(0.587, 0.71), protected_log(0.791, steepness)), protected_pow(add(mul(distance, distance), mul(distance, distance)), add(distance, steepness)), add(mul(0.413, steepness), neg(steepness))), protected_div(protected_log(if_then_else(is_water, distance, distance), add(distance, steepness)), add(if_then_else(is_water, 0.856, 0.796), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.058, distance), add(steepness, 0.376)), protected_div(if_then_else(is_water, 0.719, 0.157), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.043, distance), if_then_else(is_water, steepness, 0.948)), protected_log(protected_div(steepness, distance), mul(0.191, steepness)))))",
+                "fitness": 195.4651265170998
+            },
+            {
+                "individual": "add(protected_log(if_then_else(ge(add(0.587, 0.71), protected_log(0.791, steepness)), protected_pow(add(mul(distance, distance), mul(distance, distance)), add(distance, steepness)), add(mul(0.413, steepness), neg(steepness))), protected_div(protected_pow(add(sub(mul(mul(distance, distance), protected_log(distance, steepness)), neg(mul(0.722, 0.152))), add(steepness, protected_pow(protected_log(distance, distance), protected_div(0.022, steepness)))), protected_div(protected_log(if_then_else(ge(distance, distance), neg(0.139), distance), protected_div(mul(steepness, 0.031), protected_log(0.419, steepness))), mul(if_then_else(gt(distance, 0.264), neg(distance), mul(distance, steepness)), protected_log(protected_log(steepness, 0.288), 0.879)))), add(if_then_else(is_water, 0.856, 0.796), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.058, distance), add(steepness, 0.376)), protected_div(if_then_else(is_water, 0.719, 0.157), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.043, distance), if_then_else(is_water, steepness, 0.948)), protected_log(protected_div(steepness, distance), mul(0.191, steepness)))))",
+                "fitness": 195.53166233282857
+            },
+            {
+                "individual": "add(protected_log(if_then_else(ge(add(0.048, 0.211), protected_log(0.946, steepness)), protected_pow(add(mul(distance, distance), mul(add(neg(distance), mul(distance, distance)), distance)), add(distance, steepness)), add(mul(0.129, steepness), neg(steepness))), protected_div(protected_log(if_then_else(is_water, distance, distance), add(distance, steepness)), add(if_then_else(is_water, 0.154, 0.136), if_then_else(is_water, distance, distance)))), add(protected_log(mul(protected_pow(0.474, distance), add(steepness, 0.254)), protected_div(if_then_else(is_water, 0.824, 0.562), protected_pow(distance, steepness))), protected_pow(if_then_else(le(steepness, distance), mul(0.041, distance), if_then_else(is_water, steepness, 0.881)), protected_log(protected_div(steepness, distance), mul(0.561, steepness)))))",
+                "fitness": 196.69658182054044
+            }
+        ],
+        "runtime_in_seconds": 9.246439456939697
+    }
+]

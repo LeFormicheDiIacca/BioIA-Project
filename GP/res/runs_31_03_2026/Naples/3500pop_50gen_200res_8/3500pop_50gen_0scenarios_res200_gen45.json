@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Mondragone-Capua",
+        "current_generation": 45,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "mul(if_then_else(is_water, protected_div(0.191, protected_div(distance, 0.026)), 0.004), add(steepness, add(step_penalty_adder(0.644, 0.026, distance), step_penalty_adder(0.637, distance, distance))))",
+        "best_individual_fitness": [
+            97.73307713184074
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "mul(if_then_else(is_water, protected_div(0.191, protected_div(distance, 0.026)), 0.004), add(steepness, add(step_penalty_adder(0.644, 0.026, distance), step_penalty_adder(0.637, distance, distance))))",
+                "fitness": 97.73307713184074
+            },
+            {
+                "individual": "mul(if_then_else(is_water, protected_div(0.191, protected_div(distance, 0.026)), 0.004), add(steepness, add(step_penalty_adder(0.644, steepness, distance), step_penalty_adder(0.637, distance, 0.026))))",
+                "fitness": 97.73510769826963
+            },
+            {
+                "individual": "mul(if_then_else(is_water, protected_div(0.191, protected_div(1.0, 0.026)), 0.004), add(steepness, add(step_penalty_adder(0.644, steepness, distance), step_penalty_adder(0.637, distance, distance))))",
+                "fitness": 97.73674207314934
+            },
+            {
+                "individual": "mul(if_then_else(is_water, protected_div(0.191, protected_div(distance, 0.026)), 0.004), add(steepness, add(step_penalty_adder(0.644, steepness, distance), step_penalty_adder(0.637, distance, distance))))",
+                "fitness": 97.73674220569897
+            },
+            {
+                "individual": "mul(if_then_else(is_water, protected_div(0.191, distance), 0.004), add(steepness, add(step_penalty_adder(0.644, steepness, distance), step_penalty_adder(0.637, distance, 0.026))))",
+                "fitness": 97.73682204277947
+            }
+        ],
+        "runtime_in_seconds": 19.1086847782135
+    }
+]

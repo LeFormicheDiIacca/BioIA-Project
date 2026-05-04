@@ -1,0 +1,44 @@
+Failed at IL 2026-03-26 14:44:19.162609
+Parameters: Population Size=500, Generations Number=200, Scenarios=10
+--------------------------------------------------
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 173, in evaluate_individual
+    raw_costs = func(*_STATIC_DATA['edge_features'])
+  File "<string>", line 1, in <lambda>
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/gp_logistics.py", line 19, in protected_div
+    res = n1 / n2
+          ~~~^~~~
+ZeroDivisionError: float division by zero
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ~~~~^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 187, in evaluate_individual
+    print(e)
+          ^
+NameError: name 'e' is not defined
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 425, in <module>
+    run_EA(scenarios_number=scen_number, population=population, generations=gens, res=res, npz_path=npz_path,
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           log=True)
+           ^^^^^^^^^
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 306, in run_EA
+    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 774, in get
+    raise self._value
+NameError: name 'e' is not defined

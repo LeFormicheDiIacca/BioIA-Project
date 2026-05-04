@@ -1,0 +1,18 @@
+Failed at IL 2026-03-27 20:35:34.927848
+Parameters: Population Size=100, Generations Number=200
+--------------------------------------------------
+Traceback (most recent call last):
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 516, in <module>
+    run_EA(population=population, generations=gens, res=res, npz_path=npz_path,
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           log=True, scenario_path = scenario_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/davide/PycharmProjects/BioIA-Project/GP/GP_with_optimizations.py", line 363, in run_EA
+    pool = multiprocessing.Pool(...)
+  File "/usr/lib/python3.13/multiprocessing/context.py", line 119, in Pool
+    return Pool(processes, initializer, initargs, maxtasksperchild,
+                context=self.get_context())
+  File "/usr/lib/python3.13/multiprocessing/pool.py", line 204, in __init__
+    if processes < 1:
+       ^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'ellipsis' and 'int'

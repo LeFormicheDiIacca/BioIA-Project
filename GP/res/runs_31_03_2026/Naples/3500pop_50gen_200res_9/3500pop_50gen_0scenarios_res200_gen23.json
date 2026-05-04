@@ -1,0 +1,37 @@
+[
+    {
+        "area": "Mondragone-Capua",
+        "current_generation": 23,
+        "total_generations": 50,
+        "resolution": 200,
+        "population": 3500,
+        "scenarios": 0,
+        "best_individual": "protected_div(add(if_then_else(is_water, protected_pow(steepness, add(steepness, steepness)), add(0.096, steepness)), distance), 0.048)",
+        "best_individual_fitness": [
+            97.73333262244897
+        ],
+        "hall_of_fame": [
+            {
+                "individual": "protected_div(add(if_then_else(is_water, protected_pow(steepness, add(steepness, steepness)), add(0.096, steepness)), distance), 0.048)",
+                "fitness": 97.73333262244897
+            },
+            {
+                "individual": "protected_div(add(if_then_else(is_water, 0.663, add(0.096, steepness)), distance), 0.048)",
+                "fitness": 97.73333262244897
+            },
+            {
+                "individual": "protected_div(if_then_else(is_water, protected_pow(if_then_else(is_water, 0.04, 0.048), steepness), add(0.096, add(steepness, distance))), if_then_else(is_water, 0.027, 0.048))",
+                "fitness": 97.73333262244897
+            },
+            {
+                "individual": "protected_div(if_then_else(is_water, add(if_then_else(is_water, 0.321, steepness), distance), add(0.096, add(steepness, distance))), 0.048)",
+                "fitness": 97.73333262244897
+            },
+            {
+                "individual": "protected_div(add(if_then_else(is_water, if_then_else(is_water, 0.321, steepness), add(0.096, steepness)), distance), 0.048)",
+                "fitness": 97.73333262244897
+            }
+        ],
+        "runtime_in_seconds": 20.974281549453735
+    }
+]

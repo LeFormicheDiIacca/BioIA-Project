@@ -1,0 +1,9 @@
+[
+    {
+        "generations": 200,
+        "resolution": 200,
+        "population": 500,
+        "scenarios": 10,
+        "best_individual": "if_then_else(and_(or_(is_water, is_water), le(distance, steepness)), sub(protected_div(distance, steepness), protected_log(0.207, steepness)), protected_pow(mul(distance, 0.387), protected_div(distance, steepness)))",
+        "best_individual_fitness": [
+            
