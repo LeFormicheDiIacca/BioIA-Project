@@ -17,6 +17,22 @@ Key Contributions:
 * **Morphology-Aware Planning**: Integration of topographic data (slope, terrain type, obstacles) directly into the cost calculation.
 * **Performance Optimization**: Automatic discovery of fitness functions that outperform standard heuristics in rugged or constrained environments.
 
+<table style="border: none; border-collapse: collapse; width: 100%;">
+  <tr style="border: none;">
+    <td style="border: none; width: 48%; text-align: center; vertical-align: top;">
+      <img src="https://github.com/user-attachments/assets/1261048c-1a0f-4a6e-8801-02f11a3e3205" width="100%" />
+      <br>
+      <em>Figure 1: Example of a GP-generated cost function.</em>
+    </td>
+    <td style="border: none; width: 4%;">&nbsp;</td> <!-- Spazio tra le colonne -->
+    <td style="border: none; width: 48%; text-align: center; vertical-align: top;">
+      <img src="https://github.com/user-attachments/assets/4aae335b-a8e7-400d-98ac-fa3f3d5f393e" width="100%" />
+      <br>
+      <em>Figure 2: A path generated through the ACO algorithm.</em>
+    </td>
+  </tr>
+</table>
+
 ## Repository Structure
 
 The project is organized into modular components:
